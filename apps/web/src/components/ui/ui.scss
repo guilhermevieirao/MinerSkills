@@ -1,0 +1,289 @@
+@use '../../styles/mixins' as *;
+
+// ── Button ──
+.ms-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ms-space-2);
+  font-family: var(--ms-font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--ms-text-sm);
+  padding: 0.7rem 1.4rem;
+  border-radius: var(--ms-radius-pill);
+  border: 1px solid transparent;
+  transition:
+    transform var(--ms-dur) var(--ms-ease),
+    background var(--ms-dur) var(--ms-ease),
+    box-shadow var(--ms-dur) var(--ms-ease),
+    color var(--ms-dur) var(--ms-ease);
+  white-space: nowrap;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  &--primary {
+    background: var(--ms-green);
+    color: var(--ms-on-green);
+    &:hover:not(:disabled) {
+      background: var(--ms-green-strong);
+      box-shadow: var(--ms-shadow-glow);
+    }
+  }
+  &--outline {
+    background: transparent;
+    color: var(--ms-text);
+    border-color: var(--ms-border-strong);
+    &:hover:not(:disabled) {
+      border-color: var(--ms-green);
+      color: var(--ms-green);
+    }
+  }
+  &--ghost {
+    background: transparent;
+    color: var(--ms-text-dim);
+    &:hover:not(:disabled) {
+      color: var(--ms-green);
+      background: var(--ms-surface-2);
+    }
+  }
+  &--danger {
+    background: transparent;
+    color: var(--ms-danger);
+    border-color: rgba(255, 90, 90, 0.4);
+    &:hover:not(:disabled) {
+      background: rgba(255, 90, 90, 0.12);
+    }
+  }
+  &--sm {
+    padding: 0.45rem 0.9rem;
+    font-size: var(--ms-text-xs);
+  }
+  &--lg {
+    padding: 0.95rem 2rem;
+    font-size: var(--ms-text-base);
+  }
+  &--block {
+    width: 100%;
+  }
+}
+
+// ── SectionHeading ──
+.ms-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ms-space-3);
+  margin-bottom: var(--ms-space-8);
+
+  &--center {
+    align-items: center;
+    text-align: center;
+  }
+
+  &__kicker {
+    @include kicker;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    &::before {
+      content: '';
+      width: 22px;
+      height: 2px;
+      background: var(--ms-green);
+    }
+  }
+  &__title {
+    font-size: var(--ms-text-3xl);
+    @include below($bp-md) {
+      font-size: var(--ms-text-2xl);
+    }
+  }
+  &__subtitle {
+    color: var(--ms-text-dim);
+    max-width: 60ch;
+    font-size: var(--ms-text-lg);
+  }
+}
+
+// ── Card ──
+.ms-card {
+  @include card-surface;
+  padding: var(--ms-space-5);
+  transition:
+    transform var(--ms-dur) var(--ms-ease),
+    border-color var(--ms-dur) var(--ms-ease),
+    box-shadow var(--ms-dur) var(--ms-ease);
+
+  &--hover:hover {
+    transform: translateY(-4px);
+    border-color: var(--ms-green-deep);
+    box-shadow: var(--ms-shadow);
+  }
+}
+
+// ── FilterChip ──
+.ms-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ms-space-2);
+  padding: 0.5rem 1rem;
+  border-radius: var(--ms-radius-pill);
+  border: 1px solid var(--ms-border);
+  background: var(--ms-surface);
+  color: var(--ms-text-dim);
+  font-size: var(--ms-text-sm);
+  font-weight: 500;
+  transition: all var(--ms-dur) var(--ms-ease);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--ms-green-deep);
+    color: var(--ms-text);
+  }
+  &--active {
+    background: var(--ms-green);
+    border-color: var(--ms-green);
+    color: var(--ms-on-green);
+    font-weight: 600;
+  }
+}
+
+// ── Tag ──
+.ms-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--ms-radius-sm);
+  font-size: var(--ms-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid var(--ms-border-strong);
+  color: var(--ms-green);
+  background: rgba(41, 217, 140, 0.08);
+
+  &--solid {
+    background: var(--ms-green);
+    color: var(--ms-on-green);
+    border-color: var(--ms-green);
+  }
+  &--muted {
+    color: var(--ms-text-dim);
+    border-color: var(--ms-border);
+    background: var(--ms-surface-2);
+  }
+}
+
+// ── Form controls ──
+.ms-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ms-space-2);
+  margin-bottom: var(--ms-space-4);
+
+  &__label {
+    font-size: var(--ms-text-sm);
+    font-weight: 600;
+    color: var(--ms-text);
+  }
+  &__hint {
+    font-size: var(--ms-text-xs);
+    color: var(--ms-text-faint);
+  }
+  &__error {
+    font-size: var(--ms-text-xs);
+    color: var(--ms-danger);
+  }
+}
+
+.ms-input,
+.ms-textarea,
+.ms-select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background: var(--ms-surface-2);
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius-sm);
+  color: var(--ms-text);
+  transition: border-color var(--ms-dur) var(--ms-ease);
+  @include focus-ring;
+
+  &::placeholder {
+    color: var(--ms-text-faint);
+  }
+  &:focus {
+    border-color: var(--ms-green);
+  }
+  &[aria-invalid='true'] {
+    border-color: var(--ms-danger);
+  }
+}
+.ms-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+// ── Spinner / Skeleton ──
+.ms-spinner {
+  width: 1.4em;
+  height: 1.4em;
+  border: 2px solid var(--ms-border-strong);
+  border-top-color: var(--ms-green);
+  border-radius: 50%;
+  animation: ms-spin 0.7s linear infinite;
+}
+.ms-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--ms-surface) 25%,
+    var(--ms-surface-2) 37%,
+    var(--ms-surface) 63%
+  );
+  background-size: 400% 100%;
+  animation: ms-shimmer 1.4s ease infinite;
+  border-radius: var(--ms-radius-sm);
+}
+
+// ── EmptyState ──
+.ms-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ms-space-3);
+  text-align: center;
+  padding: var(--ms-space-10) var(--ms-space-4);
+  color: var(--ms-text-dim);
+
+  svg {
+    width: 48px;
+    height: 48px;
+    color: var(--ms-green-deep);
+  }
+}
+
+// ── Loader block ──
+.ms-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ms-space-3);
+  padding: var(--ms-space-10);
+  color: var(--ms-text-dim);
+}

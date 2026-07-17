@@ -1,0 +1,45 @@
+@use '../../styles/mixins' as *;
+
+.ms-pagehero {
+  position: relative;
+  overflow: hidden;
+  padding-top: calc(var(--ms-navbar-h) + var(--ms-space-10));
+  padding-bottom: var(--ms-space-8);
+  background: var(--ms-gradient-dark);
+  border-bottom: 1px solid var(--ms-border);
+
+  &__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+  }
+
+  &__kicker {
+    @include kicker;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    margin-bottom: var(--ms-space-4);
+    &::before {
+      content: '';
+      width: 24px;
+      height: 2px;
+      background: var(--ms-green);
+    }
+  }
+
+  &__title {
+    font-size: var(--ms-text-4xl);
+    line-height: 1.02;
+    margin-bottom: var(--ms-space-4);
+    @include below($bp-md) {
+      font-size: var(--ms-text-3xl);
+    }
+  }
+
+  &__subtitle {
+    color: var(--ms-text-dim);
+    font-size: var(--ms-text-lg);
+    max-width: 60ch;
+  }
+}

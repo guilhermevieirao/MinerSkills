@@ -1,0 +1,116 @@
+@use '../../styles/mixins' as *;
+
+.ms-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--ms-z-nav);
+  height: var(--ms-navbar-h);
+  display: flex;
+  align-items: center;
+  transition:
+    background var(--ms-dur) var(--ms-ease),
+    border-color var(--ms-dur) var(--ms-ease),
+    backdrop-filter var(--ms-dur) var(--ms-ease);
+  border-bottom: 1px solid transparent;
+
+  &--solid {
+    background: rgba(10, 10, 10, 0.82);
+    backdrop-filter: blur(14px);
+    border-bottom-color: var(--ms-border);
+  }
+
+  &__inner {
+    @include container(var(--ms-container-wide));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ms-space-4);
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    color: var(--ms-text);
+    flex-shrink: 0;
+  }
+  &__logo {
+    height: 34px;
+    width: auto;
+    color: var(--ms-green);
+  }
+
+  &__links {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-1);
+
+    @include below($bp-xl) {
+      display: none;
+    }
+  }
+
+  &__link {
+    padding: 0.4rem 0.7rem;
+    font-family: var(--ms-font-display);
+    font-size: var(--ms-text-sm);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ms-text-dim);
+    border-radius: var(--ms-radius-sm);
+    position: relative;
+    transition: color var(--ms-dur) var(--ms-ease);
+
+    &:hover {
+      color: var(--ms-text);
+    }
+    &--active {
+      color: var(--ms-green);
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0.7rem;
+        right: 0.7rem;
+        bottom: -2px;
+        height: 2px;
+        background: var(--ms-green);
+        border-radius: 2px;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ms-space-3);
+    flex-shrink: 0;
+  }
+
+  &__cta {
+    @include below($bp-md) {
+      display: none;
+    }
+  }
+
+  &__burger {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--ms-border);
+    border-radius: var(--ms-radius-sm);
+    color: var(--ms-text);
+    padding: 0.4rem;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    @include below($bp-xl) {
+      display: inline-flex;
+    }
+  }
+}
