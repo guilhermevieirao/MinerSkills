@@ -1,0 +1,23 @@
+{
+  "name": "@minerskills/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:prepare": "node prepare-db.mjs",
+    "test": "npm run db:prepare && playwright test",
+    "test:headed": "npm run db:prepare && playwright test --headed",
+    "test:ui": "npm run db:prepare && playwright test --ui",
+    "test:mobile": "npm run db:prepare && playwright test --project=mobile",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install chromium",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@minerskills/shared": "*",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.7",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.3"
+  }
+}
