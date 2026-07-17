@@ -1,0 +1,279 @@
+// ─────────────────────────────────────────────────────────────
+//  MinerSkills #10019 — Prisma schema (TEMPLATE)
+//
+//  ESTE é o arquivo versionado. O `schema.prisma` real é GERADO
+//  por scripts/stamp-schema.mjs, que substitui __PROVIDER__ pelo
+//  valor de DATABASE_PROVIDER (sqlite | postgresql) do .env raiz.
+//  NUNCA edite schema.prisma diretamente — edite este template.
+//
+//  Regras de portabilidade (SQLite <-> PostgreSQL sem esforço):
+//    • Apenas escalares portáveis: String, Int, Float, Boolean, DateTime
+//    • Sem enum  -> valores "enum-like" são String validados por zod
+//      (fonte única: packages/shared/src/constants.ts)
+//    • Sem Json  -> listas/mídia são modeladas em tabelas relacionais
+//    • IDs cuid() (sem autoincrement)
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "__PROVIDER__"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  kind         String // image | video
+  fileName     String   @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  thumbName    String?
+  alt          String?
+  createdAt    DateTime @default(now())
+
+  contentBlocks     ContentBlock[]
+  timelineItems     TimelineItem[]
+  postCovers        Post[]             @relation("PostCover")
+  postMedia         PostMedia[]
+  galleryPhotos     GalleryPhoto[]
+  encyclopediaPhoto EncyclopediaEntry[]
+  awards            Award[]
+}
+
+model ContentBlock {
+  id       String  @id @default(cuid())
+  page     String // landing | historia | como-entrar
+  key      String
+  order    Int     @default(0)
+  title    String?
+  subtitle String?
+  body     String?
+  mediaId  String?
+  media    MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@unique([page, key])
+  @@index([page])
+}
+
+model TimelineItem {
+  id          String  @id @default(cuid())
+  year        Int
+  title       String
+  description String
+  order       Int     @default(0)
+  mediaId     String?
+  media       MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([order])
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String
+  contentHtml String
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  coverId     String?
+  cover       MediaAsset? @relation("PostCover", fields: [coverId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  media   PostMedia[]
+  youtube PostYoutube[]
+  links   PostLink[]
+
+  @@index([published, publishedAt])
+}
+
+model PostMedia {
+  id      String @id @default(cuid())
+  postId  String
+  mediaId String
+  order   Int    @default(0)
+  post    Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media   MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model PostYoutube {
+  id        String  @id @default(cuid())
+  postId    String
+  youtubeId String
+  title     String?
+  order     Int     @default(0)
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model PostLink {
+  id     String @id @default(cuid())
+  postId String
+  label  String
+  url    String
+  order  Int    @default(0)
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model GalleryPhoto {
+  id        String   @id @default(cuid())
+  mediaId   String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  media     MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([order])
+}
+
+model QuizQuestion {
+  id          String  @id @default(cuid())
+  question    String
+  explanation String?
+  active      Boolean @default(true)
+  order       Int     @default(0)
+  options     QuizOption[]
+
+  @@index([active, order])
+}
+
+model QuizOption {
+  id         String  @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model QuizScore {
+  id             String   @id @default(cuid())
+  nickname       String
+  score          Int
+  totalQuestions Int
+  durationMs     Int
+  createdAt      DateTime @default(now())
+
+  @@index([score])
+}
+
+model EncyclopediaEntry {
+  id         String  @id @default(cuid())
+  kind       String // member | robot
+  name       String
+  slug       String  @unique
+  role       String?
+  generation String? // '1' | '2' | '3'
+  age        Int?
+  season     String?
+  about      String
+  quote      String?
+  isFormer   Boolean @default(false)
+  order      Int     @default(0)
+  photoId    String?
+  photo      MediaAsset? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  tags EncyclopediaTag[]
+
+  @@index([kind, order])
+}
+
+model EncyclopediaTag {
+  id      String @id @default(cuid())
+  entryId String
+  tag     String
+  entry   EncyclopediaEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, tag])
+  @@index([tag])
+}
+
+model ForumTopic {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  nickname    String
+  status      String    @default("pending") // pending | approved | rejected
+  createdAt   DateTime  @default(now())
+  moderatedAt DateTime?
+  replies     ForumReply[]
+
+  @@index([status, createdAt])
+}
+
+model ForumReply {
+  id          String    @id @default(cuid())
+  topicId     String
+  body        String
+  nickname    String
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  moderatedAt DateTime?
+  topic       ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([topicId, status])
+}
+
+model Award {
+  id          String  @id @default(cuid())
+  title       String
+  description String
+  event       String
+  year        Int
+  highlight   Boolean @default(false)
+  order       Int     @default(0)
+  mediaId     String?
+  media       MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([year])
+}
+
+model AgendaEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  kind        String // competicao | evento | processo-seletivo | workshop | outro
+  published   Boolean   @default(true)
+
+  @@index([startsAt])
+}
+
+model SocialLink {
+  id       String  @id @default(cuid())
+  platform String
+  label    String
+  url      String
+  order    Int     @default(0)
+  active   Boolean @default(true)
+
+  @@index([order])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
