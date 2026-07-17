@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────
+#  MinerSkills — stack de PRODUÇÃO (nginx + API + PostgreSQL)
+#
+#  Antes de subir, ajuste no .env da raiz:
+#    NODE_ENV=production
+#    DATABASE_PROVIDER=postgresql
+#    DATABASE_URL="postgresql://<user>:<pass>@postgres:5432/<db>?schema=public"
+#    TRUST_PROXY=1
+#    WEB_ORIGIN=http://localhost:8080   (ou seu domínio)
+#    JWT_SECRET=<openssl rand -hex 32>
+#
+#  Uso: docker compose -f docker-compose.prod.yml up --build
+# ─────────────────────────────────────────────────────────────
+name: minerskills-prod
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: prod
+      args:
+        # VITE_* são inlined em build time — vêm do .env da raiz
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_UPLOADS_URL: ${VITE_UPLOADS_URL:-/uploads}
+        VITE_SITE_URL: ${VITE_SITE_URL}
+        VITE_TEAM_NUMBER: ${VITE_TEAM_NUMBER:-10019}
+        VITE_TEAM_NAME: ${VITE_TEAM_NAME:-MinerSkills}
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: prod
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      TRUST_PROXY: '1'
+      UPLOADS_DIR: ./data/uploads
+    volumes:
+      - uploads:/app/apps/api/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # 127.0.0.1 (não "localhost"): a API escuta em IPv4 e o wget tentaria ::1
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:${API_PORT:-3001}/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  uploads:
+  pgdata:

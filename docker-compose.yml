@@ -1,0 +1,85 @@
+# ─────────────────────────────────────────────────────────────
+#  MinerSkills — stack de DESENVOLVIMENTO (hot reload)
+#
+#  Toda a configuração vem do .env ÚNICO na raiz (lido
+#  automaticamente pelo compose para ${VAR} e via env_file).
+#
+#  Uso:
+#    docker compose up                      # web + api (SQLite)
+#    docker compose --profile postgres up   # + PostgreSQL
+# ─────────────────────────────────────────────────────────────
+name: minerskills
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: dev
+    env_file: .env
+    environment:
+      # Só sobrescrevemos o que muda DENTRO do container; o resto vem do .env.
+      # Para PostgreSQL, aponte DATABASE_URL no .env para o host "postgres"
+      # (nome do serviço), não "localhost". Veja docs/database.md.
+      API_HOST: 0.0.0.0
+      UPLOADS_DIR: ./data/uploads
+    ports:
+      - '${API_PORT:-3001}:${API_PORT:-3001}'
+    volumes:
+      # código-fonte para hot reload
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./apps/api/scripts:/app/apps/api/scripts
+      - ./packages/shared/src:/app/packages/shared/src
+      - ./.env:/app/.env:ro
+      # dados persistentes (SQLite + uploads)
+      - api-data:/app/apps/api/data
+    healthcheck:
+      # 127.0.0.1 (não "localhost"): a API escuta em IPv4 e o wget tentaria ::1
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:${API_PORT:-3001}/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    env_file: .env
+    environment:
+      # dentro da rede do compose a API é o serviço "api"
+      VITE_DEV_PROXY_TARGET: http://api:${API_PORT:-3001}
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./apps/web/index.html:/app/apps/web/index.html
+      - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts
+      - ./packages/shared/src:/app/packages/shared/src
+      - ./.env:/app/.env:ro
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:17-alpine
+    profiles: ['postgres']
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  api-data:
+  pgdata:
