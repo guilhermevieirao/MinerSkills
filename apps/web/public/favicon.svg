@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+  <!-- capacete de minerador -->
+  <path d="M20 20 a12 9 0 0 1 24 0 l0 3 -24 0 z" fill="#29D98C"/>
+  <circle cx="32" cy="17" r="3.2" fill="#0A0A0A"/>
+  <!-- letra M -->
+  <path d="M18 26 l6 0 l0 18 l-6 0 z M46 26 l-6 0 l0 18 l6 0 z M24 26 l4 0 l4 8 l4 -8 l4 0 l0 6 l-4 6 l-4 0 l-4 -6 z"
+        fill="#29D98C"/>
+</svg>

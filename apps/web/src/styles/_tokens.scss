@@ -1,0 +1,91 @@
+// ────────────────────────────────────────────────────────────
+//  MinerSkills — Design Tokens
+//  Identidade: preto + verde menta, tipografia tech/uppercase.
+//  Emitidos como CSS custom properties (tematização em runtime).
+// ────────────────────────────────────────────────────────────
+
+:root {
+  // ── Cores base ──
+  --ms-black: #0a0a0a;
+  --ms-bg: #0a0a0a;
+  --ms-surface: #111413;
+  --ms-surface-2: #181d1b;
+  --ms-surface-3: #20261f;
+  --ms-border: #2a322d;
+  --ms-border-strong: #3b463f;
+
+  // ── Verde da marca (do badge #10019) ──
+  --ms-green: #29d98c;
+  --ms-green-strong: #2ecc71;
+  --ms-green-deep: #3b9c7a;
+  --ms-green-dim: #1c8f5c;
+  --ms-green-glow: rgba(41, 217, 140, 0.35);
+  --ms-cream: #f2eee3;
+
+  // ── Texto ──
+  --ms-text: #e8edea;
+  --ms-text-dim: #9ba8a1;
+  --ms-text-faint: #6b756f;
+  --ms-on-green: #06231a;
+
+  // ── Estados ──
+  --ms-danger: #ff5a5a;
+  --ms-warning: #f2b134;
+  --ms-success: var(--ms-green);
+
+  // ── Gradientes ──
+  --ms-gradient: linear-gradient(135deg, #29d98c 0%, #3b9c7a 100%);
+  --ms-gradient-dark: linear-gradient(160deg, #131917 0%, #0a0a0a 100%);
+  --ms-gradient-text: linear-gradient(120deg, #2ecc71 0%, #29d98c 55%, #7af5c4 100%);
+
+  // ── Tipografia ──
+  --ms-font-display: 'Chakra Petch', system-ui, sans-serif;
+  --ms-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --ms-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --ms-text-xs: 0.75rem;
+  --ms-text-sm: 0.875rem;
+  --ms-text-base: 1rem;
+  --ms-text-lg: 1.125rem;
+  --ms-text-xl: 1.375rem;
+  --ms-text-2xl: 1.875rem;
+  --ms-text-3xl: 2.5rem;
+  --ms-text-4xl: 3.5rem;
+  --ms-text-5xl: clamp(2.75rem, 8vw, 6rem);
+
+  // ── Espaçamento (escala 4px) ──
+  --ms-space-1: 0.25rem;
+  --ms-space-2: 0.5rem;
+  --ms-space-3: 0.75rem;
+  --ms-space-4: 1rem;
+  --ms-space-5: 1.5rem;
+  --ms-space-6: 2rem;
+  --ms-space-8: 3rem;
+  --ms-space-10: 4rem;
+  --ms-space-12: 6rem;
+  --ms-space-16: 8rem;
+
+  // ── Raios ──
+  --ms-radius-sm: 6px;
+  --ms-radius: 12px;
+  --ms-radius-lg: 18px;
+  --ms-radius-xl: 28px;
+  --ms-radius-pill: 999px;
+
+  // ── Sombras ──
+  --ms-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --ms-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --ms-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --ms-shadow-glow: 0 0 0 1px rgba(41, 217, 140, 0.25), 0 12px 40px rgba(41, 217, 140, 0.18);
+
+  // ── Layout ──
+  --ms-container: 1200px;
+  --ms-container-wide: 1440px;
+  --ms-navbar-h: 72px;
+
+  // ── z-index ──
+  --ms-z-nav: 100;
+  --ms-z-drawer: 200;
+  --ms-z-modal: 300;
+  --ms-z-toast: 400;
+}

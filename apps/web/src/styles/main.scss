@@ -1,0 +1,5 @@
+// As fontes self-hosted (@fontsource) são importadas em main.tsx —
+// arquivos .css não podem ser carregados via @use do Sass.
+@use 'tokens';
+@use 'motion';
+@use 'base';

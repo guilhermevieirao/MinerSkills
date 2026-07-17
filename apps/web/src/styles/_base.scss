@@ -1,0 +1,131 @@
+@use 'mixins' as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--ms-font-body);
+  background: var(--ms-bg);
+  color: var(--ms-text);
+  font-size: var(--ms-text-base);
+  line-height: 1.6;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @include display-heading;
+  color: var(--ms-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  @include focus-ring;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+::selection {
+  background: var(--ms-green);
+  color: var(--ms-on-green);
+}
+
+// Scrollbar tema escuro
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ms-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ms-border-strong);
+  border-radius: var(--ms-radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ms-green-deep);
+}
+
+.ms-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Texto com gradiente da marca
+.ms-gradient-text {
+  background: var(--ms-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ms-section {
+  padding-block: var(--ms-space-12);
+
+  @include below($bp-md) {
+    padding-block: var(--ms-space-8);
+  }
+}
+
+.ms-container {
+  @include container;
+}
+
+.ms-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
