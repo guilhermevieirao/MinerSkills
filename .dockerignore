@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/build
+**/dev-dist
+**/.tsbuildinfo
+apps/api/data
+apps/api/prisma/schema.prisma
+e2e/test-results
+e2e/playwright-report
+playwright/.cache
+.git
+.gitignore
+**/*.log
+conteudo base
+docs
+.env.local

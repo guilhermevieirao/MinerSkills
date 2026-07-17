@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment (single root .env — never commit real secrets)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+apps/web/dev-dist/
+
+# Prisma — schema is generated from schema.template.prisma
+apps/api/prisma/schema.prisma
+
+# Runtime data (SQLite db + uploads volume).
+# Os diretórios de upload são criados no boot por ensureUploadDirs().
+apps/api/data/
+
+# Test artifacts
+e2e/test-results/
+e2e/playwright-report/
+e2e/.cache/
+playwright/.cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+.idea/
