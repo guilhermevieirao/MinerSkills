@@ -1,0 +1,50 @@
+import { createBrowserRouter } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { PublicLayout } from './components/layout/PublicLayout';
+import { Loader } from './components/ui';
+import { HomePage } from './pages/HomePage';
+import { HistoriaPage } from './pages/HistoriaPage';
+import { BlogPage } from './pages/BlogPage';
+import { BlogPostPage } from './pages/BlogPostPage';
+import { GaleriaPage } from './pages/GaleriaPage';
+import { EnciclopediaPage } from './pages/EnciclopediaPage';
+import { QuizPage } from './pages/QuizPage';
+import { ForumPage } from './pages/ForumPage';
+import { ForumTopicPage } from './pages/ForumTopicPage';
+import { PremiosPage } from './pages/PremiosPage';
+import { AgendaPage } from './pages/AgendaPage';
+import { ComoEntrarPage } from './pages/ComoEntrarPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+
+// Área admin: chunk separado, carregado sob demanda (sem link público)
+const AdminApp = lazy(() => import('./admin/AdminApp'));
+
+export const router = createBrowserRouter([
+  {
+    element: <PublicLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/historia', element: <HistoriaPage /> },
+      { path: '/blog', element: <BlogPage /> },
+      { path: '/blog/:slug', element: <BlogPostPage /> },
+      { path: '/galeria', element: <GaleriaPage /> },
+      { path: '/enciclopedia', element: <EnciclopediaPage /> },
+      { path: '/enciclopedia/:slug', element: <EnciclopediaPage /> },
+      { path: '/quiz', element: <QuizPage /> },
+      { path: '/forum', element: <ForumPage /> },
+      { path: '/forum/:id', element: <ForumTopicPage /> },
+      { path: '/premios', element: <PremiosPage /> },
+      { path: '/agenda', element: <AgendaPage /> },
+      { path: '/como-entrar', element: <ComoEntrarPage /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+  {
+    path: '/admin/*',
+    element: (
+      <Suspense fallback={<Loader label="Carregando painel…" />}>
+        <AdminApp />
+      </Suspense>
+    ),
+  },
+]);
