@@ -1,0 +1,154 @@
+import type {
+  ContentBlockDTO,
+  ContentBlockInput,
+  TimelineItemDTO,
+  TimelineItemInput,
+  PostListItemDTO,
+  PostDetailDTO,
+  PostInput,
+  GalleryPhotoDTO,
+  GalleryPhotoInput,
+  QuizQuestionInput,
+  EncyclopediaEntryDTO,
+  EncyclopediaEntryInput,
+  ForumTopicDTO,
+  AwardDTO,
+  AwardInput,
+  AgendaEventDTO,
+  AgendaEventInput,
+  SocialLinkDTO,
+  SocialLinkInput,
+  MediaAssetDTO,
+} from '@minerskills/shared';
+import { api } from '../lib/api';
+
+export interface DashboardStats {
+  posts: { total: number; published: number };
+  gallery: number;
+  quiz: { questions: number; scores: number };
+  encyclopedia: { members: number; robots: number };
+  awards: number;
+  agenda: number;
+  forum: { pending: number; pendingTopics: number; pendingReplies: number; approvedTopics: number };
+}
+
+export interface AdminQuizQuestion {
+  id: string;
+  question: string;
+  explanation: string | null;
+  active: boolean;
+  order: number;
+  options: { id: string; text: string; isCorrect: boolean; order: number }[];
+}
+
+export interface ModerationReply {
+  id: string;
+  nickname: string;
+  body: string;
+  status: string;
+  createdAt: string;
+  topicId: string;
+  topicTitle: string;
+}
+
+export interface ModerationQueue {
+  topics: ForumTopicDTO[];
+  replies: ModerationReply[];
+}
+
+export const adminApi = {
+  dashboard: () => api.get<DashboardStats>('/admin/dashboard'),
+
+  media: {
+    list: (kind?: 'image' | 'video') =>
+      api.get<MediaAssetDTO[]>('/admin/media', kind ? { kind } : undefined),
+    upload: (file: File, alt?: string) =>
+      api.upload<MediaAssetDTO>('/admin/media', file, alt ? { alt } : undefined),
+    remove: (id: string) => api.del(`/admin/media/${id}`),
+  },
+
+  contentBlocks: {
+    list: (page?: string) =>
+      api.get<ContentBlockDTO[]>('/admin/content-blocks', page ? { page } : undefined),
+    create: (data: ContentBlockInput) => api.post<ContentBlockDTO>('/admin/content-blocks', data),
+    update: (id: string, data: ContentBlockInput) =>
+      api.put<ContentBlockDTO>(`/admin/content-blocks/${id}`, data),
+    remove: (id: string) => api.del(`/admin/content-blocks/${id}`),
+  },
+
+  timeline: {
+    list: () => api.get<TimelineItemDTO[]>('/admin/timeline'),
+    create: (data: TimelineItemInput) => api.post<TimelineItemDTO>('/admin/timeline', data),
+    update: (id: string, data: TimelineItemInput) =>
+      api.put<TimelineItemDTO>(`/admin/timeline/${id}`, data),
+    remove: (id: string) => api.del(`/admin/timeline/${id}`),
+  },
+
+  posts: {
+    list: () => api.get<PostListItemDTO[]>('/admin/posts'),
+    get: (id: string) => api.get<PostDetailDTO>(`/admin/posts/${id}`),
+    create: (data: PostInput) => api.post<PostDetailDTO>('/admin/posts', data),
+    update: (id: string, data: PostInput) => api.put<PostDetailDTO>(`/admin/posts/${id}`, data),
+    remove: (id: string) => api.del(`/admin/posts/${id}`),
+  },
+
+  gallery: {
+    list: () => api.get<GalleryPhotoDTO[]>('/gallery'),
+    create: (data: GalleryPhotoInput) => api.post<GalleryPhotoDTO>('/admin/gallery', data),
+    update: (id: string, data: GalleryPhotoInput) =>
+      api.put<GalleryPhotoDTO>(`/admin/gallery/${id}`, data),
+    remove: (id: string) => api.del(`/admin/gallery/${id}`),
+  },
+
+  quiz: {
+    list: () => api.get<AdminQuizQuestion[]>('/admin/quiz/questions'),
+    create: (data: QuizQuestionInput) => api.post<AdminQuizQuestion>('/admin/quiz/questions', data),
+    update: (id: string, data: QuizQuestionInput) =>
+      api.put<AdminQuizQuestion>(`/admin/quiz/questions/${id}`, data),
+    remove: (id: string) => api.del(`/admin/quiz/questions/${id}`),
+    resetLeaderboard: () => api.del('/admin/quiz/leaderboard'),
+  },
+
+  encyclopedia: {
+    list: () => api.get<EncyclopediaEntryDTO[]>('/admin/encyclopedia'),
+    create: (data: EncyclopediaEntryInput) =>
+      api.post<EncyclopediaEntryDTO>('/admin/encyclopedia', data),
+    update: (id: string, data: EncyclopediaEntryInput) =>
+      api.put<EncyclopediaEntryDTO>(`/admin/encyclopedia/${id}`, data),
+    remove: (id: string) => api.del(`/admin/encyclopedia/${id}`),
+  },
+
+  forum: {
+    moderation: () => api.get<ModerationQueue>('/admin/forum/moderation'),
+    allTopics: () => api.get<ForumTopicDTO[]>('/admin/forum/topics'),
+    setTopic: (id: string, status: string) =>
+      api.patch(`/admin/forum/topics/${id}`, { status }),
+    setReply: (id: string, status: string) =>
+      api.patch(`/admin/forum/replies/${id}`, { status }),
+    removeTopic: (id: string) => api.del(`/admin/forum/topics/${id}`),
+    removeReply: (id: string) => api.del(`/admin/forum/replies/${id}`),
+  },
+
+  awards: {
+    list: () => api.get<AwardDTO[]>('/awards'),
+    create: (data: AwardInput) => api.post<AwardDTO>('/admin/awards', data),
+    update: (id: string, data: AwardInput) => api.put<AwardDTO>(`/admin/awards/${id}`, data),
+    remove: (id: string) => api.del(`/admin/awards/${id}`),
+  },
+
+  agenda: {
+    list: () => api.get<AgendaEventDTO[]>('/admin/agenda'),
+    create: (data: AgendaEventInput) => api.post<AgendaEventDTO>('/admin/agenda', data),
+    update: (id: string, data: AgendaEventInput) =>
+      api.put<AgendaEventDTO>(`/admin/agenda/${id}`, data),
+    remove: (id: string) => api.del(`/admin/agenda/${id}`),
+  },
+
+  social: {
+    list: () => api.get<SocialLinkDTO[]>('/admin/social-links'),
+    create: (data: SocialLinkInput) => api.post<SocialLinkDTO>('/admin/social-links', data),
+    update: (id: string, data: SocialLinkInput) =>
+      api.put<SocialLinkDTO>(`/admin/social-links/${id}`, data),
+    remove: (id: string) => api.del(`/admin/social-links/${id}`),
+  },
+};
