@@ -2,12 +2,7 @@ import { fakerPT_BR as faker } from '@faker-js/faker';
 import bcrypt from 'bcryptjs';
 import { rm, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import {
-  MEMBER_TAGS,
-  GENERATIONS,
-  AGENDA_KINDS,
-  type MemberTag,
-} from '@minerskills/shared';
+import { DEFAULT_MEMBER_TAGS, GENERATIONS, AGENDA_KINDS } from '@minerskills/shared';
 import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
 import { uniquePostSlug, uniqueEncyclopediaSlug } from '../src/lib/slug.js';
@@ -39,6 +34,7 @@ async function clearAll() {
   await prisma.quizScore.deleteMany();
   await prisma.quizQuestion.deleteMany();
   await prisma.encyclopediaTag.deleteMany();
+  await prisma.memberTag.deleteMany();
   await prisma.forumReply.deleteMany();
   await prisma.forumTopic.deleteMany();
   await prisma.galleryPhoto.deleteMany();
@@ -399,24 +395,27 @@ async function seedQuiz() {
   console.log(`  ✓ quiz (${chosen.length} perguntas)`);
 }
 
+async function seedMemberTags() {
+  // ordem = índice em DEFAULT_MEMBER_TAGS (sem faker: não afeta o determinismo)
+  for (let i = 0; i < DEFAULT_MEMBER_TAGS.length; i++) {
+    const t = DEFAULT_MEMBER_TAGS[i]!;
+    await prisma.memberTag.create({
+      data: { key: t.key, label: t.label, icon: t.icon, order: i },
+    });
+  }
+  console.log(`  ✓ tags da equipe (${DEFAULT_MEMBER_TAGS.length})`);
+}
+
 async function seedEncyclopedia() {
-  const roleByTag: Record<MemberTag, string> = {
-    competidor: 'Competidor',
-    treinador: 'Treinador',
-    mecanica: 'Mecânica',
-    eletronica: 'Eletrônica',
-    programacao: 'Programador',
-    cad: 'Cadista',
-    marketing: 'Marketing',
-    piloto: 'Piloto',
-  };
+  const tagKeys = DEFAULT_MEMBER_TAGS.map((t) => t.key);
+  const labelByKey = new Map(DEFAULT_MEMBER_TAGS.map((t) => [t.key, t.label]));
 
   for (let i = 0; i < N.members; i++) {
     const sex = faker.person.sexType();
     const name = faker.person.fullName({ sex });
-    const primary = faker.helpers.arrayElement([...MEMBER_TAGS]);
+    const primary = faker.helpers.arrayElement(tagKeys);
     const tags = faker.helpers.arrayElements(
-      [...MEMBER_TAGS],
+      tagKeys,
       faker.number.int({ min: 1, max: 3 }),
     );
     if (!tags.includes(primary)) tags.push(primary);
@@ -434,7 +433,7 @@ async function seedEncyclopedia() {
         kind: 'member',
         name,
         slug,
-        role: roleByTag[primary],
+        role: labelByKey.get(primary) ?? primary,
         generation: faker.helpers.arrayElement([...GENERATIONS]),
         age: faker.number.int({ min: 15, max: 19 }),
         about: faker.lorem.paragraphs(2, '\n\n'),
@@ -475,7 +474,7 @@ async function seedEncyclopedia() {
       },
     });
   }
-  console.log(`  ✓ enciclopédia (${N.members} membros + ${N.robots} robôs)`);
+  console.log(`  ✓ equipe (${N.members} membros + ${N.robots} robôs)`);
 }
 
 async function seedForum() {
@@ -597,6 +596,7 @@ async function main() {
   await seedPosts();
   await seedGallery();
   await seedQuiz();
+  await seedMemberTags();
   await seedEncyclopedia();
   await seedForum();
   await seedAwards();

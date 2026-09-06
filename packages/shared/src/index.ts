@@ -7,6 +7,7 @@ export * from './schemas/content.js';
 export * from './schemas/post.js';
 export * from './schemas/gallery.js';
 export * from './schemas/quiz.js';
+export * from './schemas/member-tag.js';
 export * from './schemas/encyclopedia.js';
 export * from './schemas/forum.js';
 export * from './schemas/award.js';

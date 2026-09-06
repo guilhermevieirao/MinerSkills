@@ -57,6 +57,28 @@ function buildData(input: EncyclopediaEntryInput, slug: string) {
   };
 }
 
+/**
+ * Garante que todas as chaves existem em MemberTag (não há FK) e devolve
+ * a lista sem repetições — a unique [entryId, tag] quebraria com duplicata.
+ */
+async function resolveTagKeys(tags: string[]): Promise<string[]> {
+  const keys = [...new Set(tags)];
+  if (keys.length === 0) return keys;
+  const known = await prisma.memberTag.findMany({
+    where: { key: { in: keys } },
+    select: { key: true },
+  });
+  const knownKeys = new Set(known.map((t) => t.key));
+  const unknown = keys.filter((k) => !knownKeys.has(k));
+  if (unknown.length > 0) {
+    throw ApiError.badRequest(
+      'Tag desconhecida',
+      unknown.map((k) => ({ path: 'tags', message: `Tag desconhecida: ${k}` })),
+    );
+  }
+  return keys;
+}
+
 // ─── PÚBLICO ────────────────────────────────────────────────
 export const encyclopediaPublicRouter = Router();
 
@@ -116,11 +138,12 @@ encyclopediaAdminRouter.post(
   validate(encyclopediaEntrySchema),
   asyncHandler(async (req, res) => {
     const input = req.body as EncyclopediaEntryInput;
+    const tags = await resolveTagKeys(input.tags);
     const slug = await uniqueEncyclopediaSlug(input.name);
     const entry = await prisma.encyclopediaEntry.create({
       data: {
         ...buildData(input, slug),
-        tags: { create: input.tags.map((tag) => ({ tag })) },
+        tags: { create: tags.map((tag) => ({ tag })) },
       },
       include: entryInclude,
     });
@@ -133,6 +156,7 @@ encyclopediaAdminRouter.put(
   validate(encyclopediaEntrySchema),
   asyncHandler(async (req, res) => {
     const input = req.body as EncyclopediaEntryInput;
+    const tags = await resolveTagKeys(input.tags);
     const slug = await uniqueEncyclopediaSlug(input.name, req.params.id);
     const entry = await prisma.$transaction(async (tx) => {
       await tx.encyclopediaTag.deleteMany({ where: { entryId: req.params.id } });
@@ -140,7 +164,7 @@ encyclopediaAdminRouter.put(
         where: { id: req.params.id },
         data: {
           ...buildData(input, slug),
-          tags: { create: input.tags.map((tag) => ({ tag })) },
+          tags: { create: tags.map((tag) => ({ tag })) },
         },
         include: entryInclude,
       });

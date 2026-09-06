@@ -177,6 +177,22 @@ model QuizScore {
   @@index([score])
 }
 
+// Tags de membro gerenciadas pelo admin. EncyclopediaTag.tag guarda a `key`
+// SEM FK (deliberado): mantém o `db push` no SQLite indolor com dados já
+// existentes — a integridade (tag existe / remoção em cascata) fica na API.
+// Dados iniciais: PostgreSQL → migration 20260906120000_member_tags;
+// SQLite → prisma/backfill-member-tags.ts (encadeado em `npm run db:push`).
+model MemberTag {
+  id        String   @id @default(cuid())
+  key       String   @unique // slug gerado do label; nunca muda
+  label     String
+  icon      String? // nome curado (MEMBER_TAG_ICONS)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([order])
+}
+
 model EncyclopediaEntry {
   id         String  @id @default(cuid())
   kind       String // member | robot
@@ -202,7 +218,7 @@ model EncyclopediaEntry {
 model EncyclopediaTag {
   id      String @id @default(cuid())
   entryId String
-  tag     String
+  tag     String // MemberTag.key (sem FK — validado na API)
   entry   EncyclopediaEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@unique([entryId, tag])

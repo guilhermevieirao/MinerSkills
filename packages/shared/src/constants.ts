@@ -9,32 +9,70 @@
  *   - seeder (dados fictícios)
  */
 
-// ─── Enciclopédia ───────────────────────────────────────────
+// ─── Equipe (membros & robôs) ───────────────────────────────
 export const ENTRY_KINDS = ['member', 'robot'] as const;
 export type EntryKind = (typeof ENTRY_KINDS)[number];
 
-export const MEMBER_TAGS = [
-  'competidor',
-  'treinador',
-  'mecanica',
-  'eletronica',
-  'programacao',
-  'cad',
-  'marketing',
-  'piloto',
+/**
+ * Ícones disponíveis para as tags de membro. Lista curada: o front-end mapeia
+ * cada nome para um componente do lucide-react (ver
+ * apps/web/src/features/encyclopedia/roleIcons.tsx). Nomes fora desta lista
+ * são rejeitados pelo zod.
+ */
+export const MEMBER_TAG_ICONS = [
+  'user',
+  'swords',
+  'graduation-cap',
+  'wrench',
+  'circuit-board',
+  'code',
+  'box',
+  'megaphone',
+  'gamepad',
+  'cpu',
+  'lightbulb',
+  'camera',
+  'rocket',
+  'trophy',
+  'shield',
+  'flask',
+  'ruler',
+  'hammer',
+  'palette',
+  'briefcase',
+  'heart',
+  'star',
+  'zap',
+  'settings',
+  'book',
+  'users',
+  'wallet',
+  'presentation',
+  'video',
+  'pen',
 ] as const;
-export type MemberTag = (typeof MEMBER_TAGS)[number];
+export type MemberTagIcon = (typeof MEMBER_TAG_ICONS)[number];
 
-export const MEMBER_TAG_LABELS: Record<MemberTag, string> = {
-  competidor: 'Competidor',
-  treinador: 'Treinador',
-  mecanica: 'Mecânica',
-  eletronica: 'Eletrônica',
-  programacao: 'Programação',
-  cad: 'Cadista',
-  marketing: 'Marketing',
-  piloto: 'Piloto',
-};
+/**
+ * Tags padrão de membro. As tags são gerenciadas pelo administrador (tabela
+ * `MemberTag`); esta lista é usada APENAS pelo seeder e pela migration
+ * inicial para popular o banco — em runtime, a fonte da verdade é a API
+ * (`GET /api/member-tags`).
+ */
+export const DEFAULT_MEMBER_TAGS: ReadonlyArray<{
+  key: string;
+  label: string;
+  icon: MemberTagIcon;
+}> = [
+  { key: 'competidor', label: 'Competidor', icon: 'swords' },
+  { key: 'treinador', label: 'Treinador', icon: 'graduation-cap' },
+  { key: 'mecanica', label: 'Mecânica', icon: 'wrench' },
+  { key: 'eletronica', label: 'Eletrônica', icon: 'circuit-board' },
+  { key: 'programacao', label: 'Programação', icon: 'code' },
+  { key: 'cad', label: 'Cadista', icon: 'box' },
+  { key: 'marketing', label: 'Marketing', icon: 'megaphone' },
+  { key: 'piloto', label: 'Piloto', icon: 'gamepad' },
+];
 
 export const GENERATIONS = ['1', '2', '3'] as const;
 export type Generation = (typeof GENERATIONS)[number];

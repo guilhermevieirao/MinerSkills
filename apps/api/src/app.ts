@@ -22,6 +22,10 @@ import { postsPublicRouter, postsAdminRouter } from './modules/posts/posts.route
 import { galleryPublicRouter, galleryAdminRouter } from './modules/gallery/gallery.routes.js';
 import { quizPublicRouter, quizAdminRouter } from './modules/quiz/quiz.routes.js';
 import {
+  memberTagsPublicRouter,
+  memberTagsAdminRouter,
+} from './modules/member-tags/member-tags.routes.js';
+import {
   encyclopediaPublicRouter,
   encyclopediaAdminRouter,
 } from './modules/encyclopedia/encyclopedia.routes.js';
@@ -87,6 +91,7 @@ export function createApp(): Express {
   app.use('/api/posts', postsPublicRouter);
   app.use('/api/gallery', galleryPublicRouter);
   app.use('/api/quiz', quizPublicRouter);
+  app.use('/api/member-tags', memberTagsPublicRouter);
   app.use('/api/encyclopedia', encyclopediaPublicRouter);
   app.use('/api/forum', forumPublicRouter);
   app.use('/api/awards', awardsPublicRouter);
@@ -102,6 +107,7 @@ export function createApp(): Express {
   app.use('/api/admin/posts', postsAdminRouter);
   app.use('/api/admin/gallery', galleryAdminRouter);
   app.use('/api/admin/quiz', quizAdminRouter);
+  app.use('/api/admin/member-tags', memberTagsAdminRouter);
   app.use('/api/admin/encyclopedia', encyclopediaAdminRouter);
   app.use('/api/admin/forum', forumAdminRouter);
   app.use('/api/admin/awards', awardsAdminRouter);

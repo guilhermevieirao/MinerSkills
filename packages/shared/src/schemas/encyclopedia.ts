@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ENTRY_KINDS, GENERATIONS, MEMBER_TAGS } from '../constants.js';
+import { ENTRY_KINDS, GENERATIONS } from '../constants.js';
+import { memberTagKeySchema } from './member-tag.js';
 import type { MediaAssetDTO } from './media.js';
 
 export const encyclopediaEntrySchema = z.object({
@@ -14,13 +15,14 @@ export const encyclopediaEntrySchema = z.object({
   isFormer: z.boolean().default(false),
   order: z.number().int().min(0).default(0),
   photoId: z.string().nullish(),
-  tags: z.array(z.enum(MEMBER_TAGS)).max(MEMBER_TAGS.length).default([]),
+  /** Chaves de tags existentes (validadas contra o banco no servidor). */
+  tags: z.array(memberTagKeySchema).max(30).default([]),
 });
 export type EncyclopediaEntryInput = z.infer<typeof encyclopediaEntrySchema>;
 
 export const encyclopediaQuerySchema = z.object({
   kind: z.enum(ENTRY_KINDS).optional(),
-  tag: z.enum(MEMBER_TAGS).optional(),
+  tag: memberTagKeySchema.optional(),
   generation: z.enum(GENERATIONS).optional(),
   former: z.coerce.boolean().optional(),
 });
