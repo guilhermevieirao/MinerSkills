@@ -22,6 +22,7 @@ datasource db {
 | `apps/api/prisma/schema.template.prisma` | **Versionado.** Fonte da verdade. Contém `provider = "__PROVIDER__"`. |
 | `apps/api/scripts/stamp-schema.mjs` | Lê `DATABASE_PROVIDER` do `.env` da raiz e gera o `schema.prisma`. |
 | `apps/api/prisma/schema.prisma` | **Gerado — não edite, está no `.gitignore`.** |
+| `apps/api/prisma.config.ts` | **Versionado.** Configuração da CLI do Prisma (caminho do schema, migrations e comando de seed) e carregamento do `.env` da raiz. Substitui o bloco `prisma` do `package.json`, removido no Prisma 7. |
 
 O carimbo roda **antes de todo comando Prisma**, via os scripts `db:*`:
 
