@@ -64,15 +64,15 @@ de erro diz exatamente isso.
 
 ---
 
-## O que é coberto (69 testes × 2 projetos)
+## O que é coberto (40 testes × 2 projetos)
 
 | Arquivo | Cobertura |
 | --- | --- |
 | `public-pages.spec.ts` | Todas as telas públicas renderizam com dados do seed; ordenação da timeline; busca do blog; lightbox da galeria; links sociais do rodapé (com `noopener`); 404; **ausência de emojis**. |
-| `enciclopedia.spec.ts` | Grid de cards; painel de detalhe (desktop); **deep-link** por slug que sobrevive a reload; filtros reduzem e restauram os resultados. |
+| `equipe.spec.ts` | Grid de cards; painel de detalhe (desktop); **deep-link** por slug que sobrevive a reload; **navegação SPA** — clicar num membro não recarrega nem remonta a página (marcador em `window` sobrevive, filtro ativo preservado); redirects das rotas antigas `/enciclopedia[/:slug]`; chips de filtro refletem as tags do banco; filtros reduzem e restauram os resultados. |
 | `quiz.spec.ts` | Fluxo completo (apelido → perguntas → resultado → leaderboard); validação de apelido; **o payload não revela `isCorrect`**. |
 | `forum-moderation.spec.ts` | Tópico novo **invisível até a aprovação**; **XSS neutralizado**; respostas também moderadas. |
-| `admin.spec.ts` | **Nenhum link para `/admin` no site público**; `robots.txt`; login errado/certo; CRUD de post publicado aparecendo no blog; CRUD de agenda; criar pergunta de quiz; logout encerrando a sessão de verdade. |
+| `admin.spec.ts` | **Nenhum link para `/admin` no site público**; `robots.txt`; login errado/certo; CRUD de post publicado aparecendo no blog; CRUD de agenda; CRUD de tag da equipe (aparece no formulário de membro e nos chips públicos, e é removida); nome de tag duplicado rejeitado; criar pergunta de quiz; logout encerrando a sessão de verdade. |
 | `security.spec.ts` | 401 em todas as rotas admin; mutações bloqueadas; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
 
 ---
@@ -109,7 +109,7 @@ await expect(steps.first()).toBeVisible();
 expect(await steps.count()).toBe(4);
 ```
 
-**Cuidado com listas animadas.** O grid da enciclopédia usa `AnimatePresence`: ao
+**Cuidado com listas animadas.** O grid da Equipe usa `AnimatePresence`: ao
 trocar de filtro existe um instante com zero cards. Use `expect.poll` para esperar um
 estado *estável*, em vez de ler a contagem no meio da animação.
 

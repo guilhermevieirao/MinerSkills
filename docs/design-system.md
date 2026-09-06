@@ -129,7 +129,7 @@ Não é apenas "encolher" — o mobile é redesenhado:
 | Tela | Adaptação |
 | --- | --- |
 | Navegação | Menu completo ≥1280px; abaixo disso, drawer lateral. |
-| Enciclopédia | Painel lateral no desktop → **tela cheia** no mobile. |
+| Equipe | Painel lateral no desktop → **tela cheia** no mobile. |
 | Galeria | 4 colunas → 2 colunas. |
 | Quiz | Leaderboard lateral → empilhado abaixo. |
 | Admin | Sidebar fixa → drawer com overlay. |

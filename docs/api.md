@@ -32,6 +32,7 @@ Base: `/api` · Respostas sempre em JSON · Textos de erro em pt-BR.
 | `GET` | `/api/gallery` | Fotos da galeria. |
 | `GET` | `/api/encyclopedia?kind&tag&generation&former` | Membros e robôs, com filtros. |
 | `GET` | `/api/encyclopedia/:slug` | Registro individual. |
+| `GET` | `/api/member-tags` | Tags de membro (`order`, `label`, `icon`, `usageCount`) — alimentam os chips de filtro da Equipe. |
 | `GET` | `/api/quiz/questions` | Perguntas ativas — **sem `isCorrect`**, opções embaralhadas. |
 | `POST` | `/api/quiz/submit` | Envia respostas. **Pontuação calculada no servidor.** Rate-limited. |
 | `GET` | `/api/quiz/leaderboard?limit` | Ranking (melhor pontuação por apelido). |
@@ -82,11 +83,18 @@ Padrão `GET` (lista) · `POST` (cria) · `PUT /:id` (atualiza) · `DELETE /:id`
 | Blog | `/api/admin/posts` (+ `GET /:id` com o conteúdo completo) |
 | Galeria | `/api/admin/gallery` (+ `PUT /reorder`) |
 | Quiz | `/api/admin/quiz/questions` |
-| Enciclopédia | `/api/admin/encyclopedia` |
+| Equipe | `/api/admin/encyclopedia` |
+| Tags da equipe | `/api/admin/member-tags` |
 | Prêmios | `/api/admin/awards` |
 | Agenda | `/api/admin/agenda` |
 | Redes sociais | `/api/admin/social-links` |
 | Configurações | `/api/admin/settings` (`GET`, `PUT`) |
+
+> **Tags da equipe.** A `key` é gerada no servidor a partir do nome (slug) e nunca muda;
+> um nome repetido (comparação sem caixa e sem espaços extras) responde `409`. `DELETE`
+> remove a tag **e os vínculos** (`EncyclopediaTag`) de todos os registros na mesma
+> transação. Ao criar/editar um registro em `/api/admin/encyclopedia`, uma chave ausente
+> em `MemberTag` responde `400` (`bad_request`, `details: [{ path: "tags", message: "Tag desconhecida: x" }]`).
 
 ### Moderação e quiz
 

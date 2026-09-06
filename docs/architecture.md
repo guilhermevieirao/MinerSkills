@@ -101,9 +101,11 @@ Erros 5xx são logados com `pino` (cookies e senhas são redigidos).
 
 `packages/shared` é a fonte única de verdade entre front e back:
 
-- **`constants.ts`** — `MEMBER_TAGS`, `GENERATIONS`, `AGENDA_KINDS`, `SOCIAL_PLATFORMS`,
-  `MODERATION_STATUSES`, `EDITABLE_PAGES`. Como o schema Prisma não tem enums
-  (portabilidade), estes arrays cumprem esse papel.
+- **`constants.ts`** — `ENTRY_KINDS`, `MEMBER_TAG_ICONS`, `GENERATIONS`, `AGENDA_KINDS`,
+  `SOCIAL_PLATFORMS`, `MODERATION_STATUSES`, `EDITABLE_PAGES`. Como o schema Prisma não
+  tem enums (portabilidade), estes arrays cumprem esse papel. As **tags de membro** são
+  a exceção: vivem no banco (`MemberTag`, gerenciadas pelo admin) — `DEFAULT_MEMBER_TAGS`
+  só alimenta o seed e a migration inicial.
 - **`schemas/*`** — schemas zod usados na validação do servidor **e** na validação
   dos formulários do cliente, mais os DTOs de resposta.
 

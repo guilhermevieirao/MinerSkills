@@ -14,7 +14,7 @@ Um documento por tela/módulo. Todas seguem o mesmo padrão:
 | [historia.md](historia.md) | `/historia` | `/admin/paginas` |
 | [blog.md](blog.md) | `/blog`, `/blog/:slug` | `/admin/blog` |
 | [galeria.md](galeria.md) | `/galeria` | `/admin/galeria` |
-| [enciclopedia.md](enciclopedia.md) | `/enciclopedia`, `/enciclopedia/:slug` | `/admin/enciclopedia` |
+| [equipe.md](equipe.md) | `/equipe`, `/equipe/:slug` | `/admin/equipe`, `/admin/equipe/tags` |
 | [quiz.md](quiz.md) | `/quiz` | `/admin/quiz` |
 | [forum.md](forum.md) | `/forum`, `/forum/:id` | `/admin/forum` |
 | [premios.md](premios.md) | `/premios` | `/admin/premios` |

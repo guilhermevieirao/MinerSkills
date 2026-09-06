@@ -29,7 +29,7 @@ O carimbo roda **antes de todo comando Prisma**, via os scripts `db:*`:
 ```jsonc
 "db:stamp":   "node scripts/stamp-schema.mjs",
 "db:generate":"npm run db:stamp && dotenv -e ../../.env -- prisma generate",
-"db:push":    "npm run db:stamp && dotenv -e ../../.env -- prisma db push",
+"db:push":    "npm run db:stamp && dotenv -e ../../.env -- prisma db push && npm run db:backfill-tags",
 // …
 ```
 
@@ -55,9 +55,32 @@ denominador comum:
 | **Sem SQL cru** | `$queryRaw`/`$executeRaw` são **bloqueados por regra do ESLint** (`no-restricted-syntax`). |
 | Sem `mode: 'insensitive'` | Não existe no SQLite. Buscas usam `contains` e slugs são sempre minúsculos. |
 
-A fonte única dos valores "enum-like" é
+A fonte única dos valores "enum-like" **fixos** é
 [`packages/shared/src/constants.ts`](../packages/shared/src/constants.ts) —
 consumida pelo back-end (validação), pelo front-end (filtros/selects) e pelo seeder.
+
+As **tags de membro** são a exceção: vivem no banco (model `MemberTag`) e são criadas
+pelo administrador. `DEFAULT_MEMBER_TAGS`, em `constants.ts`, contém apenas as 8 tags
+iniciais e alimenta **somente** o seed e a migration inicial — em runtime a fonte da
+verdade é `GET /api/member-tags`.
+
+`EncyclopediaTag.tag` guarda a `key` da tag **sem chave estrangeira** para
+`MemberTag.key`. É uma decisão deliberada: sem FK, o `prisma db push` do SQLite continua
+indolor em bancos com dados existentes. A integridade fica a cargo da API — criar ou
+editar um registro com uma tag desconhecida responde `400`, e excluir uma tag apaga os
+seus vínculos em todos os registros na mesma transação.
+
+Os **dados iniciais** de `MemberTag` chegam por dois caminhos equivalentes:
+
+| Provider | Como |
+| --- | --- |
+| PostgreSQL | Migration `20260906120000_member_tags` (SQL). |
+| SQLite | `apps/api/prisma/backfill-member-tags.ts`, encadeado em `npm run db:push` (e no ramo SQLite do `docker-entrypoint.sh`); também disponível isolado como `npm run db:backfill-tags -w apps/api`. |
+
+Os dois são idempotentes: com a tabela vazia criam as 8 tags padrão; chaves já gravadas
+em `EncyclopediaTag` sem `MemberTag` correspondente viram tags (`label = key`, sem
+ícone) para nenhum filtro sumir do site. Tags existentes nunca são alteradas nem
+apagadas — uma tag excluída pelo admin não volta.
 
 ---
 
@@ -146,7 +169,8 @@ npm run test:e2e
 | `Post` + `PostMedia` / `PostYoutube` / `PostLink` | Blog: conteúdo, fotos/vídeos, embeds e links. |
 | `GalleryPhoto` | Galeria pública. |
 | `QuizQuestion` + `QuizOption` + `QuizScore` | Quiz e leaderboard. |
-| `EncyclopediaEntry` + `EncyclopediaTag` | Membros e robôs, com tags de filtro. |
+| `EncyclopediaEntry` + `EncyclopediaTag` | Membros e robôs, com tags de filtro (`EncyclopediaTag.tag` guarda a `key` da tag). |
+| `MemberTag` | Tags de membro gerenciadas pelo admin: `key` única e imutável, `label`, `icon`, `order`. Sem FK com `EncyclopediaTag` — ver "Regras de portabilidade". |
 | `ForumTopic` + `ForumReply` | Fórum com status de moderação. |
 | `Award` | Prêmios e conquistas. |
 | `AgendaEvent` | Agenda. |

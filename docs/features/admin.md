@@ -24,7 +24,8 @@ Detalhes em [security.md](../security.md).
 | `/admin/blog` | Posts: editor rich-text, capa, fotos, vídeos, YouTube, links, rascunho/publicado. |
 | `/admin/galeria` | Upload múltiplo, legenda, exclusão. |
 | `/admin/quiz` | Perguntas e opções; zerar leaderboard. |
-| `/admin/enciclopedia` | Membros e robôs: foto, tags, geração, sobre, citação. |
+| `/admin/equipe` | **Equipe** — membros e robôs: foto, tags, geração, sobre, citação. |
+| `/admin/equipe/tags` | **Tags da equipe** — nome, ícone e ordem das tags de membro. Excluir uma tag a remove de todos os registros. |
 | `/admin/forum` | Fila de moderação + todos os tópicos. |
 | `/admin/premios` | Prêmios, com destaque e badge. |
 | `/admin/agenda` | Eventos, com data/hora e tipo. |

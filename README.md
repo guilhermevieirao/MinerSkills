@@ -74,7 +74,7 @@ Veja [docs/docker.md](docs/docker.md).
 | `npm run build` | Build de produção de todos os workspaces |
 | `npm run typecheck` | Checagem de tipos de todos os workspaces |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
-| `npm run db:push` | Sincroniza o schema com o banco (SQLite, dev) |
+| `npm run db:push` | Sincroniza o schema com o banco (SQLite, dev) e garante as tags padrão da equipe |
 | `npm run db:seed` | Popula o banco com dados fictícios |
 | `npm run db:reset` | Recria o banco do zero e popula |
 | `npm run db:studio` | Abre o Prisma Studio |
@@ -89,11 +89,12 @@ Veja [docs/docker.md](docs/docker.md).
 
 **Público** — Landing animada (MinerSkills, FRC, FIRST, STEM) · História (timeline) ·
 Blog (fotos, vídeos e embeds do YouTube) · Galeria (grid dinâmico + lightbox) ·
-Enciclopédia de membros e robôs (filtros + painel de detalhe) · Quiz com leaderboard ·
+Equipe (membros e robôs, com tags gerenciadas pelo admin; filtros + painel de detalhe) ·
+Quiz com leaderboard ·
 Fórum moderado · Prêmios · Agenda · Como Entrar · Redes sociais.
 
 **Administrativo** (`/admin`, sem link público) — Todo o conteúdo acima é gerenciável:
-blog com editor rich-text, upload de mídia, galeria, perguntas do quiz, enciclopédia,
+blog com editor rich-text, upload de mídia, galeria, perguntas do quiz, equipe e suas tags,
 fila de moderação do fórum, prêmios, agenda, textos das páginas, timeline e redes sociais.
 
 ---
