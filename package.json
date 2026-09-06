@@ -31,6 +31,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,scss,json,md}\"",
     "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w apps/api && npm run typecheck -w apps/web",
+    "test:unit": "npm run test:unit --workspaces --if-present",
     "test:e2e": "npm run test -w e2e",
     "test:e2e:headed": "npm run test:headed -w e2e",
     "test:e2e:ui": "npm run test:ui -w e2e"
@@ -47,6 +48,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^3.2.7"
   }
 }

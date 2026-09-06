@@ -12,6 +12,7 @@ Não existem `.env` dentro de `apps/api`, `apps/web` ou `e2e` — e não devem e
 | **Prisma CLI** | Todo comando é embrulhado com `dotenv -e ../../.env --` nos scripts `db:*`. Nunca chame `prisma` diretamente. |
 | **Docker Compose** | Os arquivos compose ficam na raiz, então o `.env` é lido automaticamente para `${VAR}`; os serviços também recebem `env_file: .env`. |
 | **Playwright** | `e2e/playwright.config.ts` carrega o `.env` da raiz. |
+| **CI (GitHub Actions)** | O `.env` não é versionado, então o workflow faz `cp .env.example .env` antes de qualquer script — os valores do exemplo bastam para o SQLite local do runner. Ver [testing.md](testing.md#integração-contínua). |
 
 > ⚠️ Variáveis `VITE_*` são **embutidas no bundle em tempo de build**. Nunca coloque
 > segredos nelas — tudo que é `VITE_*` é público.

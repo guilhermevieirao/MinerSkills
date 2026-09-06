@@ -1,7 +1,11 @@
 import slugify from 'slugify';
 import { prisma } from './prisma.js';
 
-function base(input: string, max = 140, fallback = 'item'): string {
+/**
+ * Slug puro (sem checar colisão): minúsculo, sem acentos, só [a-z0-9-],
+ * cortado em `max` chars sem deixar hífen no final. Vazio vira `fallback`.
+ */
+export function slugBase(input: string, max = 140, fallback = 'item'): string {
   return (
     slugify(input, { lower: true, strict: true, locale: 'pt' })
       .slice(0, max)
@@ -50,7 +54,7 @@ async function uniqueSlug(
   input: string,
   ignoreId?: string,
 ): Promise<string> {
-  const root = model === 'memberTag' ? base(input, 60, 'tag') : base(input);
+  const root = model === 'memberTag' ? slugBase(input, 60, 'tag') : slugBase(input);
   let candidate = root;
   let n = 1;
   while (true) {

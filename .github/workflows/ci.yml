@@ -1,0 +1,99 @@
+# Integração contínua: qualidade (lint, typecheck, unit, build) e suíte e2e.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Uma execução por ref. Em pull requests, um push novo cancela a anterior ainda em
+# andamento; na main cada commit mantém o próprio run (fica claro qual quebrou).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, typecheck, unit e build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # A API, o Prisma e o Playwright leem o .env ÚNICO da raiz, que não existe
+      # no CI (está no .gitignore). O .env.example já traz valores válidos para
+      # SQLite local, então basta copiá-lo antes de qualquer script db:*/dev.
+      - name: Criar .env a partir do .env.example
+        run: cp .env.example .env
+
+      # Carimba o schema.prisma e gera o Prisma Client (o typecheck depende dele).
+      - name: Gerar Prisma Client
+        run: npm run db:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes unitários
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # Mesmo motivo do job quality: sem .env a API e o Playwright não sobem.
+      - name: Criar .env a partir do .env.example
+        run: cp .env.example .env
+
+      - name: Gerar Prisma Client
+        run: npm run db:generate
+
+      # Só o Chromium: os projetos "chromium" e "mobile" (Pixel 7) usam o mesmo browser.
+      # O pacote @playwright/test mora no workspace e2e.
+      - name: Instalar Chromium do Playwright
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      # CI=true (padrão do Actions) → workers 1, retries 2, sem reaproveitar servidores.
+      # A suíte zera/popula o SQLite de testes e sobe API + web nas portas 3101/5273.
+      - name: Testes e2e
+        run: npm run test:e2e
+
+      - name: Publicar relatório do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7

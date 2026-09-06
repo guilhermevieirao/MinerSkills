@@ -58,7 +58,7 @@ Veja [docs/docker.md](docs/docker.md).
 | [docs/api.md](docs/api.md) | Mapa completo de rotas (públicas e admin) |
 | [docs/security.md](docs/security.md) | Práticas e controles de segurança |
 | [docs/uploads.md](docs/uploads.md) | Pipeline de upload de imagens e vídeos |
-| [docs/testing.md](docs/testing.md) | Playwright (headless e headed) |
+| [docs/testing.md](docs/testing.md) | Unitários (Vitest), e2e com Playwright (headless e headed) e CI |
 | [docs/docker.md](docs/docker.md) | Stacks de desenvolvimento e produção |
 | [docs/pwa.md](docs/pwa.md) | Manifest, service worker e estratégias de cache |
 | [docs/features/](docs/features/) | Um documento por tela/módulo |
@@ -79,6 +79,7 @@ Veja [docs/docker.md](docs/docker.md).
 | `npm run db:reset` | Recria o banco do zero e popula |
 | `npm run db:studio` | Abre o Prisma Studio |
 | `npm run db:migrate:deploy` | Aplica migrations (PostgreSQL) |
+| `npm run test:unit` | Testes unitários (vitest) de API e shared |
 | `npm run test:e2e` | Testes end-to-end (headless) |
 | `npm run test:e2e:headed` | Testes end-to-end com navegador visível |
 | `npm run icons` | Regera os ícones do PWA a partir do selo da marca |
@@ -104,7 +105,7 @@ fila de moderação do fórum, prêmios, agenda, textos das páginas, timeline e
 **Front-end** Vite · React · TypeScript · SCSS · React Router · TanStack Query · Motion · lucide-react · TipTap · PWA
 **Back-end** Node.js · Express · TypeScript · Prisma · Zod · JWT (jose) · Helmet · Sharp
 **Banco** SQLite (dev) → PostgreSQL (produção), sem mudança de código
-**Infra** Docker · Nginx · Playwright
+**Infra** Docker · Nginx · Vitest · Playwright · GitHub Actions
 
 ---
 

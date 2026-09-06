@@ -32,6 +32,7 @@ Em desenvolvimento o nginx não existe: o dev-server do Vite (5173) faz proxy de
 ```
 minerskills/
 ├── .env  .env.example          # configuração ÚNICA
+├── .github/                    # CI (lint · typecheck · unit · build · e2e) e Dependabot
 ├── docker-compose.yml          # dev (+ perfil postgres)
 ├── docker-compose.prod.yml     # produção (nginx + api + postgres)
 ├── packages/shared/            # @minerskills/shared

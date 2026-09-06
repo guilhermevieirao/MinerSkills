@@ -8,6 +8,7 @@
     "build": "npm run db:generate && tsc -p tsconfig.json --noEmit",
     "start": "tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run",
     "db:stamp": "node scripts/stamp-schema.mjs",
     "db:generate": "npm run db:stamp && dotenv -e ../../.env -- prisma generate",
     "db:push": "npm run db:stamp && dotenv -e ../../.env -- prisma db push && npm run db:backfill",

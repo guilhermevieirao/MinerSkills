@@ -1,6 +1,7 @@
 import type { QuizQuestionInput, QuizSubmitInput, QuizResultDTO } from '@minerskills/shared';
 import { prisma } from '../../lib/prisma.js';
 import { stripHtml } from '../../lib/sanitize.js';
+import { scoreAnswers } from './quiz.scoring.js';
 
 /** Cria pergunta + opções. */
 export async function createQuestion(input: QuizQuestionInput) {
@@ -56,23 +57,7 @@ export async function submitQuiz(input: QuizSubmitInput): Promise<QuizResultDTO>
     include: { options: true },
   });
   const totalQuestions = questions.length;
-
-  const answerMap = new Map(input.answers.map((a) => [a.questionId, a.optionId]));
-  let score = 0;
-  const corrections: QuizResultDTO['corrections'] = [];
-
-  for (const q of questions) {
-    const correct = q.options.find((o) => o.isCorrect);
-    if (!correct) continue;
-    const chosen = answerMap.get(q.id);
-    if (chosen === correct.id) score += 1;
-    corrections.push({
-      questionId: q.id,
-      correctOptionId: correct.id,
-      chosenOptionId: chosen ?? '',
-      explanation: q.explanation,
-    });
-  }
+  const { score, corrections } = scoreAnswers(questions, input.answers);
 
   // grava mantendo a melhor pontuação por apelido (menor tempo desempata)
   const existing = await prisma.quizScore.findFirst({

@@ -1,0 +1,31 @@
+# Atualizações automáticas de dependências (npm workspaces) e das actions do CI.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    # Lockfile único na raiz cobre todos os workspaces (packages/shared, apps/*, e2e).
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(deps)"
+    # Minor e patch chegam agrupados num único PR; majors continuam separados.
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    # Majors do Prisma exigem migração manual (schema, client, migrations).
+    ignore:
+      - dependency-name: prisma
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
