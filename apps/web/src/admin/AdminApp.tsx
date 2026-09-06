@@ -7,7 +7,8 @@ import { DashboardPage } from './sections/DashboardPage';
 import { PostsSection } from './sections/PostsSection';
 import { GallerySection } from './sections/GallerySection';
 import { QuizSection } from './sections/QuizSection';
-import { EncyclopediaSection } from './sections/EncyclopediaSection';
+import { TeamSection } from './sections/TeamSection';
+import { MemberTagsSection } from './sections/MemberTagsSection';
 import { ForumSection } from './sections/ForumSection';
 import { AwardsSection } from './sections/AwardsSection';
 import { AgendaSection } from './sections/AgendaSection';
@@ -39,7 +40,10 @@ export default function AdminApp() {
         <Route path="blog" element={<PostsSection />} />
         <Route path="galeria" element={<GallerySection />} />
         <Route path="quiz" element={<QuizSection />} />
-        <Route path="enciclopedia" element={<EncyclopediaSection />} />
+        <Route path="equipe" element={<TeamSection />} />
+        <Route path="equipe/tags" element={<MemberTagsSection />} />
+        {/* URL antiga da seção, mantida para links salvos */}
+        <Route path="enciclopedia" element={<Navigate to="/admin/equipe" replace />} />
         <Route path="forum" element={<ForumSection />} />
         <Route path="premios" element={<AwardsSection />} />
         <Route path="agenda" element={<AgendaSection />} />

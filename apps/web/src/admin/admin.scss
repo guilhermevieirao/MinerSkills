@@ -453,6 +453,68 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ms-space-2);
+
+  // chips com ícone da tag
+  .ms-chip svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// ── Seletor de ícone (tags da equipe) ──
+.ms-iconpick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: var(--ms-space-2);
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--ms-radius-sm);
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface-2);
+    color: var(--ms-text-dim);
+    cursor: pointer;
+    transition:
+      border-color var(--ms-dur),
+      color var(--ms-dur),
+      background var(--ms-dur);
+    @include focus-ring;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+    &:hover {
+      border-color: var(--ms-green-deep);
+      color: var(--ms-text);
+    }
+    &--active {
+      border-color: var(--ms-green);
+      background: rgba(41, 217, 140, 0.12);
+      color: var(--ms-green);
+    }
+  }
+}
+
+// chave (slug) e ícone nas tabelas do painel
+.ms-adm {
+  &__code {
+    font-family: var(--ms-font-mono);
+    font-size: var(--ms-text-xs);
+    color: var(--ms-text-dim);
+  }
+  &__icon-cell {
+    display: inline-flex;
+    color: var(--ms-green);
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
 
 // ── Fila de moderação ──

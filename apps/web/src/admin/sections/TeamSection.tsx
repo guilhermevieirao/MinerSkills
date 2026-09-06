@@ -1,21 +1,29 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Pencil, Trash2, Tags, TriangleAlert } from 'lucide-react';
 import {
   encyclopediaEntrySchema,
-  MEMBER_TAGS,
-  MEMBER_TAG_LABELS,
   GENERATIONS,
   GENERATION_LABELS,
   ENTRY_KINDS,
   type EncyclopediaEntryDTO,
   type EncyclopediaEntryInput,
-  type MemberTag,
   type Generation,
   type EntryKind,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Textarea, Select, Field, Loader, EmptyState, FilterChip } from '../../components/ui';
+import {
+  Button,
+  LinkButton,
+  Input,
+  Textarea,
+  Select,
+  Field,
+  Loader,
+  EmptyState,
+  FilterChip,
+} from '../../components/ui';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
@@ -23,17 +31,23 @@ import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
 import { mediaUrl } from '../../lib/format';
 import { ApiError } from '../../lib/api';
+import { TagIcon } from '../../features/encyclopedia/roleIcons';
+import { MEMBER_TAGS_QUERY_KEY } from '../../features/encyclopedia/useMemberTags';
 
-export function EncyclopediaSection() {
+export function TeamSection() {
   const { data, isLoading } = useQuery({ queryKey: ['admin-encyclopedia'], queryFn: adminApi.encyclopedia.list });
   const [editing, setEditing] = useState<EncyclopediaEntryDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<EncyclopediaEntryDTO | null>(null);
   const toast = useToast();
 
+  // `usageCount` das tags é derivado dos registros: as listas de tags também
+  // precisam ser invalidadas, senão a tela de tags mostra contagens antigas.
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin-encyclopedia'] });
     void queryClient.invalidateQueries({ queryKey: ['encyclopedia'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin-member-tags'] });
+    void queryClient.invalidateQueries({ queryKey: MEMBER_TAGS_QUERY_KEY });
   };
 
   const remove = async () => {
@@ -48,12 +62,17 @@ export function EncyclopediaSection() {
     <div>
       <div className="ms-adm__head">
         <div>
-          <h1>Enciclopédia</h1>
+          <h1>Equipe</h1>
           <p>Membros (atuais e antigos), treinadores e robôs.</p>
         </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Novo registro
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--ms-space-2)' }}>
+          <LinkButton variant="outline" to="/admin/equipe/tags">
+            <Tags /> Gerenciar tags
+          </LinkButton>
+          <Button onClick={() => setCreating(true)}>
+            <Plus /> Novo registro
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -137,6 +156,16 @@ function EntryForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  // Tags cadastradas pelo admin (fonte da verdade para os chips abaixo).
+  const {
+    data: memberTags,
+    isLoading: tagsLoading,
+    isError: tagsError,
+  } = useQuery({
+    queryKey: ['admin-member-tags'],
+    queryFn: adminApi.memberTags.list,
+  });
+  const tagsLabelId = useId();
   const [form, setForm] = useState<EncyclopediaEntryInput>({
     kind: (initial?.kind as EntryKind) ?? 'member',
     name: initial?.name ?? '',
@@ -149,21 +178,30 @@ function EntryForm({
     isFormer: initial?.isFormer ?? false,
     order: initial?.order ?? 0,
     photoId: initial?.photo?.id ?? null,
-    tags: (initial?.tags as MemberTag[]) ?? [],
+    tags: initial?.tags ?? [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
-  const toggleTag = (tag: MemberTag) =>
+  const toggleTag = (key: string) =>
     setForm((f) => ({
       ...f,
-      tags: f.tags.includes(tag) ? f.tags.filter((t) => t !== tag) : [...f.tags, tag],
+      tags: f.tags.includes(key) ? f.tags.filter((t) => t !== key) : [...f.tags, key],
     }));
+
+  // Chaves gravadas no registro que não existem mais em MemberTag (tag excluída
+  // ou banco sem backfill). Aparecem como chips de aviso e são descartadas ao
+  // salvar (a API rejeitaria com 400). Só com a lista carregada — sem ela,
+  // manter as chaves e deixar o servidor validar evita apagar tags por um
+  // erro de rede.
+  const known = memberTags ? new Set(memberTags.map((t) => t.key)) : null;
+  const unknownTags = known ? form.tags.filter((t) => !known.has(t)) : [];
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = encyclopediaEntrySchema.safeParse(form);
+    const tags = known ? form.tags.filter((t) => known.has(t)) : form.tags;
+    const parsed = encyclopediaEntrySchema.safeParse({ ...form, tags });
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
@@ -241,14 +279,40 @@ function EntryForm({
             </Field>
 
             <div className="ms-field">
-              <span className="ms-field__label">Tags (filtros da enciclopédia)</span>
-              <div className="ms-tagpick">
-                {MEMBER_TAGS.map((t) => (
-                  <FilterChip key={t} active={form.tags.includes(t)} onClick={() => toggleTag(t)}>
-                    {MEMBER_TAG_LABELS[t]}
-                  </FilterChip>
-                ))}
-              </div>
+              <span className="ms-field__label" id={tagsLabelId}>
+                Tags (filtros da página Equipe)
+              </span>
+              {tagsLoading ? (
+                <Loader label="Carregando tags…" />
+              ) : tagsError ? (
+                <span className="ms-field__error">Não foi possível carregar as tags.</span>
+              ) : memberTags && memberTags.length === 0 && unknownTags.length === 0 ? (
+                <span className="ms-field__hint">
+                  Nenhuma tag cadastrada. <Link to="/admin/equipe/tags">Criar tags</Link>
+                </span>
+              ) : (
+                <div className="ms-tagpick" role="group" aria-labelledby={tagsLabelId}>
+                  {(memberTags ?? []).map((t) => (
+                    <FilterChip key={t.key} active={form.tags.includes(t.key)} onClick={() => toggleTag(t.key)}>
+                      <TagIcon icon={t.icon} />
+                      {t.label}
+                    </FilterChip>
+                  ))}
+                  {unknownTags.map((key) => (
+                    <FilterChip key={key} active onClick={() => toggleTag(key)}>
+                      <TriangleAlert />
+                      {key}
+                    </FilterChip>
+                  ))}
+                </div>
+              )}
+              {unknownTags.length > 0 && (
+                <span className="ms-field__hint">
+                  Tags não cadastradas (serão removidas ao salvar): {unknownTags.join(', ')}.{' '}
+                  <Link to="/admin/equipe/tags">Gerenciar tags</Link>
+                </span>
+              )}
+              {errors.tags && <span className="ms-field__error">{errors.tags}</span>}
             </div>
           </>
         )}

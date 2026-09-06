@@ -11,6 +11,8 @@ import type {
   QuizQuestionInput,
   EncyclopediaEntryDTO,
   EncyclopediaEntryInput,
+  MemberTagDTO,
+  MemberTagInput,
   ForumTopicDTO,
   AwardDTO,
   AwardInput,
@@ -116,6 +118,14 @@ export const adminApi = {
     update: (id: string, data: EncyclopediaEntryInput) =>
       api.put<EncyclopediaEntryDTO>(`/admin/encyclopedia/${id}`, data),
     remove: (id: string) => api.del(`/admin/encyclopedia/${id}`),
+  },
+
+  memberTags: {
+    list: () => api.get<MemberTagDTO[]>('/admin/member-tags'),
+    create: (data: MemberTagInput) => api.post<MemberTagDTO>('/admin/member-tags', data),
+    update: (id: string, data: MemberTagInput) =>
+      api.put<MemberTagDTO>(`/admin/member-tags/${id}`, data),
+    remove: (id: string) => api.del(`/admin/member-tags/${id}`),
   },
 
   forum: {
