@@ -40,9 +40,12 @@ services:
       target: prod
     env_file: .env
     environment:
+      # Só o que muda DENTRO do container; o resto vem do .env (environment vence
+      # env_file). TRUST_PROXY: 1 é só o fallback para o nginx do stack — com mais
+      # proxies à frente (Caddy, Cloudflare…), o valor do .env prevalece.
       NODE_ENV: production
       API_HOST: 0.0.0.0
-      TRUST_PROXY: '1'
+      TRUST_PROXY: ${TRUST_PROXY:-1}
       UPLOADS_DIR: ./data/uploads
     volumes:
       - uploads:/app/apps/api/data

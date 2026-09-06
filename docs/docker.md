@@ -84,8 +84,9 @@ docker compose -f docker-compose.prod.yml exec api npx tsx prisma/seed.ts
 
 1. **carimba** o `schema.prisma` a partir de `DATABASE_PROVIDER`;
 2. **gera** o Prisma Client (sempre — o provider pode ter mudado desde o build);
-3. PostgreSQL → `prisma migrate deploy` · SQLite → `prisma db push` + backfill das
-   tags da equipe (`prisma/backfill-member-tags.ts`, idempotente);
+3. PostgreSQL → `prisma migrate deploy` · SQLite → `prisma db push` + backfills de
+   dados iniciais (agregador `prisma/backfill.ts`, idempotente — ver
+   [database.md](database.md#agregador-de-backfills-sqlite));
 4. `SEED_ON_BOOT=1` (opcional) roda o seeder;
 5. inicia a API.
 

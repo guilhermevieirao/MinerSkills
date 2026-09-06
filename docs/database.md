@@ -29,7 +29,7 @@ O carimbo roda **antes de todo comando Prisma**, via os scripts `db:*`:
 ```jsonc
 "db:stamp":   "node scripts/stamp-schema.mjs",
 "db:generate":"npm run db:stamp && dotenv -e ../../.env -- prisma generate",
-"db:push":    "npm run db:stamp && dotenv -e ../../.env -- prisma db push && npm run db:backfill-tags",
+"db:push":    "npm run db:stamp && dotenv -e ../../.env -- prisma db push && npm run db:backfill",
 // …
 ```
 
@@ -75,12 +75,25 @@ Os **dados iniciais** de `MemberTag` chegam por dois caminhos equivalentes:
 | Provider | Como |
 | --- | --- |
 | PostgreSQL | Migration `20260906120000_member_tags` (SQL). |
-| SQLite | `apps/api/prisma/backfill-member-tags.ts`, encadeado em `npm run db:push` (e no ramo SQLite do `docker-entrypoint.sh`); também disponível isolado como `npm run db:backfill-tags -w apps/api`. |
+| SQLite | `apps/api/prisma/backfill-member-tags.ts`, executado pelo agregador de backfills (abaixo); também disponível isolado como `npm run db:backfill-tags -w apps/api`. |
 
 Os dois são idempotentes: com a tabela vazia criam as 8 tags padrão; chaves já gravadas
 em `EncyclopediaTag` sem `MemberTag` correspondente viram tags (`label = key`, sem
 ícone) para nenhum filtro sumir do site. Tags existentes nunca são alteradas nem
 apagadas — uma tag excluída pelo admin não volta.
+
+### Agregador de backfills (SQLite)
+
+Como o SQLite nunca roda migrations, os **dados iniciais** que no PostgreSQL chegam
+por SQL são garantidos por scripts de backfill, todos idempotentes. O agregador
+`apps/api/prisma/backfill.ts` executa cada um em sequência e é o que `npm run db:push`
+(e `db:push:reset`) encadeia — e o que o ramo SQLite do `docker-entrypoint.sh` chama a
+cada boot. Isolado: `npm run db:backfill -w apps/api`.
+
+Cada frente que precisar de dados iniciais acrescenta o seu: um arquivo
+`prisma/backfill-<tema>.ts` que **exporta** a função (e só executa quando é o módulo
+principal, para continuar rodável sozinho) e uma linha na lista do agregador, em ordem
+de dependência. Hoje a lista contém apenas `backfillMemberTags`.
 
 ---
 

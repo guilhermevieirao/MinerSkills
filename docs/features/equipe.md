@@ -56,7 +56,9 @@ integridade é garantida na API (ver [database.md](../database.md)).
 
 `DEFAULT_MEMBER_TAGS` (em `constants.ts`) contém as 8 tags iniciais e é usada
 **somente** pelo seed, pela migration inicial (PostgreSQL) e pelo backfill
-`apps/api/prisma/backfill-member-tags.ts` (SQLite, encadeado em `npm run db:push`).
+`apps/api/prisma/backfill-member-tags.ts` (SQLite — executado pelo agregador
+`prisma/backfill.ts`, que `npm run db:push` e o docker-entrypoint encadeiam; ver
+[database.md](../database.md#agregador-de-backfills-sqlite)).
 Sem ele, um banco SQLite já povoado ficaria sem tags após o `db push` — e o
 formulário de membro mostra as chaves órfãs como chips de aviso, descartadas ao salvar.
 

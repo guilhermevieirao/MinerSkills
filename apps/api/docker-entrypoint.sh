@@ -20,9 +20,9 @@ if [ "$PROVIDER" = "postgresql" ]; then
 else
   echo "→ Sincronizando schema SQLite (prisma db push)"
   npx prisma db push --skip-generate --accept-data-loss
-  # sem migrations no SQLite: garante as tags padrão / chaves órfãs (idempotente)
-  echo "→ Backfill das tags da equipe"
-  npx tsx prisma/backfill-member-tags.ts
+  # sem migrations no SQLite: o agregador roda todos os backfills (idempotentes)
+  echo "→ Backfills (dados iniciais)"
+  npx tsx prisma/backfill.ts
 fi
 
 if [ "$SEED_ON_BOOT" = "1" ]; then

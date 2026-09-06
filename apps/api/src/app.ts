@@ -43,7 +43,10 @@ export function createApp(): Express {
   ensureUploadDirs();
   const app = express();
 
-  app.set('trust proxy', env.TRUST_PROXY ? 1 : false);
+  // TRUST_PROXY = quantidade de proxies confiáveis à frente da API (hops).
+  // Com o valor certo o Express lê o IP real do cliente em X-Forwarded-For —
+  // é disso que o rate limit por IP depende. 0 = sem proxy, X-Forwarded-For é ignorado.
+  app.set('trust proxy', env.TRUST_PROXY > 0 ? env.TRUST_PROXY : false);
   app.disable('x-powered-by');
 
   app.use(

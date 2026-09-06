@@ -6,18 +6,30 @@ import { z } from 'zod';
  * Todas as variáveis vêm do .env ÚNICO na raiz do projeto.
  */
 
-const boolFromEnv = (def: boolean) =>
-  z
-    .string()
-    .optional()
-    .transform((v) => (v === undefined ? def : v === '1' || v.toLowerCase() === 'true'));
-
 const intFromEnv = (def: number) =>
   z
     .string()
     .optional()
     .transform((v) => (v === undefined || v === '' ? def : Number(v)))
     .pipe(z.number().int());
+
+/**
+ * Quantidade de proxies confiáveis (hops) à frente da API: 0 = nenhum,
+ * 1 = nginx, 2 = Caddy + nginx… Aceita "true"/"false" por compatibilidade
+ * com o formato booleano antigo (→ 1/0).
+ */
+const hopsFromEnv = (def: number) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v === undefined || v.trim() === '') return def;
+      const s = v.trim().toLowerCase();
+      if (s === 'true') return 1;
+      if (s === 'false') return 0;
+      return Number(s);
+    })
+    .pipe(z.number().int().min(0));
 
 const csv = (def: string[]) =>
   z
@@ -41,7 +53,7 @@ export const serverEnvSchema = z.object({
   API_PORT: intFromEnv(3001),
   API_HOST: z.string().default('0.0.0.0'),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
-  TRUST_PROXY: boolFromEnv(false),
+  TRUST_PROXY: hopsFromEnv(0),
   BODY_LIMIT: z.string().default('1mb'),
 
   JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter no mínimo 32 caracteres'),

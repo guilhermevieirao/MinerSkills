@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { DEFAULT_MEMBER_TAGS } from '@minerskills/shared';
 import { prisma, disconnectPrisma } from '../src/lib/prisma.js';
 
@@ -10,10 +12,11 @@ import { prisma, disconnectPrisma } from '../src/lib/prisma.js';
  *      viram tags (label = key, sem ícone) para nenhum filtro sumir do site.
  *
  * Nunca altera nem apaga tags existentes: uma tag excluída pelo admin (que já
- * removeu seus vínculos) não volta. Encadeado em `npm run db:push` e no
- * docker-entrypoint (ramo SQLite).
+ * removeu seus vínculos) não volta. Executado pelo agregador `prisma/backfill.ts`
+ * (encadeado em `npm run db:push` e no docker-entrypoint, ramo SQLite) ou
+ * isolado via `npm run db:backfill-tags`.
  */
-async function backfillMemberTags(): Promise<void> {
+export async function backfillMemberTags(): Promise<void> {
   let created = 0;
 
   if ((await prisma.memberTag.count()) === 0) {
@@ -44,9 +47,16 @@ async function backfillMemberTags(): Promise<void> {
   );
 }
 
-backfillMemberTags()
-  .catch((err) => {
-    console.error('❌ Backfill das tags da equipe falhou:', err);
-    process.exitCode = 1;
-  })
-  .finally(() => disconnectPrisma());
+// Só executa quando chamado diretamente (`tsx prisma/backfill-member-tags.ts`);
+// importado pelo agregador, apenas exporta a função.
+const isMain =
+  !!process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+
+if (isMain) {
+  backfillMemberTags()
+    .catch((err) => {
+      console.error('❌ Backfill das tags da equipe falhou:', err);
+      process.exitCode = 1;
+    })
+    .finally(() => disconnectPrisma());
+}

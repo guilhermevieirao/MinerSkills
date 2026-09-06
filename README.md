@@ -74,7 +74,7 @@ Veja [docs/docker.md](docs/docker.md).
 | `npm run build` | Build de produção de todos os workspaces |
 | `npm run typecheck` | Checagem de tipos de todos os workspaces |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
-| `npm run db:push` | Sincroniza o schema com o banco (SQLite, dev) e garante as tags padrão da equipe |
+| `npm run db:push` | Sincroniza o schema com o banco (SQLite, dev) e roda os backfills de dados iniciais |
 | `npm run db:seed` | Popula o banco com dados fictícios |
 | `npm run db:reset` | Recria o banco do zero e popula |
 | `npm run db:studio` | Abre o Prisma Studio |

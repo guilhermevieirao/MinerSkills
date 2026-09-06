@@ -50,7 +50,7 @@ Não existem `.env` dentro de `apps/api`, `apps/web` ou `e2e` — e não devem e
 | `API_HOST` | `0.0.0.0` | Interface de escuta. |
 | `WEB_PORT` | `8080` | Porta pública do nginx (stack de produção). |
 | `WEB_ORIGIN` | `http://localhost:5173` | Origem permitida no CORS. Deve ser a URL real do site. |
-| `TRUST_PROXY` | `0` | `1` quando a API roda atrás de um proxy (nginx). Necessário para o rate limit por IP funcionar corretamente. |
+| `TRUST_PROXY` | `0` | Quantidade de **proxies confiáveis** (hops) à frente da API: `0` = nenhum (dev, `X-Forwarded-For` é ignorado); `1` = nginx (stack de produção); `2` = Caddy + nginx, por exemplo. Necessário para o rate limit por IP enxergar o IP real do cliente. `true`/`false` ainda são aceitos (→ `1`/`0`). |
 | `BODY_LIMIT` | `1mb` | Tamanho máximo do corpo JSON. |
 
 ### Autenticação (admin)
@@ -123,5 +123,5 @@ Os testes sobem servidores próprios, em portas separadas, para não colidirem c
 - [ ] `ADMIN_PASSWORD` forte (e trocado após o primeiro login)
 - [ ] `POSTGRES_PASSWORD` forte
 - [ ] `DATABASE_PROVIDER=postgresql` e `DATABASE_URL` apontando para o serviço `postgres`
-- [ ] `TRUST_PROXY=1` (a API fica atrás do nginx)
+- [ ] `TRUST_PROXY=1` (a API fica atrás do nginx; some 1 por proxy extra à frente dele)
 - [ ] `WEB_ORIGIN` e `VITE_SITE_URL` com o domínio real (HTTPS)

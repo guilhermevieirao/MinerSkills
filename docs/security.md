@@ -140,7 +140,7 @@ nada aparece publicamente sem aprovação.
 - [ ] `ADMIN_PASSWORD` forte e trocado após o primeiro acesso
 - [ ] `POSTGRES_PASSWORD` forte
 - [ ] `NODE_ENV=production` (ativa o `Secure` no cookie)
-- [ ] `TRUST_PROXY=1`
+- [ ] `TRUST_PROXY=1` (quantidade de proxies à frente da API; some 1 por proxy extra)
 - [ ] `WEB_ORIGIN` com o domínio real
 - [ ] **HTTPS** no proxy de borda (o cookie `Secure` exige)
 - [ ] Considerar adicionar `Strict-Transport-Security` no proxy TLS
