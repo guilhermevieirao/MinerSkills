@@ -80,6 +80,73 @@ test.describe('Área administrativa', () => {
     await expect(page.getByText(title)).toBeVisible();
   });
 
+  test('CRUD de tag: cria, aparece no formulário de membro e nos filtros públicos, e é removida', async ({
+    page,
+  }) => {
+    const stamp = Date.now().toString().slice(-6);
+    const label = `Tag e2e ${stamp}`;
+
+    await login(page);
+    await page.goto('/admin/equipe/tags');
+    await expect(page.getByRole('heading', { name: 'Tags da equipe' })).toBeVisible();
+    await page.getByRole('button', { name: /Nova tag/i }).click();
+    await page.getByLabel('Nome da tag').fill(label);
+    await page.getByRole('button', { name: 'Salvar' }).click();
+
+    await expect(page.getByText('Tag salva.')).toBeVisible();
+    await expect(page.locator('.ms-adm__table').getByText(label)).toBeVisible();
+
+    // o formulário de membro lista as tags do banco
+    await page.goto('/admin/equipe');
+    await expect(page.getByRole('heading', { name: 'Equipe' })).toBeVisible();
+    await page.getByRole('button', { name: /Novo registro/i }).click();
+    await expect(
+      page.locator('.ms-tagpick').getByRole('button', { name: new RegExp(label) }),
+    ).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // e os chips de filtro do site também
+    await page.goto('/equipe');
+    await expect(
+      page.locator('.ms-enc__filters').getByRole('button', { name: label, exact: true }),
+    ).toBeVisible();
+
+    // limpa: remove a tag
+    await page.goto('/admin/equipe/tags');
+    const row = page.locator('tr', { hasText: label });
+    await row.locator('.ms-btn--danger').click();
+    await page.getByRole('button', { name: 'Excluir' }).click();
+    await expect(page.getByText('Tag removida.')).toBeVisible();
+    await expect(page.locator('.ms-adm__table').getByText(label)).toHaveCount(0);
+  });
+
+  test('nome de tag duplicado é rejeitado', async ({ page }) => {
+    const stamp = Date.now().toString().slice(-6);
+    const label = `Tag duplicada ${stamp}`;
+
+    await login(page);
+    await page.goto('/admin/equipe/tags');
+    await page.getByRole('button', { name: /Nova tag/i }).click();
+    await page.getByLabel('Nome da tag').fill(label);
+    await page.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.getByText('Tag salva.')).toBeVisible();
+
+    // mesmo nome com caixa e espaços diferentes: a comparação ignora os dois → 409
+    await page.getByRole('button', { name: /Nova tag/i }).click();
+    await page.getByLabel('Nome da tag').fill(`  ${label.toUpperCase()}  `);
+    await page.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.locator('.ms-toast--error, .ms-field__error').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    // continua existindo uma linha só (hasText ignora caixa)
+    await expect(page.locator('.ms-adm__table tr', { hasText: label })).toHaveCount(1);
+
+    // limpa
+    const row = page.locator('tr', { hasText: label });
+    await row.locator('.ms-btn--danger').click();
+    await page.getByRole('button', { name: 'Excluir' }).click();
+    await expect(page.getByText('Tag removida.')).toBeVisible();
+  });
+
   test('quiz: admin cria pergunta e ela aparece no jogo', async ({ page }) => {
     const stamp = Date.now().toString().slice(-6);
     const question = `Pergunta automatizada ${stamp}?`;
