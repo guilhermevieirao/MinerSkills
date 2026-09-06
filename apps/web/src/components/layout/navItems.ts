@@ -8,7 +8,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/historia', label: 'História' },
   { to: '/blog', label: 'Blog' },
   { to: '/galeria', label: 'Galeria' },
-  { to: '/enciclopedia', label: 'Enciclopédia' },
+  { to: '/equipe', label: 'Equipe' },
   { to: '/quiz', label: 'Quiz' },
   { to: '/forum', label: 'Fórum' },
   { to: '/premios', label: 'Prêmios' },

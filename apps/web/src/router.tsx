@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { Loader } from './components/ui';
@@ -7,7 +7,7 @@ import { HistoriaPage } from './pages/HistoriaPage';
 import { BlogPage } from './pages/BlogPage';
 import { BlogPostPage } from './pages/BlogPostPage';
 import { GaleriaPage } from './pages/GaleriaPage';
-import { EnciclopediaPage } from './pages/EnciclopediaPage';
+import { EquipePage } from './pages/EquipePage';
 import { QuizPage } from './pages/QuizPage';
 import { ForumPage } from './pages/ForumPage';
 import { ForumTopicPage } from './pages/ForumTopicPage';
@@ -19,6 +19,12 @@ import { NotFoundPage } from './pages/NotFoundPage';
 // Área admin: chunk separado, carregado sob demanda (sem link público)
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
+/** URLs antigas /enciclopedia[/:slug] → /equipe[/:slug] (links externos/favoritos). */
+function EnciclopediaRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={slug ? `/equipe/${slug}` : '/equipe'} replace />;
+}
+
 export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
@@ -28,8 +34,8 @@ export const router = createBrowserRouter([
       { path: '/blog', element: <BlogPage /> },
       { path: '/blog/:slug', element: <BlogPostPage /> },
       { path: '/galeria', element: <GaleriaPage /> },
-      { path: '/enciclopedia', element: <EnciclopediaPage /> },
-      { path: '/enciclopedia/:slug', element: <EnciclopediaPage /> },
+      // parâmetro opcional: lista e detalhe são a MESMA rota (a página não remonta ao abrir um membro)
+      { path: '/equipe/:slug?', element: <EquipePage /> },
       { path: '/quiz', element: <QuizPage /> },
       { path: '/forum', element: <ForumPage /> },
       { path: '/forum/:id', element: <ForumTopicPage /> },
@@ -39,6 +45,8 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
+  // fora do layout público: redireciona sem passar pela transição de página
+  { path: '/enciclopedia/:slug?', element: <EnciclopediaRedirect /> },
   {
     path: '/admin/*',
     element: (

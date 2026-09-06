@@ -3,58 +3,73 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X, Quote, CalendarDays, Users } from 'lucide-react';
 import {
-  MEMBER_TAGS,
-  MEMBER_TAG_LABELS,
   GENERATIONS,
   GENERATION_LABELS,
   type EncyclopediaEntryDTO,
+  type MemberTagDTO,
 } from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
-import { useEncyclopedia, type EncyclopediaFilters } from '../features/encyclopedia/useEncyclopedia';
-import { RoleIcon } from '../features/encyclopedia/roleIcons';
+import {
+  useEncyclopedia,
+  type EncyclopediaFilters,
+} from '../features/encyclopedia/useEncyclopedia';
+import { useMemberTagMap, useMemberTags } from '../features/encyclopedia/useMemberTags';
+import { EntryIcon } from '../features/encyclopedia/roleIcons';
 import { FilterChip, EmptyState, Loader, Tag } from '../components/ui';
 import { mediaUrl } from '../lib/format';
-import './EnciclopediaPage.scss';
+import './EquipePage.scss';
 
-type FilterKey =
-  | { type: 'all' }
-  | { type: 'tag'; value: string }
-  | { type: 'generation'; value: string }
-  | { type: 'robot' };
+/** Filtro ativo como string estável: 'all' | 'robot' | 'tag:<key>' | 'gen:<geração>'. */
+type FilterId = string;
 
-const FILTERS: { label: string; key: FilterKey }[] = [
-  { label: 'Todos', key: { type: 'all' } },
-  ...MEMBER_TAGS.map((t) => ({
-    label: MEMBER_TAG_LABELS[t],
-    key: { type: 'tag' as const, value: t },
-  })),
-  ...GENERATIONS.map((g) => ({
-    label: GENERATION_LABELS[g],
-    key: { type: 'generation' as const, value: g },
-  })),
-  { label: 'Robôs', key: { type: 'robot' } },
-];
+type TagMap = Map<string, MemberTagDTO>;
 
-function toFilters(key: FilterKey): EncyclopediaFilters {
-  switch (key.type) {
-    case 'tag':
-      return { tag: key.value };
-    case 'generation':
-      return { generation: key.value };
-    case 'robot':
-      return { kind: 'robot' };
-    default:
-      return {};
-  }
+const TEAM_PATH = '/equipe';
+
+/** Navegação interna da página: troca o membro na URL sem rolar ao topo (ver PublicLayout). */
+const KEEP_SCROLL = { state: { preserveScroll: true } };
+
+function toFilters(id: FilterId): EncyclopediaFilters {
+  if (id === 'robot') return { kind: 'robot' };
+  if (id.startsWith('tag:')) return { tag: id.slice(4) };
+  if (id.startsWith('gen:')) return { generation: id.slice(4) };
+  return {};
 }
 
-export function EnciclopediaPage() {
+/** Chips fixos + uma por tag do banco (na ordem da API); as tags entram quando carregam. */
+function buildChips(tags: MemberTagDTO[]): { id: FilterId; label: string }[] {
+  return [
+    { id: 'all', label: 'Todos' },
+    ...tags.map((t) => ({ id: `tag:${t.key}`, label: t.label })),
+    ...GENERATIONS.map((g) => ({ id: `gen:${g}`, label: GENERATION_LABELS[g] })),
+    { id: 'robot', label: 'Robôs' },
+  ];
+}
+
+/** Tag principal do registro (a primeira gravada), se ainda existir no banco. */
+function primaryTag(
+  entry: EncyclopediaEntryDTO,
+  tagMap: TagMap,
+): MemberTagDTO | undefined {
+  const key = entry.tags[0];
+  return key ? tagMap.get(key) : undefined;
+}
+
+export function EquipePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const filters = toFilters(FILTERS[activeIndex]!.key);
-  const { data, isLoading } = useEncyclopedia(filters);
+  const { data: tags } = useMemberTags();
+  const tagMap = useMemberTagMap();
 
+  // Estado local: a rota '/equipe/:slug?' não remonta ao trocar o slug, então
+  // o filtro sobrevive aos cliques nos membros.
+  const [chosenFilter, setChosenFilter] = useState<FilterId>('all');
+  const chips = useMemo(() => buildChips(tags ?? []), [tags]);
+  // tag removida pelo admin enquanto estava selecionada → volta para "Todos"
+  const active = chips.some((c) => c.id === chosenFilter) ? chosenFilter : 'all';
+
+  const filters = useMemo(() => toFilters(active), [active]);
+  const { data, isLoading } = useEncyclopedia(filters);
   const entries = useMemo(() => data ?? [], [data]);
 
   // entrada selecionada (via slug na URL, ou a primeira no desktop)
@@ -63,29 +78,38 @@ export function EnciclopediaPage() {
     return entries[0];
   }, [entries, slug]);
 
-  // se o slug não existe no filtro atual, limpa
+  // slug que não existe no filtro atual: volta para a lista (sem rolar ao topo)
   useEffect(() => {
-    if (slug && entries.length && !entries.some((e) => e.slug === slug)) {
-      navigate('/enciclopedia', { replace: true });
+    if (slug && data && !data.some((e) => e.slug === slug)) {
+      navigate(TEAM_PATH, { replace: true, ...KEEP_SCROLL });
     }
-  }, [slug, entries, navigate]);
+  }, [slug, data, navigate]);
 
-  const openEntry = (e: EncyclopediaEntryDTO) => navigate(`/enciclopedia/${e.slug}`);
-  const closeMobile = () => navigate('/enciclopedia');
+  const openEntry = (e: EncyclopediaEntryDTO) =>
+    navigate(`${TEAM_PATH}/${e.slug}`, KEEP_SCROLL);
+  const closeMobile = () => navigate(TEAM_PATH, KEEP_SCROLL);
 
   return (
     <>
       <PageHero
-        kicker="Enciclopédia da Equipe"
+        kicker="Equipe MinerSkills"
         title="Membros & Robôs"
         subtitle="Competidores, treinadores e robôs que constroem a história da MinerSkills."
       />
 
       <section className="ms-section ms-container">
-        <div className="ms-enc__filters" role="tablist" aria-label="Filtrar por função">
-          {FILTERS.map((f, i) => (
-            <FilterChip key={f.label} active={activeIndex === i} onClick={() => setActiveIndex(i)}>
-              {f.label}
+        <div
+          className="ms-enc__filters"
+          role="tablist"
+          aria-label="Filtrar a equipe por função"
+        >
+          {chips.map((c) => (
+            <FilterChip
+              key={c.id}
+              active={active === c.id}
+              onClick={() => setChosenFilter(c.id)}
+            >
+              {c.label}
             </FilterChip>
           ))}
         </div>
@@ -105,7 +129,7 @@ export function EnciclopediaPage() {
               <motion.div className="ms-enc__grid" layout>
                 <AnimatePresence mode="popLayout">
                   {entries.map((e) => {
-                    const primaryTag = e.kind === 'robot' ? 'robot' : e.tags[0] ?? 'competidor';
+                    const primary = primaryTag(e, tagMap);
                     return (
                       <motion.button
                         key={e.id}
@@ -126,7 +150,7 @@ export function EnciclopediaPage() {
                             />
                           ) : (
                             <div className="ms-enc-card__photo-fallback">
-                              <RoleIcon tag={primaryTag} />
+                              <EntryIcon kind={e.kind} icon={primary?.icon} />
                             </div>
                           )}
                         </div>
@@ -134,10 +158,14 @@ export function EnciclopediaPage() {
                           <span className="ms-enc-card__name">{e.name}</span>
                           <span className="ms-enc-card__role">
                             <span className="ms-enc-card__dot" />
-                            {e.role ?? MEMBER_TAG_LABELS[primaryTag as never] ?? 'Membro'}
+                            {e.role ?? primary?.label ?? 'Membro'}
                           </span>
                         </div>
-                        <RoleIcon tag={primaryTag} className="ms-enc-card__role-icon" />
+                        <EntryIcon
+                          kind={e.kind}
+                          icon={primary?.icon}
+                          className="ms-enc-card__role-icon"
+                        />
                       </motion.button>
                     );
                   })}
@@ -146,10 +174,10 @@ export function EnciclopediaPage() {
             )}
           </div>
 
-          {/* Painel de detalhe — lateral no desktop */}
+          {/* Painel de detalhe — lateral no desktop (a key remonta e anima a troca de membro) */}
           <aside className="ms-enc__detail">
             {selected ? (
-              <DetailPanel entry={selected} />
+              <DetailPanel key={selected.id} entry={selected} tagMap={tagMap} />
             ) : (
               <div className="ms-enc__detail-empty">
                 <p>Selecione um membro para ver os detalhes.</p>
@@ -169,10 +197,14 @@ export function EnciclopediaPage() {
             exit={{ opacity: 0, y: 40 }}
             transition={{ duration: 0.3 }}
           >
-            <button className="ms-enc__mobile-close" onClick={closeMobile} aria-label="Fechar">
+            <button
+              className="ms-enc__mobile-close"
+              onClick={closeMobile}
+              aria-label="Fechar"
+            >
               <X />
             </button>
-            <DetailPanel entry={selected} />
+            <DetailPanel key={selected.id} entry={selected} tagMap={tagMap} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -180,10 +212,10 @@ export function EnciclopediaPage() {
   );
 }
 
-function DetailPanel({ entry }: { entry: EncyclopediaEntryDTO }) {
+function DetailPanel({ entry, tagMap }: { entry: EncyclopediaEntryDTO; tagMap: TagMap }) {
+  const primary = primaryTag(entry, tagMap);
   return (
     <motion.div
-      key={entry.id}
       className="ms-enc-detail"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -194,7 +226,7 @@ function DetailPanel({ entry }: { entry: EncyclopediaEntryDTO }) {
           <img src={mediaUrl(entry.photo.url)} alt={entry.name} />
         ) : (
           <div className="ms-enc-detail__photo-fallback">
-            <RoleIcon tag={entry.kind === 'robot' ? 'robot' : entry.tags[0] ?? 'competidor'} />
+            <EntryIcon kind={entry.kind} icon={primary?.icon} />
           </div>
         )}
       </div>
@@ -212,7 +244,9 @@ function DetailPanel({ entry }: { entry: EncyclopediaEntryDTO }) {
               <CalendarDays /> {entry.season}
             </span>
           )}
-          {entry.generation && <Tag variant="muted">{GENERATION_LABELS[entry.generation as never]}</Tag>}
+          {entry.generation && (
+            <Tag variant="muted">{GENERATION_LABELS[entry.generation as never]}</Tag>
+          )}
         </div>
 
         {(entry.tags.length > 0 || entry.role) && (
@@ -220,7 +254,7 @@ function DetailPanel({ entry }: { entry: EncyclopediaEntryDTO }) {
             {entry.kind === 'robot' && entry.role ? (
               <Tag>{entry.role}</Tag>
             ) : (
-              entry.tags.map((t) => <Tag key={t}>{MEMBER_TAG_LABELS[t as never] ?? t}</Tag>)
+              entry.tags.map((t) => <Tag key={t}>{tagMap.get(t)?.label ?? t}</Tag>)
             )}
           </div>
         )}

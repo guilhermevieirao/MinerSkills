@@ -109,7 +109,7 @@ export function HomePage() {
               subtitle={about?.subtitle ?? undefined}
             />
             <p className="ms-about__body">{about?.body}</p>
-            <LinkButton to="/enciclopedia" variant="outline">
+            <LinkButton to="/equipe" variant="outline">
               Conheça a equipe <ArrowRight />
             </LinkButton>
           </Reveal>
