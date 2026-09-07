@@ -93,7 +93,8 @@ cada boot. Isolado: `npm run db:backfill -w apps/api`.
 Cada frente que precisar de dados iniciais acrescenta o seu: um arquivo
 `prisma/backfill-<tema>.ts` que **exporta** a função (e só executa quando é o módulo
 principal, para continuar rodável sozinho) e uma linha na lista do agregador, em ordem
-de dependência. Hoje a lista contém apenas `backfillMemberTags`.
+de dependência. Hoje a lista contém `backfillMemberTags` e `backfillAdminEmails`
+(normaliza e-mails de admin gravados com outra caixa).
 
 ---
 
@@ -175,7 +176,7 @@ npm run test:e2e
 
 | Modelo | Papel |
 | --- | --- |
-| `Admin` | Administradores (senha com bcrypt, custo 12). |
+| `Admin` | Administradores (senha com bcrypt, custo 12; e-mail sempre normalizado em minúsculas; `passwordChangedAt` invalida as sessões emitidas antes da troca). |
 | `MediaAsset` | Toda imagem/vídeo enviado (dimensões, thumbnail, mime real). |
 | `ContentBlock` | Blocos de texto editáveis das páginas (`landing`, `historia`, `como-entrar`), únicos por `page`+`key`. |
 | `TimelineItem` | Marcos da página História. |
@@ -188,7 +189,7 @@ npm run test:e2e
 | `Award` | Prêmios e conquistas. |
 | `AgendaEvent` | Agenda. |
 | `SocialLink` | Redes sociais. |
-| `Setting` | Configurações chave/valor editáveis. |
+| `Setting` | Configurações chave/valor editáveis em `/admin/configuracoes`; chaves restritas a `SETTING_DEFINITIONS` (`packages/shared`). |
 
 ---
 

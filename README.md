@@ -33,6 +33,8 @@ npm run dev
 
 Credenciais iniciais do admin: definidas em `ADMIN_EMAIL` / `ADMIN_PASSWORD` no `.env`
 (padrão `admin@minerskills.com.br` / `MinerSkills@10019` — **troque em produção**).
+Depois do primeiro acesso, troque a senha em `/admin/conta` e cadastre outras pessoas em
+`/admin/administradores` — não é preciso mexer no `.env` nem no banco.
 
 ### Com Docker
 
@@ -95,8 +97,11 @@ Quiz com leaderboard ·
 Fórum moderado · Prêmios · Agenda · Como Entrar · Redes sociais.
 
 **Administrativo** (`/admin`, sem link público) — Todo o conteúdo acima é gerenciável:
-blog com editor rich-text, upload de mídia, galeria, perguntas do quiz, equipe e suas tags,
-fila de moderação do fórum, prêmios, agenda, textos das páginas, timeline e redes sociais.
+blog com editor rich-text, upload de mídia e biblioteca de mídia (usos, alt e exclusão segura),
+galeria (legendas e ordem das fotos), perguntas do quiz, equipe e suas tags,
+fila de moderação do fórum, prêmios, agenda, textos das páginas, timeline, redes sociais,
+configurações gerais (lema, cidade, e-mail de contato, inscrições) e administradores
+(cadastro de quem entra no painel e troca da própria senha).
 
 ---
 

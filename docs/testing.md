@@ -72,7 +72,10 @@ de erro diz exatamente isso.
 
 ---
 
-## O que a suíte e2e cobre (40 testes × 2 projetos)
+## O que a suíte e2e cobre (52 testes × 2 projetos)
+
+Alguns testes que alteram **estado global** (ordem da galeria, configurações do site) rodam
+só no projeto desktop, porque os dois projetos executam em paralelo sobre o mesmo banco.
 
 | Arquivo | Cobertura |
 | --- | --- |
@@ -81,7 +84,11 @@ de erro diz exatamente isso.
 | `quiz.spec.ts` | Fluxo completo (apelido → perguntas → resultado → leaderboard); validação de apelido; **o payload não revela `isCorrect`**. |
 | `forum-moderation.spec.ts` | Tópico novo **invisível até a aprovação**; **XSS neutralizado**; respostas também moderadas. |
 | `admin.spec.ts` | **Nenhum link para `/admin` no site público**; `robots.txt`; login errado/certo; CRUD de post publicado aparecendo no blog; CRUD de agenda; CRUD de tag da equipe (aparece no formulário de membro e nos chips públicos, e é removida); nome de tag duplicado rejeitado; criar pergunta de quiz; logout encerrando a sessão de verdade. |
-| `security.spec.ts` | 401 em todas as rotas admin; mutações bloqueadas; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
+| `admin-settings.spec.ts` | Painel de **Configurações**: o formulário lista todas as chaves de `SETTING_DEFINITIONS` com os valores do seed; alterar o lema, salvar e vê-lo no **rodapé** do site (só desktop), restaurando o valor original pela API; `PUT /bulk` com chave desconhecida responde 400. |
+| `gallery.spec.ts` | Painel da galeria: **edição de legenda** refletida na página pública e restaurada (desktop edita a primeira foto, mobile a última); **reordenação** pelos botões com "Salvar ordem" e conferência via `GET /api/gallery` (só desktop), restaurando a ordem original. |
+| `media.spec.ts` | **Biblioteca de mídia**: mídia enviada pela API e vinculada a um prêmio novo; busca, "Usada em 1", detalhes com "Onde é usada", edição do alt, exclusão em dois passos (409 → "Excluir mesmo assim") e o prêmio sobrevive sem badge (`SetNull`); o mesmo contrato do 409 (`details` por tipo) e do `?force=1` direto na API. O prêmio é removido ao final. |
+| `admins.spec.ts` | **Administradores e Minha conta**: cria um admin pelo painel; a própria linha tem "Você" e nenhum botão de excluir (a API responde 409); o novo admin entra, **troca a própria senha** (cookie reemitido, sessão segue válida), sai e volta com a nova; o admin principal remove o criado. |
+| `security.spec.ts` | 401 em todas as rotas admin (inclusive `/api/admin/admins`); mutações bloqueadas; troca de senha sem sessão bloqueada; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
 
 ---
 
