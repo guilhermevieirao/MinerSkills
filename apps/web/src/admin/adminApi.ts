@@ -101,6 +101,7 @@ export const adminApi = {
     create: (data: GalleryPhotoInput) => api.post<GalleryPhotoDTO>('/admin/gallery', data),
     update: (id: string, data: GalleryPhotoInput) =>
       api.put<GalleryPhotoDTO>(`/admin/gallery/${id}`, data),
+    reorder: (ids: string[]) => api.put<void>('/admin/gallery/reorder', { ids }),
     remove: (id: string) => api.del(`/admin/gallery/${id}`),
   },
 
