@@ -2,7 +2,13 @@ import { fakerPT_BR as faker } from '@faker-js/faker';
 import bcrypt from 'bcryptjs';
 import { rm, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { DEFAULT_MEMBER_TAGS, GENERATIONS, AGENDA_KINDS } from '@minerskills/shared';
+import {
+  DEFAULT_MEMBER_TAGS,
+  GENERATIONS,
+  AGENDA_KINDS,
+  SETTING_KEYS,
+  type SettingKey,
+} from '@minerskills/shared';
 import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
 import { uniquePostSlug, uniqueEncyclopediaSlug } from '../src/lib/slug.js';
@@ -578,11 +584,18 @@ async function seedSocial() {
   ];
   for (const l of links) await prisma.socialLink.create({ data: { ...l, active: true } });
 
+  // TODAS as chaves de SETTING_DEFINITIONS nascem preenchidas — o Record garante,
+  // em tempo de compilação, que uma chave nova não fique sem valor inicial.
+  const settings: Record<SettingKey, string> = {
+    team_motto: 'Escavamos conhecimento, construímos o futuro.',
+    city_line: 'Belo Horizonte / Contagem — MG',
+    contact_email: 'contato@minerskills.com.br',
+    applications_open: 'true',
+    applications_info:
+      'As inscrições para o processo seletivo abrem todos os anos. Acompanhe a agenda e nossas redes.',
+  };
   await prisma.setting.createMany({
-    data: [
-      { key: 'contact_email', value: 'contato@minerskills.com.br' },
-      { key: 'team_motto', value: 'Escavamos conhecimento, construímos o futuro.' },
-    ],
+    data: SETTING_KEYS.map((key) => ({ key, value: settings[key] })),
   });
   console.log('  ✓ redes sociais + settings');
 }

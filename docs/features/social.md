@@ -54,3 +54,11 @@ Instagram, LinkedIn, YouTube, TikTok e e-mail de contato — com URLs de exemplo
 | `GET` | `/api/social-links` (só ativos) |
 | `GET` | `/api/admin/social-links` (todos) |
 | `POST`/`PUT`/`DELETE` | `/api/admin/social-links[/:id]` |
+
+## Configurações (`Setting`)
+
+As configurações chave/valor (lema, cidade, e-mail de contato, inscrições) vivem no
+mesmo módulo (`apps/api/src/modules/social/social.routes.ts`, `settingsPublicRouter` e
+`settingsAdminRouter`), mas têm **tela própria** em `/admin/configuracoes` e
+documentação em [configuracoes.md](configuracoes.md). O hook `useSettings()` fica em
+`apps/web/src/features/social/useSocial.ts`, ao lado de `useSocialLinks()`.

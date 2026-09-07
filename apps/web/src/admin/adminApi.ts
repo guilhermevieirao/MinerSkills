@@ -21,6 +21,8 @@ import type {
   SocialLinkDTO,
   SocialLinkInput,
   MediaAssetDTO,
+  SettingDTO,
+  SettingsBulkInput,
 } from '@minerskills/shared';
 import { api } from '../lib/api';
 
@@ -160,5 +162,11 @@ export const adminApi = {
     update: (id: string, data: SocialLinkInput) =>
       api.put<SocialLinkDTO>(`/admin/social-links/${id}`, data),
     remove: (id: string) => api.del(`/admin/social-links/${id}`),
+  },
+
+  settings: {
+    list: () => api.get<SettingDTO[]>('/admin/settings'),
+    saveAll: (items: SettingsBulkInput) =>
+      api.put<SettingDTO[]>('/admin/settings/bulk', items),
   },
 };

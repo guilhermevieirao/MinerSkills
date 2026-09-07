@@ -1,14 +1,26 @@
 import { Link } from 'react-router-dom';
+import { TEAM } from '@minerskills/shared';
 import { LogoBadge } from '../brand/Logo';
 import { SocialIcon } from './SocialIcon';
 import { NAV_ITEMS, JOIN_ITEM } from './navItems';
-import { useSocialLinks } from '../../features/social/useSocial';
+import { useSocialLinks, useSettings } from '../../features/social/useSocial';
 import './Footer.scss';
 
 const YEAR = new Date().getFullYear();
 
+/** Textos exibidos enquanto a API não respondeu ou quando a chave está vazia. */
+const FALLBACK = {
+  motto: 'Escavamos conhecimento, construímos o futuro.',
+  cityLine: `${TEAM.city} — ${TEAM.state}`,
+};
+
 export function Footer() {
   const { data: social } = useSocialLinks();
+  const { data: settings } = useSettings();
+
+  const motto = settings?.team_motto?.trim() || FALLBACK.motto;
+  const cityLine = settings?.city_line?.trim() || FALLBACK.cityLine;
+  const contactEmail = settings?.contact_email?.trim();
 
   return (
     <footer className="ms-footer">
@@ -17,12 +29,15 @@ export function Footer() {
           <LogoBadge className="ms-footer__badge" />
           <div>
             <p className="ms-footer__name">MinerSkills #10019</p>
-            <p className="ms-footer__tag">
-              Escavamos conhecimento, construímos o futuro.
-            </p>
-            <p className="ms-footer__meta">
-              FIRST Robotics Competition · Belo Horizonte / Contagem — MG
-            </p>
+            <p className="ms-footer__tag">{motto}</p>
+            <p className="ms-footer__meta">FIRST Robotics Competition · {cityLine}</p>
+            {contactEmail && (
+              <p className="ms-footer__meta">
+                <a href={`mailto:${contactEmail}`} className="ms-footer__mail">
+                  {contactEmail}
+                </a>
+              </p>
+            )}
           </div>
         </div>
 

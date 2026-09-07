@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SOCIAL_PLATFORMS } from '../constants.js';
+import { SETTING_KEYS, SOCIAL_PLATFORMS } from '../constants.js';
 
 export const socialLinkSchema = z.object({
   platform: z.enum(SOCIAL_PLATFORMS),
@@ -19,9 +19,18 @@ export interface SocialLinkDTO {
   active: boolean;
 }
 
-// ─── Settings genéricas (chave/valor) ───────────────────────
+// ─── Settings (chave/valor; chaves em SETTING_DEFINITIONS) ──
 export const settingSchema = z.object({
-  key: z.string().min(1).max(80),
+  key: z.enum(SETTING_KEYS),
   value: z.string().max(2000),
 });
 export type SettingInput = z.infer<typeof settingSchema>;
+
+/** Salvamento em lote do formulário de Configurações (`PUT /api/admin/settings/bulk`). */
+export const settingsBulkSchema = z.array(settingSchema).min(1).max(50);
+export type SettingsBulkInput = z.infer<typeof settingsBulkSchema>;
+
+export interface SettingDTO {
+  key: string;
+  value: string;
+}

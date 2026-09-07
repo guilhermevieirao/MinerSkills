@@ -47,6 +47,14 @@
     font-size: var(--ms-text-xs);
     margin-top: var(--ms-space-2);
   }
+  &__mail {
+    color: var(--ms-text-dim);
+    overflow-wrap: anywhere;
+    transition: color var(--ms-dur) var(--ms-ease);
+    &:hover {
+      color: var(--ms-green);
+    }
+  }
 
   &__nav,
   &__social {

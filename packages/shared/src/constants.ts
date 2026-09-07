@@ -128,6 +128,54 @@ export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
 export const EDITABLE_PAGES = ['landing', 'historia', 'como-entrar'] as const;
 export type EditablePage = (typeof EDITABLE_PAGES)[number];
 
+// ─── Configurações editáveis (Setting chave/valor) ──────────
+/**
+ * Chaves de configuração que o painel expõe em /admin/configuracoes. O model
+ * `Setting` é genérico (key/value); esta lista dá forma ao formulário (rótulo,
+ * dica, tipo de campo) e restringe as chaves aceitas pela API.
+ * Valores booleanos são gravados como 'true' | 'false'.
+ */
+export const SETTING_DEFINITIONS = [
+  {
+    key: 'team_motto',
+    label: 'Lema da equipe',
+    hint: 'Frase curta exibida no rodapé do site.',
+    type: 'text',
+  },
+  {
+    key: 'city_line',
+    label: 'Cidade / região',
+    hint: 'Linha de localização exibida no rodapé (ex.: Belo Horizonte / Contagem — MG).',
+    type: 'text',
+  },
+  {
+    key: 'contact_email',
+    label: 'E-mail de contato',
+    hint: 'Exibido no rodapé e na página de contato.',
+    type: 'email',
+  },
+  {
+    key: 'applications_open',
+    label: 'Inscrições abertas',
+    hint: 'Quando ligado, a página Como Entrar exibe o formulário de inscrição.',
+    type: 'boolean',
+  },
+  {
+    key: 'applications_info',
+    label: 'Aviso sobre inscrições',
+    hint: 'Texto mostrado em Como Entrar enquanto as inscrições estão fechadas.',
+    type: 'textarea',
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  label: string;
+  hint: string;
+  type: 'text' | 'textarea' | 'boolean' | 'email';
+}>;
+export type SettingKey = (typeof SETTING_DEFINITIONS)[number]['key'];
+export type SettingFieldType = (typeof SETTING_DEFINITIONS)[number]['type'];
+export const SETTING_KEYS = SETTING_DEFINITIONS.map((d) => d.key) as [SettingKey, ...SettingKey[]];
+
 // ─── Metadados da equipe ────────────────────────────────────
 export const TEAM = {
   number: 10019,

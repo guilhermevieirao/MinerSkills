@@ -14,6 +14,7 @@ import { AwardsSection } from './sections/AwardsSection';
 import { AgendaSection } from './sections/AgendaSection';
 import { SocialSection } from './sections/SocialSection';
 import { PagesSection } from './sections/PagesSection';
+import { SettingsSection } from './sections/SettingsSection';
 import './admin.scss';
 
 export default function AdminApp() {
@@ -48,6 +49,7 @@ export default function AdminApp() {
         <Route path="premios" element={<AwardsSection />} />
         <Route path="agenda" element={<AgendaSection />} />
         <Route path="social" element={<SocialSection />} />
+        <Route path="configuracoes" element={<SettingsSection />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

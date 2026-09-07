@@ -12,6 +12,7 @@ import {
   Award,
   CalendarDays,
   Share2,
+  Settings,
   LogOut,
   ExternalLink,
   Menu,
@@ -34,6 +35,7 @@ const LINKS = [
   { to: '/admin/premios', label: 'Prêmios', icon: Award },
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/admin/social', label: 'Redes Sociais', icon: Share2 },
+  { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
 export function AdminLayout({ admin, children }: { admin: AdminMe; children: ReactNode }) {
