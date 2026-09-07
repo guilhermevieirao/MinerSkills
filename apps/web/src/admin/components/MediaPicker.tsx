@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react';
-import { UploadCloud, ImageOff } from 'lucide-react';
+import { UploadCloud, ImageOff, Library } from 'lucide-react';
 import type { MediaAssetDTO } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
 import { mediaUrl } from '../../lib/format';
 import { Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { ApiError } from '../../lib/api';
+import { MediaLibraryModal } from './MediaLibraryModal';
 
-/** Faz upload de uma imagem e devolve o MediaAsset (via onChange do id). */
+/**
+ * Campo de imagem única: faz upload de um arquivo novo ou escolhe uma imagem
+ * já existente na biblioteca; devolve o MediaAsset via onChange.
+ */
 export function MediaPicker({
   value,
   preview,
@@ -22,7 +26,14 @@ export function MediaPicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [current, setCurrent] = useState<MediaAssetDTO | null>(preview ?? null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const toast = useToast();
+
+  const pickFromLibrary = (media: MediaAssetDTO) => {
+    setCurrent(media);
+    onChange(media);
+    setLibraryOpen(false);
+  };
 
   const handleFile = async (file: File) => {
     setUploading(true);
@@ -63,6 +74,9 @@ export function MediaPicker({
           >
             <UploadCloud /> Enviar
           </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setLibraryOpen(true)}>
+            <Library /> Escolher da biblioteca
+          </Button>
           {(current || value) && (
             <Button
               type="button"
@@ -89,6 +103,9 @@ export function MediaPicker({
           }}
         />
       </div>
+      {libraryOpen && (
+        <MediaLibraryModal onSelect={pickFromLibrary} onClose={() => setLibraryOpen(false)} />
+      )}
     </div>
   );
 }

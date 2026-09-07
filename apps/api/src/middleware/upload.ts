@@ -31,5 +31,7 @@ const maxBytes =
 
 export const uploadSingle = multer({
   storage,
-  limits: { fileSize: maxBytes, files: 1 },
+  // fieldSize: os campos de texto do multipart (alt) são curtos — 4 KB barra
+  // abusos antes do zod, que limita a 240 caracteres na rota.
+  limits: { fileSize: maxBytes, files: 1, fieldSize: 4 * 1024 },
 }).single('file');

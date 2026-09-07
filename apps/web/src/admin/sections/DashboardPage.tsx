@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Newspaper,
   Images,
+  Library,
   HelpCircle,
   Users,
   Bot,
@@ -25,6 +26,7 @@ export function DashboardPage() {
   const cards = [
     { label: 'Posts publicados', value: `${data.posts.published}/${data.posts.total}`, icon: Newspaper, to: '/admin/blog' },
     { label: 'Fotos na galeria', value: data.gallery, icon: Images, to: '/admin/galeria' },
+    { label: 'Mídias', value: data.media, icon: Library, to: '/admin/midia' },
     { label: 'Perguntas do quiz', value: data.quiz.questions, icon: HelpCircle, to: '/admin/quiz' },
     { label: 'Membros', value: data.encyclopedia.members, icon: Users, to: '/admin/equipe' },
     { label: 'Robôs', value: data.encyclopedia.robots, icon: Bot, to: '/admin/equipe' },

@@ -13,6 +13,7 @@ dashboardAdminRouter.get(
       posts,
       publishedPosts,
       gallery,
+      media,
       quizQuestions,
       quizScores,
       members,
@@ -26,6 +27,7 @@ dashboardAdminRouter.get(
       prisma.post.count(),
       prisma.post.count({ where: { published: true } }),
       prisma.galleryPhoto.count(),
+      prisma.mediaAsset.count(),
       prisma.quizQuestion.count(),
       prisma.quizScore.count(),
       prisma.encyclopediaEntry.count({ where: { kind: 'member' } }),
@@ -40,6 +42,7 @@ dashboardAdminRouter.get(
     res.json({
       posts: { total: posts, published: publishedPosts },
       gallery,
+      media,
       quiz: { questions: quizQuestions, scores: quizScores },
       encyclopedia: { members, robots },
       awards,

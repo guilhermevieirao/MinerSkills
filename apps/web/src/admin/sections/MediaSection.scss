@@ -1,0 +1,219 @@
+@use '../../styles/mixins' as *;
+
+// ── Biblioteca de mídia (/admin/midia) e modal "Escolher da biblioteca" ──
+// Também é importado pelo <MediaLibraryModal>, que aparece em outras seções.
+.ms-media {
+  &__toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--ms-space-3) var(--ms-space-5);
+    margin-bottom: var(--ms-space-5);
+  }
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ms-space-2);
+  }
+  &__search {
+    flex: 1 1 240px;
+    max-width: 360px;
+    .ms-field {
+      margin-bottom: 0;
+    }
+  }
+  &__count {
+    color: var(--ms-text-dim);
+    font-size: var(--ms-text-sm);
+    margin-bottom: var(--ms-space-3);
+  }
+
+  // ── Grade de cards ──
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--ms-space-4);
+
+    @include below($bp-sm) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ms-space-3);
+    }
+
+    &--compact {
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: var(--ms-space-3);
+    }
+  }
+
+  &__card {
+    @include card-surface;
+    @include focus-ring;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+    font: inherit;
+    color: var(--ms-text);
+    cursor: pointer;
+    transition:
+      border-color var(--ms-dur) var(--ms-ease),
+      transform var(--ms-dur) var(--ms-ease);
+
+    &:hover {
+      border-color: var(--ms-green-deep);
+      transform: translateY(-2px);
+    }
+  }
+
+  &__thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: var(--ms-surface-2);
+
+    &--video {
+      display: grid;
+      place-items: center;
+      color: var(--ms-green);
+      svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: var(--ms-space-3);
+  }
+  &__name {
+    font-size: var(--ms-text-sm);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &__meta {
+    font-size: var(--ms-text-xs);
+    color: var(--ms-text-dim);
+  }
+  &__badge {
+    margin-top: auto;
+    padding: 0 var(--ms-space-3) var(--ms-space-3);
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ms-space-4);
+    margin-top: var(--ms-space-6);
+    color: var(--ms-text-dim);
+    font-size: var(--ms-text-sm);
+  }
+
+  // ── Modal de detalhes ──
+  &__detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-5);
+  }
+
+  &__preview {
+    @include card-surface;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--ms-surface-2);
+
+    img,
+    video {
+      display: block;
+      max-width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+    }
+  }
+
+  &__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--ms-space-3);
+    margin: 0;
+
+    dt {
+      font-size: var(--ms-text-xs);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ms-text-dim);
+    }
+    dd {
+      margin: 2px 0 0;
+      font-size: var(--ms-text-sm);
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__alt {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ms-space-3);
+
+    .ms-field {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    // alinha o botão ao controle, abaixo do rótulo
+    .ms-btn {
+      margin-top: calc(var(--ms-text-sm) * 1.5 + var(--ms-space-2));
+    }
+
+    @include below($bp-sm) {
+      flex-direction: column;
+      align-items: stretch;
+      .ms-btn {
+        margin-top: 0;
+      }
+    }
+  }
+
+  &__usage {
+    h3 {
+      font-size: var(--ms-text-xs);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ms-text-dim);
+      margin-bottom: var(--ms-space-3);
+    }
+    dl {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+      margin: 0;
+    }
+    dt {
+      font-size: var(--ms-text-sm);
+      font-weight: 600;
+    }
+    dd {
+      margin: 2px 0 0;
+      padding-left: var(--ms-space-3);
+      border-left: 2px solid var(--ms-border-strong);
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+    }
+  }
+  &__none {
+    color: var(--ms-text-dim);
+    font-size: var(--ms-text-sm);
+  }
+}

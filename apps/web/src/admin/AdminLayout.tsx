@@ -12,6 +12,7 @@ import {
   Award,
   CalendarDays,
   Share2,
+  Library,
   Settings,
   LogOut,
   ExternalLink,
@@ -35,6 +36,7 @@ const LINKS = [
   { to: '/admin/premios', label: 'Prêmios', icon: Award },
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/admin/social', label: 'Redes Sociais', icon: Share2 },
+  { to: '/admin/midia', label: 'Mídia', icon: Library },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ];
 

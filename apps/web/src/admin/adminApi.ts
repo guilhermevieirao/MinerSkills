@@ -21,6 +21,11 @@ import type {
   SocialLinkDTO,
   SocialLinkInput,
   MediaAssetDTO,
+  MediaLibraryItemDTO,
+  MediaUsageDTO,
+  MediaQuery,
+  UpdateMediaInput,
+  Paginated,
   SettingDTO,
   SettingsBulkInput,
 } from '@minerskills/shared';
@@ -29,6 +34,7 @@ import { api } from '../lib/api';
 export interface DashboardStats {
   posts: { total: number; published: number };
   gallery: number;
+  media: number;
   quiz: { questions: number; scores: number };
   encyclopedia: { members: number; robots: number };
   awards: number;
@@ -64,11 +70,17 @@ export const adminApi = {
   dashboard: () => api.get<DashboardStats>('/admin/dashboard'),
 
   media: {
-    list: (kind?: 'image' | 'video') =>
-      api.get<MediaAssetDTO[]>('/admin/media', kind ? { kind } : undefined),
+    /** Biblioteca paginada, com contagem de usos por item. */
+    list: (query?: Partial<MediaQuery>) =>
+      api.get<Paginated<MediaLibraryItemDTO>>('/admin/media', query),
     upload: (file: File, alt?: string) =>
       api.upload<MediaAssetDTO>('/admin/media', file, alt ? { alt } : undefined),
-    remove: (id: string) => api.del(`/admin/media/${id}`),
+    usage: (id: string) => api.get<MediaUsageDTO>(`/admin/media/${id}/usage`),
+    update: (id: string, data: UpdateMediaInput) =>
+      api.patch<MediaAssetDTO>(`/admin/media/${id}`, data),
+    /** Sem `force`, a API responde 409 quando a mídia está em uso. */
+    remove: (id: string, force = false) =>
+      api.del(`/admin/media/${id}${force ? '?force=1' : ''}`),
   },
 
   contentBlocks: {
