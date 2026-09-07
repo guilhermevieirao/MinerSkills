@@ -1,5 +1,6 @@
 import { disconnectPrisma } from '../src/lib/prisma.js';
 import { backfillMemberTags } from './backfill-member-tags.js';
+import { backfillAdminEmails } from './backfill-admin-emails.js';
 
 /**
  * Agregador dos backfills de dados iniciais — o equivalente, para o SQLite
@@ -13,6 +14,7 @@ import { backfillMemberTags } from './backfill-member-tags.js';
  */
 const backfills: Array<[name: string, run: () => Promise<void>]> = [
   ['tags da equipe', backfillMemberTags],
+  ['e-mails de admin', backfillAdminEmails],
 ];
 
 async function main(): Promise<void> {

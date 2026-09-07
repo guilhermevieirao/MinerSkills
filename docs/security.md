@@ -7,10 +7,34 @@
 | Senhas | `bcryptjs`, custo **12**. |
 | Token | JWT HS256 via `jose`, `JWT_SECRET` com **mínimo 32 caracteres** (validado no boot). |
 | Transporte | Cookie **`httpOnly`** + **`SameSite=Strict`** + `Path=/api` + `Secure` quando `NODE_ENV=production`. |
-| Expiração | `JWT_EXPIRES_IN` (padrão 12h). |
-| Força bruta | Máx. `RATE_LIMIT_LOGIN_MAX` (5) tentativas **que falham** por janela de 15 min. |
+| Expiração | `JWT_EXPIRES_IN` (padrão 12h). Antes disso a sessão cai se o admin for **excluído** ou **trocar a senha**: `requireAdmin` confere o registro e `passwordChangedAt` a cada requisição (uma busca por chave primária) e rejeita tokens emitidos antes da troca. |
+| Força bruta | Máx. `RATE_LIMIT_LOGIN_MAX` (5) tentativas **que falham** por janela de 15 min — no login **e na troca de senha**. |
 | Enumeração | Mensagem genérica ("Credenciais inválidas") para e-mail e senha errados. |
-| Timing | O `bcrypt.compare` roda **mesmo quando o e-mail não existe** (hash fictício). |
+| Timing | O `bcrypt.compare` roda **mesmo quando o e-mail não existe**, contra um hash fictício **real** gerado no boot (60 caracteres, custo 12) — com um hash malformado o `bcryptjs` responde na hora e o tempo revelaria quais e-mails existem. |
+| E-mail | Normalizado (`trim` + minúsculas) no login, no seed e na gestão de admins (`lib/email.ts`). Bases antigas são ajustadas pela migration `20260906130000_admin_session_revocation` (PostgreSQL) ou pelo backfill `backfill-admin-emails.ts` (SQLite). |
+
+**Troca de senha (`PUT /api/admin/auth/password`, tela `/admin/conta`):** exige a
+**senha atual** — uma sessão sequestrada não consegue trocar a senha sem conhecê-la —
+e a nova precisa ter ao menos 10 caracteres e ser diferente da atual (validação
+compartilhada com o front). Passa pelo mesmo rate limit do login, já que também
+é alvo de força bruta; o `requireAdmin` vem antes do limiter, então um 401 por
+falta de sessão não consome o balde. Ao trocar, a API grava `passwordChangedAt`,
+**reemite o cookie** com um token novo (mesma validade de um login) e a sessão atual
+segue ativa — todas as **outras** sessões desse admin, inclusive uma sequestrada,
+passam a receber `401`.
+
+**Gestão de administradores (`/api/admin/admins`, tela `/admin/administradores`):**
+qualquer admin autenticado cria, edita e remove outros admins — não há papéis.
+As senhas entram sempre em bcrypt (custo 12) e o `passwordHash` **nunca** sai da
+API. Duas guardas evitam trancar a porta por fora: um admin **não exclui a própria
+conta** (409) e **sempre resta ao menos um** administrador (409). Editar o próprio
+registro reemite o cookie, já que o token carrega nome e e-mail. Redefinir a senha de
+**outro** admin por essa tela é intencional (recuperação de acesso) e derruba as sessões
+dele; a **própria** senha só muda em Minha conta — `PUT /api/admin/admins/:id` com
+`password` no próprio registro responde `403`, senão uma sessão sequestrada trocaria a
+senha do dono sem conhecê-la. Criar novos admins continua possível a partir de qualquer
+sessão: a exigência da senha atual protege a conta, não o conjunto de administradores.
+Excluir um admin invalida as sessões dele na hora (`requireAdmin` não encontra o registro).
 
 **CSRF:** o cookie é `SameSite=Strict`, o CORS aceita apenas `WEB_ORIGIN` com
 `credentials: true`, e a API só aceita JSON. Um site terceiro não consegue enviar
@@ -95,7 +119,7 @@ As fontes são **self-hosted**, então não há origem externa em `font-src`.
 | Superfície | Padrão | Variável |
 | --- | --- | --- |
 | Geral (`/api`) | 300 / 15 min | `RATE_LIMIT_MAX` |
-| Login | 5 falhas / 15 min | `RATE_LIMIT_LOGIN_MAX` |
+| Login e troca de senha | 5 falhas / 15 min | `RATE_LIMIT_LOGIN_MAX` |
 | Fórum | 10 / 15 min | `RATE_LIMIT_FORUM_MAX` |
 | Quiz | 30 / 15 min | `RATE_LIMIT_QUIZ_MAX` |
 
@@ -123,7 +147,7 @@ Apenas erros 5xx registram o stack.
 `e2e/tests/security.spec.ts` verifica a cada execução:
 
 - Todas as rotas `/api/admin/*` respondem **401** sem sessão.
-- Mutações sem sessão são bloqueadas.
+- Mutações sem sessão são bloqueadas — inclusive a troca de senha.
 - O cookie tem `HttpOnly`, `SameSite=Strict` e `Path=/api`.
 - A validação zod rejeita payloads inválidos com `details`.
 - `X-Powered-By` não é exposto.
@@ -132,12 +156,16 @@ Apenas erros 5xx registram o stack.
 `e2e/tests/forum-moderation.spec.ts` verifica que payloads XSS ficam inertes e que
 nada aparece publicamente sem aprovação.
 
+`e2e/tests/admins.spec.ts` cria um administrador pelo painel, confirma que a própria
+conta não pode ser excluída (na tela e na API), troca a senha do novo admin com a
+sessão preservada, entra com a senha nova e remove o registro ao final.
+
 ---
 
 ## Antes de ir para produção
 
 - [ ] `JWT_SECRET` novo (`openssl rand -hex 32`)
-- [ ] `ADMIN_PASSWORD` forte e trocado após o primeiro acesso
+- [ ] `ADMIN_PASSWORD` forte e trocado após o primeiro acesso — agora em `/admin/conta`, sem mexer no `.env`
 - [ ] `POSTGRES_PASSWORD` forte
 - [ ] `NODE_ENV=production` (ativa o `Secure` no cookie)
 - [ ] `TRUST_PROXY=1` (quantidade de proxies à frente da API; some 1 por proxy extra)

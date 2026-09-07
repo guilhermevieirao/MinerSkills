@@ -14,6 +14,8 @@ import {
   Share2,
   Library,
   Settings,
+  UserCog,
+  CircleUserRound,
   LogOut,
   ExternalLink,
   Menu,
@@ -37,6 +39,7 @@ const LINKS = [
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/admin/social', label: 'Redes Sociais', icon: Share2 },
   { to: '/admin/midia', label: 'Mídia', icon: Library },
+  { to: '/admin/administradores', label: 'Administradores', icon: UserCog },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
@@ -73,6 +76,15 @@ export function AdminLayout({ admin, children }: { admin: AdminMe; children: Rea
         </nav>
 
         <div className="ms-admin__sidebar-foot">
+          <NavLink
+            to="/admin/conta"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              cx('ms-admin__link', isActive && 'ms-admin__link--active')
+            }
+          >
+            <CircleUserRound /> Minha conta
+          </NavLink>
           <a href="/" className="ms-admin__link" target="_blank" rel="noopener noreferrer">
             <ExternalLink /> Ver site
           </a>

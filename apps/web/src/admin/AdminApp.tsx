@@ -16,6 +16,8 @@ import { SocialSection } from './sections/SocialSection';
 import { PagesSection } from './sections/PagesSection';
 import { SettingsSection } from './sections/SettingsSection';
 import { MediaSection } from './sections/MediaSection';
+import { AdminsSection } from './sections/AdminsSection';
+import { AccountSection } from './sections/AccountSection';
 import './admin.scss';
 
 export default function AdminApp() {
@@ -52,6 +54,8 @@ export default function AdminApp() {
         <Route path="social" element={<SocialSection />} />
         <Route path="midia" element={<MediaSection />} />
         <Route path="configuracoes" element={<SettingsSection />} />
+        <Route path="administradores" element={<AdminsSection />} />
+        <Route path="conta" element={<AccountSection />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

@@ -24,11 +24,12 @@ datasource db {
 }
 
 model Admin {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  createdAt    DateTime @default(now())
+  id                String    @id @default(cuid())
+  email             String    @unique // sempre normalizado (lib/email.ts)
+  passwordHash      String
+  name              String
+  createdAt         DateTime  @default(now())
+  passwordChangedAt DateTime? // sessões emitidas antes deixam de valer (middleware/auth.ts)
 }
 
 model MediaAsset {

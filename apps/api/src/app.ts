@@ -12,6 +12,7 @@ import { ensureUploadDirs } from './middleware/upload.js';
 
 // routers
 import { authRouter } from './modules/auth/auth.routes.js';
+import { adminsAdminRouter } from './modules/admins/admins.routes.js';
 import { mediaRouter } from './modules/media/media.routes.js';
 import { dashboardAdminRouter } from './modules/dashboard/dashboard.routes.js';
 import {
@@ -104,6 +105,7 @@ export function createApp(): Express {
 
   // ─── Rotas admin ──────────────────────────────────────────
   app.use('/api/admin/auth', authRouter);
+  app.use('/api/admin/admins', adminsAdminRouter);
   app.use('/api/admin/media', mediaRouter);
   app.use('/api/admin/dashboard', dashboardAdminRouter);
   app.use('/api/admin', contentAdminRouter); // /content-blocks, /timeline

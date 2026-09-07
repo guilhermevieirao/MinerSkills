@@ -12,6 +12,7 @@ test.describe('Segurança', () => {
       '/api/admin/member-tags',
       '/api/admin/agenda',
       '/api/admin/social-links',
+      '/api/admin/admins',
     ];
     for (const route of routes) {
       const resp = await request.get(route);
@@ -22,6 +23,13 @@ test.describe('Segurança', () => {
   test('mutações admin sem sessão são bloqueadas', async ({ request }) => {
     const resp = await request.post('/api/admin/posts', {
       data: { title: 'x', excerpt: 'x', contentHtml: '<p>x</p>', published: true },
+    });
+    expect(resp.status()).toBe(401);
+  });
+
+  test('troca de senha sem sessão é bloqueada', async ({ request }) => {
+    const resp = await request.put('/api/admin/auth/password', {
+      data: { currentPassword: 'qualquer-coisa', newPassword: 'SenhaNova12345!' },
     });
     expect(resp.status()).toBe(401);
   });

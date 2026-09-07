@@ -28,6 +28,10 @@ import type {
   Paginated,
   SettingDTO,
   SettingsBulkInput,
+  ChangePasswordInput,
+  AdminUserDTO,
+  AdminUserInput,
+  AdminUserCreateInput,
 } from '@minerskills/shared';
 import { api } from '../lib/api';
 
@@ -181,5 +185,18 @@ export const adminApi = {
     list: () => api.get<SettingDTO[]>('/admin/settings'),
     saveAll: (items: SettingsBulkInput) =>
       api.put<SettingDTO[]>('/admin/settings/bulk', items),
+  },
+
+  auth: {
+    changePassword: (data: ChangePasswordInput) =>
+      api.put<void>('/admin/auth/password', data),
+  },
+
+  admins: {
+    list: () => api.get<AdminUserDTO[]>('/admin/admins'),
+    create: (data: AdminUserCreateInput) => api.post<AdminUserDTO>('/admin/admins', data),
+    update: (id: string, data: AdminUserInput) =>
+      api.put<AdminUserDTO>(`/admin/admins/${id}`, data),
+    remove: (id: string) => api.del(`/admin/admins/${id}`),
   },
 };

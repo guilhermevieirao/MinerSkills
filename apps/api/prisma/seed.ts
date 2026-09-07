@@ -11,6 +11,7 @@ import {
 } from '@minerskills/shared';
 import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
+import { normalizeEmail } from '../src/lib/email.js';
 import { uniquePostSlug, uniqueEncyclopediaSlug } from '../src/lib/slug.js';
 import { UPLOAD_DIRS } from '../src/middleware/upload.js';
 import { seedImage } from './seed-images.js';
@@ -68,10 +69,12 @@ async function clearAll() {
 
 async function seedAdmin() {
   const passwordHash = await bcrypt.hash(env.ADMIN_PASSWORD, 12);
+  // mesma normalização do login e da gestão de admins (lib/email.ts)
+  const email = normalizeEmail(env.ADMIN_EMAIL);
   await prisma.admin.create({
-    data: { email: env.ADMIN_EMAIL, name: env.ADMIN_NAME, passwordHash },
+    data: { email, name: env.ADMIN_NAME, passwordHash },
   });
-  console.log(`  ✓ admin: ${env.ADMIN_EMAIL}`);
+  console.log(`  ✓ admin: ${email}`);
 }
 
 async function seedContentBlocks() {
