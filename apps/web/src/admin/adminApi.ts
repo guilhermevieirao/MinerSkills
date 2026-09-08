@@ -39,6 +39,8 @@ import type {
   ContactStatusInput,
   SeasonDTO,
   SeasonInput,
+  ForumReportDTO,
+  ForumReportStatusInput,
 } from '@minerskills/shared';
 import { api } from '../lib/api';
 
@@ -50,7 +52,14 @@ export interface DashboardStats {
   encyclopedia: { members: number; robots: number };
   awards: number;
   agenda: number;
-  forum: { pending: number; pendingTopics: number; pendingReplies: number; approvedTopics: number };
+  forum: {
+    pending: number;
+    pendingTopics: number;
+    pendingReplies: number;
+    approvedTopics: number;
+    /** Denúncias abertas. */
+    reports: number;
+  };
   sponsors: number;
   seasons: number;
   contact: { new: number };
@@ -166,6 +175,10 @@ export const adminApi = {
       api.patch(`/admin/forum/replies/${id}`, { status }),
     removeTopic: (id: string) => api.del(`/admin/forum/topics/${id}`),
     removeReply: (id: string) => api.del(`/admin/forum/replies/${id}`),
+    reports: (status: 'open' | 'resolved' | 'all' = 'open') =>
+      api.get<ForumReportDTO[]>('/admin/forum/reports', status === 'all' ? undefined : { status }),
+    setReport: (id: string, data: ForumReportStatusInput) =>
+      api.patch<ForumReportDTO>(`/admin/forum/reports/${id}`, data),
   },
 
   awards: {

@@ -46,7 +46,12 @@ const LINKS: Array<{
   { to: '/admin/quiz', label: 'Quiz', icon: HelpCircle },
   { to: '/admin/equipe', label: 'Equipe', icon: Users, end: true },
   { to: '/admin/equipe/tags', label: 'Tags da equipe', icon: Tags },
-  { to: '/admin/forum', label: 'Fórum', icon: MessagesSquare, badge: (s) => s.forum.pending },
+  {
+    to: '/admin/forum',
+    label: 'Fórum',
+    icon: MessagesSquare,
+    badge: (s) => s.forum.pending + s.forum.reports,
+  },
   { to: '/admin/premios', label: 'Prêmios', icon: Award },
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/admin/social', label: 'Redes Sociais', icon: Share2 },

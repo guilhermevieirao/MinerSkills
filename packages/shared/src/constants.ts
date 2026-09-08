@@ -87,6 +87,18 @@ export const GENERATION_LABELS: Record<Generation, string> = {
 export const MODERATION_STATUSES = ['pending', 'approved', 'rejected'] as const;
 export type ModerationStatus = (typeof MODERATION_STATUSES)[number];
 
+/** Motivos de denúncia de conteúdo do fórum. */
+export const REPORT_REASONS = ['spam', 'ofensivo', 'off-topic', 'outro'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  spam: 'Spam ou propaganda',
+  ofensivo: 'Conteúdo ofensivo',
+  'off-topic': 'Fora do assunto',
+  outro: 'Outro motivo',
+};
+export const REPORT_STATUSES = ['open', 'resolved'] as const;
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
+
 // ─── Mídia ──────────────────────────────────────────────────
 export const MEDIA_KINDS = ['image', 'video'] as const;
 export type MediaKind = (typeof MEDIA_KINDS)[number];

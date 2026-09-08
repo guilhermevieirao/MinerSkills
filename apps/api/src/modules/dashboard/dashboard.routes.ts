@@ -26,6 +26,7 @@ dashboardAdminRouter.get(
       sponsors,
       seasons,
       contactNew,
+      forumReports,
     ] = await Promise.all([
       prisma.post.count(),
       prisma.post.count({ where: { published: true } }),
@@ -43,6 +44,7 @@ dashboardAdminRouter.get(
       prisma.sponsor.count(),
       prisma.season.count(),
       prisma.contactMessage.count({ where: { status: 'new' } }),
+      prisma.forumReport.count({ where: { status: 'open' } }),
     ]);
 
     res.json({
@@ -58,6 +60,7 @@ dashboardAdminRouter.get(
         pendingTopics,
         pendingReplies,
         approvedTopics,
+        reports: forumReports,
       },
       sponsors,
       seasons,

@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { PageTransition } from '../motion/PageTransition';
+import { RouteAnnouncer } from './RouteAnnouncer';
+import { NavigationProgress } from './NavigationProgress';
 
 /** Estado de navegação reconhecido pelo layout (`navigate(to, { state })`). */
 interface LayoutNavState {
@@ -53,9 +55,15 @@ export function PublicLayout() {
   const outlet = useOutlet();
   return (
     <>
+      {/* Primeiro elemento focável da página: leva o teclado direto ao conteúdo */}
+      <a href="#conteudo" className="ms-skip-link">
+        Pular para o conteúdo
+      </a>
       <ScrollToTop />
+      <RouteAnnouncer />
+      <NavigationProgress />
       <Navbar />
-      <main className="ms-main">
+      <main className="ms-main" id="conteudo" tabIndex={-1}>
         <AnimatePresence mode="wait">
           <PageTransition key={routeId}>{outlet}</PageTransition>
         </AnimatePresence>

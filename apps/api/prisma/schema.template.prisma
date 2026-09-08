@@ -239,7 +239,9 @@ model ForumTopic {
   status      String    @default("pending") // pending | approved | rejected
   createdAt   DateTime  @default(now())
   moderatedAt DateTime?
+  moderatedBy String? // id do admin que moderou (sem FK: admins podem ser excluídos)
   replies     ForumReply[]
+  reports     ForumReport[]
 
   @@index([status, createdAt])
 }
@@ -252,9 +254,31 @@ model ForumReply {
   status      String    @default("pending")
   createdAt   DateTime  @default(now())
   moderatedAt DateTime?
+  moderatedBy String? // id do admin que moderou (sem FK)
   topic       ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reports     ForumReport[]
 
   @@index([topicId, status])
+}
+
+// Denúncias de visitantes sobre tópicos/respostas aprovados; fila própria no painel.
+model ForumReport {
+  id         String    @id @default(cuid())
+  topicId    String?
+  replyId    String?
+  reason     String // spam | ofensivo | off-topic | outro (REPORT_REASONS)
+  details    String?
+  ipHash     String? // sha256(ip + segredo): dedupe por alvo/24h, nunca o IP em claro
+  status     String    @default("open") // open | resolved (REPORT_STATUSES)
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedBy String? // id do admin (sem FK)
+  topic      ForumTopic? @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reply      ForumReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([topicId])
+  @@index([replyId])
 }
 
 model Award {
