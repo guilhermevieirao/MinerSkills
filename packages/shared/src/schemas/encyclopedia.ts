@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ENTRY_KINDS, GENERATIONS } from '../constants.js';
 import { memberTagKeySchema } from './member-tag.js';
 import type { MediaAssetDTO } from './media.js';
+import type { SeasonRefDTO } from './season.js';
 
 export const encyclopediaEntrySchema = z.object({
   kind: z.enum(ENTRY_KINDS),
@@ -15,6 +16,8 @@ export const encyclopediaEntrySchema = z.object({
   isFormer: z.boolean().default(false),
   order: z.number().int().min(0).default(0),
   photoId: z.string().nullish(),
+  /** Temporada (só faz sentido para robôs); validada na API. */
+  seasonId: z.string().nullish(),
   /** Chaves de tags existentes (validadas contra o banco no servidor). */
   tags: z.array(memberTagKeySchema).max(30).default([]),
 });
@@ -42,5 +45,8 @@ export interface EncyclopediaEntryDTO {
   isFormer: boolean;
   order: number;
   photo: MediaAssetDTO | null;
+  seasonId: string | null;
+  /** Temporada vinculada (robôs); `season` acima é o rótulo de texto livre. */
+  seasonRef: SeasonRefDTO | null;
   tags: string[];
 }

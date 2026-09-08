@@ -99,7 +99,7 @@ export async function processUpload(
 
 // ─── Usos da mídia ──────────────────────────────────────────
 
-/** As 7 relações de MediaAsset, no formato aceito por `include: { _count: { select } }`. */
+/** As 9 relações de MediaAsset, no formato aceito por `include: { _count: { select } }`. */
 export const mediaUsageCountSelect = {
   postCovers: true,
   postMedia: true,
@@ -108,6 +108,8 @@ export const mediaUsageCountSelect = {
   contentBlocks: true,
   encyclopediaPhoto: true,
   awards: true,
+  sponsors: true,
+  seasons: true,
 } as const;
 
 type MediaUsageCount = Record<keyof typeof mediaUsageCountSelect, number>;
@@ -122,6 +124,8 @@ export function summarizeMediaUsage(count: MediaUsageCount): MediaUsageSummary {
     contentBlock: count.contentBlocks,
     encyclopedia: count.encyclopediaPhoto,
     award: count.awards,
+    sponsor: count.sponsors,
+    season: count.seasons,
   };
   const total = Object.values(byKind).reduce((sum, n) => sum + n, 0);
   return { total, byKind };
@@ -152,6 +156,8 @@ export async function getMediaUsage(id: string): Promise<MediaUsageDTO> {
       },
       encyclopediaPhoto: { select: { slug: true, name: true }, orderBy: { name: 'asc' } },
       awards: { select: { id: true, title: true }, orderBy: { year: 'desc' } },
+      sponsors: { select: { id: true, name: true }, orderBy: { order: 'asc' } },
+      seasons: { select: { id: true, name: true }, orderBy: { year: 'desc' } },
     },
   });
   if (!media) throw ApiError.notFound('Mídia não encontrada');
@@ -169,6 +175,8 @@ export async function getMediaUsage(id: string): Promise<MediaUsageDTO> {
     contentBlocks: media.contentBlocks,
     encyclopedia: media.encyclopediaPhoto,
     awards: media.awards,
+    sponsors: media.sponsors,
+    seasons: media.seasons,
   };
 }
 

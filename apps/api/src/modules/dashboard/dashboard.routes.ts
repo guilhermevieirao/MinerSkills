@@ -23,6 +23,9 @@ dashboardAdminRouter.get(
       pendingTopics,
       pendingReplies,
       approvedTopics,
+      sponsors,
+      seasons,
+      contactNew,
     ] = await Promise.all([
       prisma.post.count(),
       prisma.post.count({ where: { published: true } }),
@@ -37,6 +40,9 @@ dashboardAdminRouter.get(
       prisma.forumTopic.count({ where: { status: 'pending' } }),
       prisma.forumReply.count({ where: { status: 'pending' } }),
       prisma.forumTopic.count({ where: { status: 'approved' } }),
+      prisma.sponsor.count(),
+      prisma.season.count(),
+      prisma.contactMessage.count({ where: { status: 'new' } }),
     ]);
 
     res.json({
@@ -53,6 +59,9 @@ dashboardAdminRouter.get(
         pendingReplies,
         approvedTopics,
       },
+      sponsors,
+      seasons,
+      contact: { new: contactNew },
     });
   }),
 );

@@ -29,7 +29,7 @@ export const mediaQuerySchema = paginationQuerySchema.extend({
 });
 export type MediaQuery = z.infer<typeof mediaQuerySchema>;
 
-/** Referências à mídia, por relação (postCover, postMedia, gallery, timeline, contentBlock, encyclopedia, award). */
+/** Referências à mídia, por relação (postCover, postMedia, gallery, timeline, contentBlock, encyclopedia, award, sponsor, season). */
 export interface MediaUsageSummary {
   total: number;
   byKind: Record<string, number>;
@@ -49,4 +49,6 @@ export interface MediaUsageDTO {
   contentBlocks: { page: string; key: string }[];
   encyclopedia: { slug: string; name: string }[];
   awards: { id: string; title: string }[];
+  sponsors: { id: string; name: string }[];
+  seasons: { id: string; name: string }[];
 }

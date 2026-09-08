@@ -3,10 +3,10 @@ import { NavLink } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { cx } from '../../lib/format';
 import { LogoMark } from '../brand/Logo';
-import { NAV_ITEMS, JOIN_ITEM } from './navItems';
+import { FOOTER_ITEMS } from './navItems';
 import './MobileNav.scss';
 
-const ALL = [...NAV_ITEMS, JOIN_ITEM];
+const ALL = FOOTER_ITEMS;
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (

@@ -128,6 +128,38 @@ export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
 export const EDITABLE_PAGES = ['landing', 'historia', 'como-entrar'] as const;
 export type EditablePage = (typeof EDITABLE_PAGES)[number];
 
+// ─── Patrocinadores ─────────────────────────────────────────
+export const SPONSOR_TIERS = ['principal', 'apoio', 'parceiro'] as const;
+export type SponsorTier = (typeof SPONSOR_TIERS)[number];
+export const SPONSOR_TIER_LABELS: Record<SponsorTier, string> = {
+  principal: 'Patrocínio principal',
+  apoio: 'Apoio institucional',
+  parceiro: 'Parceiro',
+};
+/** Patrocinadores iniciais (seed, migration e backfill) — hoje fixos no rodapé. */
+export const DEFAULT_SPONSORS: ReadonlyArray<{ name: string; tier: SponsorTier; url: string | null }> = [
+  { name: 'FIEMG', tier: 'principal', url: 'https://www.fiemg.com.br' },
+  { name: 'SESI', tier: 'apoio', url: 'https://www.fiemg.com.br/sesi' },
+  { name: 'SENAI', tier: 'apoio', url: 'https://www.fiemg.com.br/senai' },
+];
+
+// ─── Contato / inscrição ────────────────────────────────────
+export const CONTACT_KINDS = ['inscricao', 'contato'] as const;
+export type ContactKind = (typeof CONTACT_KINDS)[number];
+export const CONTACT_KIND_LABELS: Record<ContactKind, string> = {
+  inscricao: 'Inscrição',
+  contato: 'Contato',
+};
+export const CONTACT_STATUSES = ['new', 'read', 'archived'] as const;
+export type ContactStatus = (typeof CONTACT_STATUSES)[number];
+export const CONTACT_STATUS_LABELS: Record<ContactStatus, string> = {
+  new: 'Nova',
+  read: 'Lida',
+  archived: 'Arquivada',
+};
+/** Campo-armadilha dos formulários públicos: preenchido só por robôs (a API descarta em silêncio). */
+export const HONEYPOT_FIELD = 'website';
+
 // ─── Configurações editáveis (Setting chave/valor) ──────────
 /**
  * Chaves de configuração que o painel expõe em /admin/configuracoes. O model

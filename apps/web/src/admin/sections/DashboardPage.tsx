@@ -10,6 +10,9 @@ import {
   Award,
   CalendarDays,
   MessagesSquare,
+  Handshake,
+  Layers,
+  Inbox,
   AlertCircle,
 } from 'lucide-react';
 import { adminApi } from '../adminApi';
@@ -33,6 +36,8 @@ export function DashboardPage() {
     { label: 'Prêmios', value: data.awards, icon: Award, to: '/admin/premios' },
     { label: 'Eventos na agenda', value: data.agenda, icon: CalendarDays, to: '/admin/agenda' },
     { label: 'Tópicos aprovados', value: data.forum.approvedTopics, icon: MessagesSquare, to: '/admin/forum' },
+    { label: 'Patrocinadores', value: data.sponsors, icon: Handshake, to: '/admin/patrocinadores' },
+    { label: 'Temporadas', value: data.seasons, icon: Layers, to: '/admin/temporadas' },
   ];
 
   return (
@@ -43,6 +48,16 @@ export function DashboardPage() {
           <p>Visão geral da plataforma MinerSkills.</p>
         </div>
       </div>
+
+      {data.contact.new > 0 && (
+        <Link to="/admin/mensagens" className="ms-dash-alert">
+          <Inbox />
+          <span>
+            <strong>{data.contact.new}</strong>{' '}
+            {data.contact.new === 1 ? 'mensagem nova' : 'mensagens novas'} na caixa de entrada
+          </span>
+        </Link>
+      )}
 
       {data.forum.pending > 0 && (
         <Link to="/admin/forum" className="ms-dash-alert">

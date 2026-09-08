@@ -14,6 +14,8 @@ import { LinkButton, SectionHeading } from '../components/ui';
 import { Reveal, RevealGroup, RevealItem } from '../components/motion/Reveal';
 import { MarqueeStrip } from '../components/motion/MarqueeStrip';
 import { HexPattern } from '../components/motion/HexPattern';
+import { NextCompetition } from '../components/layout/NextCompetition';
+import { SponsorsStrip } from '../components/layout/SponsorsStrip';
 import { StatCounter } from '../components/motion/StatCounter';
 import { LogoBadge } from '../components/brand/Logo';
 import { mediaUrl } from '../lib/format';
@@ -99,6 +101,9 @@ export function HomePage() {
 
       <MarqueeStrip />
 
+      {/* Próxima competição (contador regressivo); não renderiza sem evento futuro */}
+      <NextCompetition />
+
       {/* ─── SOBRE ────────────────────────────────────────── */}
       <section className="ms-section ms-container" id="sobre">
         <div className="ms-about">
@@ -159,6 +164,9 @@ export function HomePage() {
           </RevealGroup>
         </div>
       </section>
+
+      {/* ─── PATROCINADORES ───────────────────────────────── */}
+      <SponsorsStrip />
 
       {/* ─── CTA ──────────────────────────────────────────── */}
       <section className="ms-section ms-container">

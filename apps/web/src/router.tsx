@@ -14,6 +14,8 @@ import { ForumTopicPage } from './pages/ForumTopicPage';
 import { PremiosPage } from './pages/PremiosPage';
 import { AgendaPage } from './pages/AgendaPage';
 import { ComoEntrarPage } from './pages/ComoEntrarPage';
+import { TemporadasPage } from './pages/TemporadasPage';
+import { ContatoPage } from './pages/ContatoPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 // Área admin: chunk separado, carregado sob demanda (sem link público)
@@ -42,6 +44,8 @@ export const router = createBrowserRouter([
       { path: '/premios', element: <PremiosPage /> },
       { path: '/agenda', element: <AgendaPage /> },
       { path: '/como-entrar', element: <ComoEntrarPage /> },
+      { path: '/temporadas', element: <TemporadasPage /> },
+      { path: '/contato', element: <ContatoPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

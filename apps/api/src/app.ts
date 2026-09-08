@@ -33,6 +33,9 @@ import {
 import { forumPublicRouter, forumAdminRouter } from './modules/forum/forum.routes.js';
 import { awardsPublicRouter, awardsAdminRouter } from './modules/awards/awards.routes.js';
 import { agendaPublicRouter, agendaAdminRouter } from './modules/agenda/agenda.routes.js';
+import { sponsorsPublicRouter, sponsorsAdminRouter } from './modules/sponsors/sponsors.routes.js';
+import { contactPublicRouter, contactAdminRouter } from './modules/contact/contact.routes.js';
+import { seasonsPublicRouter, seasonsAdminRouter } from './modules/seasons/seasons.routes.js';
 import {
   socialPublicRouter,
   socialAdminRouter,
@@ -102,6 +105,9 @@ export function createApp(): Express {
   app.use('/api/agenda', agendaPublicRouter);
   app.use('/api/social-links', socialPublicRouter);
   app.use('/api/settings', settingsPublicRouter);
+  app.use('/api/sponsors', sponsorsPublicRouter);
+  app.use('/api/contact', contactPublicRouter);
+  app.use('/api/seasons', seasonsPublicRouter);
 
   // ─── Rotas admin ──────────────────────────────────────────
   app.use('/api/admin/auth', authRouter);
@@ -119,6 +125,9 @@ export function createApp(): Express {
   app.use('/api/admin/agenda', agendaAdminRouter);
   app.use('/api/admin/social-links', socialAdminRouter);
   app.use('/api/admin/settings', settingsAdminRouter);
+  app.use('/api/admin/sponsors', sponsorsAdminRouter);
+  app.use('/api/admin/contact', contactAdminRouter);
+  app.use('/api/admin/seasons', seasonsAdminRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -32,6 +32,13 @@ import type {
   AdminUserDTO,
   AdminUserInput,
   AdminUserCreateInput,
+  SponsorDTO,
+  SponsorInput,
+  ContactMessageDTO,
+  ContactQuery,
+  ContactStatusInput,
+  SeasonDTO,
+  SeasonInput,
 } from '@minerskills/shared';
 import { api } from '../lib/api';
 
@@ -44,6 +51,9 @@ export interface DashboardStats {
   awards: number;
   agenda: number;
   forum: { pending: number; pendingTopics: number; pendingReplies: number; approvedTopics: number };
+  sponsors: number;
+  seasons: number;
+  contact: { new: number };
 }
 
 export interface AdminQuizQuestion {
@@ -190,6 +200,29 @@ export const adminApi = {
   auth: {
     changePassword: (data: ChangePasswordInput) =>
       api.put<void>('/admin/auth/password', data),
+  },
+
+  sponsors: {
+    list: () => api.get<SponsorDTO[]>('/admin/sponsors'),
+    create: (data: SponsorInput) => api.post<SponsorDTO>('/admin/sponsors', data),
+    update: (id: string, data: SponsorInput) => api.put<SponsorDTO>(`/admin/sponsors/${id}`, data),
+    reorder: (ids: string[]) => api.put<void>('/admin/sponsors/reorder', { ids }),
+    remove: (id: string) => api.del(`/admin/sponsors/${id}`),
+  },
+
+  contact: {
+    list: (query?: Partial<ContactQuery>) =>
+      api.get<Paginated<ContactMessageDTO>>('/admin/contact', query),
+    setStatus: (id: string, data: ContactStatusInput) =>
+      api.patch<ContactMessageDTO>(`/admin/contact/${id}`, data),
+    remove: (id: string) => api.del(`/admin/contact/${id}`),
+  },
+
+  seasons: {
+    list: () => api.get<SeasonDTO[]>('/admin/seasons'),
+    create: (data: SeasonInput) => api.post<SeasonDTO>('/admin/seasons', data),
+    update: (id: string, data: SeasonInput) => api.put<SeasonDTO>(`/admin/seasons/${id}`, data),
+    remove: (id: string) => api.del(`/admin/seasons/${id}`),
   },
 
   admins: {

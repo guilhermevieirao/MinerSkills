@@ -52,6 +52,8 @@ model MediaAsset {
   galleryPhotos     GalleryPhoto[]
   encyclopediaPhoto EncyclopediaEntry[]
   awards            Award[]
+  sponsors          Sponsor[]
+  seasons           Season[]
 }
 
 model ContentBlock {
@@ -209,11 +211,14 @@ model EncyclopediaEntry {
   order      Int     @default(0)
   photoId    String?
   photo      MediaAsset? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  seasonId   String? // temporada (robôs); SetNull ao excluir a temporada. `season` (texto) é o rótulo livre antigo
+  seasonRef  Season? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now())
 
   tags EncyclopediaTag[]
 
   @@index([kind, order])
+  @@index([seasonId])
 }
 
 model EncyclopediaTag {
@@ -262,8 +267,11 @@ model Award {
   order       Int     @default(0)
   mediaId     String?
   media       MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  seasonId    String?
+  season      Season? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
 
   @@index([year])
+  @@index([seasonId])
 }
 
 model AgendaEvent {
@@ -274,6 +282,7 @@ model AgendaEvent {
   startsAt    DateTime
   endsAt      DateTime?
   kind        String // competicao | evento | processo-seletivo | workshop | outro
+  url         String? // link de inscrição/detalhes do evento
   published   Boolean   @default(true)
 
   @@index([startsAt])
@@ -288,6 +297,61 @@ model SocialLink {
   active   Boolean @default(true)
 
   @@index([order])
+}
+
+// Patrocinadores e parceiros exibidos na Home e no rodapé.
+model Sponsor {
+  id        String   @id @default(cuid())
+  name      String
+  url       String?
+  tier      String // principal | apoio | parceiro (SPONSOR_TIERS)
+  logoId    String?
+  logo      MediaAsset? @relation(fields: [logoId], references: [id], onDelete: SetNull)
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([active, order])
+}
+
+// Mensagens do formulário público (inscrição no processo seletivo e contato).
+model ContactMessage {
+  id        String    @id @default(cuid())
+  kind      String // inscricao | contato (CONTACT_KINDS)
+  name      String
+  email     String
+  phone     String?
+  school    String?
+  grade     String?
+  message   String
+  status    String    @default("new") // new | read | archived (CONTACT_STATUSES)
+  ipHash    String? // sha256(ip + segredo): só para dedupe/abuso, nunca o IP em claro
+  userAgent String?
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([status, createdAt])
+  @@index([kind, createdAt])
+}
+
+// Temporadas da FRC (jogo do ano): agrupam robôs e prêmios; eventos vêm pelo ano.
+model Season {
+  id        String   @id @default(cuid())
+  name      String // Reefscape
+  slug      String   @unique
+  year      Int
+  game      String? // nome oficial do jogo (ex.: REEFSCAPE presented by Haas)
+  summary   String?
+  badgeId   String?
+  badge     MediaAsset? @relation(fields: [badgeId], references: [id], onDelete: SetNull)
+  order     Int      @default(0)
+  isCurrent Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  entries EncyclopediaEntry[]
+  awards  Award[]
+
+  @@index([year])
 }
 
 model Setting {

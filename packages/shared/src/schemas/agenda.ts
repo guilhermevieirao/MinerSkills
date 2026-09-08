@@ -9,9 +9,10 @@ export const agendaEventSchema = z
     startsAt: z.string().datetime({ offset: true }),
     endsAt: z.string().datetime({ offset: true }).nullish(),
     kind: z.enum(AGENDA_KINDS),
+    url: z.string().trim().url('URL inválida').max(400).nullish(),
     published: z.boolean().default(true),
   })
-  .refine((e) => !e.endsAt || new Date(e.endsAt) >= new Date(e.startsAt), {
+  .refine((e) => !e.endsAt || new Date(e.endsAt) > new Date(e.startsAt), {
     message: 'A data de término deve ser posterior ao início',
     path: ['endsAt'],
   });
@@ -30,5 +31,6 @@ export interface AgendaEventDTO {
   startsAt: string;
   endsAt: string | null;
   kind: string;
+  url: string | null;
   published: boolean;
 }

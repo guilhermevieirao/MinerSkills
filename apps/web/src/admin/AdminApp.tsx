@@ -18,6 +18,9 @@ import { SettingsSection } from './sections/SettingsSection';
 import { MediaSection } from './sections/MediaSection';
 import { AdminsSection } from './sections/AdminsSection';
 import { AccountSection } from './sections/AccountSection';
+import { SponsorsSection } from './sections/SponsorsSection';
+import { InboxSection } from './sections/InboxSection';
+import { SeasonsSection } from './sections/SeasonsSection';
 import './admin.scss';
 
 export default function AdminApp() {
@@ -56,6 +59,9 @@ export default function AdminApp() {
         <Route path="configuracoes" element={<SettingsSection />} />
         <Route path="administradores" element={<AdminsSection />} />
         <Route path="conta" element={<AccountSection />} />
+        <Route path="patrocinadores" element={<SponsorsSection />} />
+        <Route path="mensagens" element={<InboxSection />} />
+        <Route path="temporadas" element={<SeasonsSection />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

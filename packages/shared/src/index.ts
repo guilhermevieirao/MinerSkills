@@ -1,4 +1,5 @@
 export * from './constants.js';
+export * from './calendar.js';
 export * from './env.schema.js';
 export * from './schemas/common.js';
 export * from './schemas/auth.js';
@@ -13,3 +14,6 @@ export * from './schemas/forum.js';
 export * from './schemas/award.js';
 export * from './schemas/agenda.js';
 export * from './schemas/social.js';
+export * from './schemas/sponsor.js';
+export * from './schemas/contact.js';
+export * from './schemas/season.js';

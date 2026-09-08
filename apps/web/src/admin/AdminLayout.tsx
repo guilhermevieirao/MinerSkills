@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   FileText,
@@ -12,6 +13,9 @@ import {
   Award,
   CalendarDays,
   Share2,
+  Handshake,
+  Layers,
+  Inbox,
   Library,
   Settings,
   UserCog,
@@ -23,10 +27,18 @@ import {
 } from 'lucide-react';
 import type { AdminMe } from '@minerskills/shared';
 import { useLogout } from './useAdminAuth';
+import { adminApi, type DashboardStats } from './adminApi';
 import { LogoMark } from '../components/brand/Logo';
 import { cx } from '../lib/format';
 
-const LINKS = [
+/** Itens da sidebar; `badge` lê um contador do dashboard (pendências) e some quando zero. */
+const LINKS: Array<{
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+  badge?: (stats: DashboardStats) => number;
+}> = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/paginas', label: 'Páginas & Timeline', icon: FileText },
   { to: '/admin/blog', label: 'Blog', icon: Newspaper },
@@ -34,10 +46,13 @@ const LINKS = [
   { to: '/admin/quiz', label: 'Quiz', icon: HelpCircle },
   { to: '/admin/equipe', label: 'Equipe', icon: Users, end: true },
   { to: '/admin/equipe/tags', label: 'Tags da equipe', icon: Tags },
-  { to: '/admin/forum', label: 'Fórum', icon: MessagesSquare },
+  { to: '/admin/forum', label: 'Fórum', icon: MessagesSquare, badge: (s) => s.forum.pending },
   { to: '/admin/premios', label: 'Prêmios', icon: Award },
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/admin/social', label: 'Redes Sociais', icon: Share2 },
+  { to: '/admin/patrocinadores', label: 'Patrocinadores', icon: Handshake },
+  { to: '/admin/temporadas', label: 'Temporadas', icon: Layers },
+  { to: '/admin/mensagens', label: 'Mensagens', icon: Inbox, badge: (s) => s.contact.new },
   { to: '/admin/midia', label: 'Mídia', icon: Library },
   { to: '/admin/administradores', label: 'Administradores', icon: UserCog },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
@@ -46,6 +61,14 @@ const LINKS = [
 export function AdminLayout({ admin, children }: { admin: AdminMe; children: ReactNode }) {
   const logout = useLogout();
   const [open, setOpen] = useState(false);
+  // Contadores das badges (mensagens novas, moderação pendente): a mesma query
+  // do dashboard, renovada a cada minuto enquanto o painel está aberto.
+  const { data: stats } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: adminApi.dashboard,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
 
   return (
     <div className="ms-admin">
@@ -71,6 +94,11 @@ export function AdminLayout({ admin, children }: { admin: AdminMe; children: Rea
             >
               <l.icon />
               {l.label}
+              {stats && l.badge && l.badge(stats) > 0 && (
+                <span className="ms-admin__badge" aria-label={`${l.badge(stats)} pendentes`}>
+                  {l.badge(stats)}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

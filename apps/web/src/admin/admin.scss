@@ -166,6 +166,21 @@
     }
   }
 
+  &__badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: var(--ms-radius-pill);
+    background: var(--ms-green);
+    color: #0a0a0a;
+    font-size: var(--ms-text-xs);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   &__sidebar-foot {
     display: flex;
     flex-direction: column;

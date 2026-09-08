@@ -183,6 +183,8 @@ function usageGroups(usage: MediaUsageDTO): { label: string; items: string[] }[]
     { label: 'Blocos de conteúdo', items: usage.contentBlocks.map((b) => `${b.page} / ${b.key}`) },
     { label: 'Equipe', items: usage.encyclopedia.map((e) => e.name) },
     { label: 'Prêmios', items: usage.awards.map((a) => a.title) },
+    { label: 'Patrocinadores', items: usage.sponsors.map((s) => s.name) },
+    { label: 'Temporadas', items: usage.seasons.map((s) => s.name) },
   ].filter((g) => g.items.length > 0);
 }
 
