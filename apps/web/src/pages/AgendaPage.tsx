@@ -1,12 +1,29 @@
 import { useMemo } from 'react';
-import { CalendarDays, MapPin, CalendarClock } from 'lucide-react';
-import { AGENDA_KIND_LABELS, type AgendaKind } from '@minerskills/shared';
+import {
+  CalendarDays,
+  CalendarPlus,
+  CalendarClock,
+  Download,
+  ExternalLink,
+  MapPin,
+  Rss,
+} from 'lucide-react';
+import {
+  AGENDA_KIND_LABELS,
+  googleCalendarUrl,
+  type AgendaEventDTO,
+  type AgendaKind,
+} from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
 import { useAgenda } from '../features/agenda/useAgenda';
-import { Loader, EmptyState, Tag } from '../components/ui';
+import { Loader, EmptyState, LinkButton, Tag } from '../components/ui';
 import { Reveal } from '../components/motion/Reveal';
-import { formatDateTime } from '../lib/format';
+import { formatDateTime, isWebUrl } from '../lib/format';
+import { API_URL } from '../lib/api';
 import './AgendaPage.scss';
+
+/** Arquivo .ics com todos os eventos publicados (assinável por qualquer calendário). */
+const AGENDA_ICS_URL = `${API_URL}/agenda/ics`;
 
 export function AgendaPage() {
   const { data, isLoading } = useAgenda();
@@ -40,9 +57,14 @@ export function AgendaPage() {
         ) : (
           <div className="ms-agenda">
             <div>
-              <h2 className="ms-agenda__group-title">
-                <CalendarClock /> Próximos eventos
-              </h2>
+              <div className="ms-agenda__group-head">
+                <h2 className="ms-agenda__group-title">
+                  <CalendarClock /> Próximos eventos
+                </h2>
+                <a className="ms-agenda__subscribe" href={AGENDA_ICS_URL}>
+                  <Rss /> Assinar agenda (.ics)
+                </a>
+              </div>
               {upcoming.length === 0 ? (
                 <p className="ms-agenda__empty">Nenhum evento futuro no momento.</p>
               ) : (
@@ -78,7 +100,7 @@ function EventCard({
   delay,
   highlight,
 }: {
-  event: import('@minerskills/shared').AgendaEventDTO;
+  event: AgendaEventDTO;
   delay: number;
   highlight?: boolean;
 }) {
@@ -108,6 +130,23 @@ function EventCard({
                 <MapPin /> {event.location}
               </span>
             )}
+          </div>
+          <div className="ms-event__actions">
+            {isWebUrl(event.url) && (
+              <LinkButton to={event.url} external size="sm">
+                Inscrever-se <ExternalLink />
+              </LinkButton>
+            )}
+            <LinkButton to={googleCalendarUrl(event)} external size="sm" variant="outline">
+              <CalendarPlus /> Google Calendar
+            </LinkButton>
+            <a
+              className="ms-btn ms-btn--ghost ms-btn--sm"
+              href={`${API_URL}/agenda/${event.id}/ics`}
+              download
+            >
+              <Download /> .ics
+            </a>
           </div>
         </div>
       </article>

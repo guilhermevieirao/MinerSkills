@@ -138,6 +138,7 @@ function AgendaForm({
     startsAt: initial ? toLocalInput(initial.startsAt) : '',
     endsAt: initial?.endsAt ? toLocalInput(initial.endsAt) : '',
     kind: (initial?.kind as AgendaKind) ?? 'evento',
+    url: initial?.url ?? '',
     published: initial?.published ?? true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -153,6 +154,7 @@ function AgendaForm({
       startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : '',
       endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
       kind: form.kind,
+      url: form.url.trim() || null,
       published: form.published,
     };
     const parsed = agendaEventSchema.safeParse(payload);
@@ -177,7 +179,7 @@ function AgendaForm({
 
   return (
     <Modal title={initial ? 'Editar evento' : 'Novo evento'} onClose={onClose}>
-      <form onSubmit={save}>
+      <form onSubmit={save} noValidate>
         <Field label="Título" error={errors.title}>
           <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
         </Field>
@@ -217,6 +219,19 @@ function AgendaForm({
             <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
           </Field>
         </div>
+        <Field
+          label="Link de inscrição ou detalhes (opcional)"
+          hint="Vira o botão Inscrever-se na agenda pública e o link do evento no arquivo .ics."
+          error={errors.url}
+        >
+          <Input
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            value={form.url}
+            onChange={(e) => setForm({ ...form, url: e.target.value })}
+          />
+        </Field>
         <label className="ms-checkbox">
           <input
             type="checkbox"

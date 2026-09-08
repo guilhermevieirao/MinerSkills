@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import type { AgendaEvent } from '@prisma/client';
 import {
   agendaEventSchema,
@@ -7,6 +7,9 @@ import {
   type AgendaEventInput,
 } from '@minerskills/shared';
 import { prisma } from '../../lib/prisma.js';
+import { env } from '../../config/env.js';
+import { ApiError } from '../../lib/errors.js';
+import { buildCalendar } from '../../lib/ics.js';
 import { asyncHandler } from '../../middleware/asyncHandler.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAdmin } from '../../middleware/auth.js';
@@ -20,6 +23,7 @@ function eventDTO(e: AgendaEvent): AgendaEventDTO {
     startsAt: e.startsAt.toISOString(),
     endsAt: e.endsAt?.toISOString() ?? null,
     kind: e.kind,
+    url: e.url,
     published: e.published,
   };
 }
@@ -32,8 +36,19 @@ function toData(input: AgendaEventInput) {
     startsAt: new Date(input.startsAt),
     endsAt: input.endsAt ? new Date(input.endsAt) : null,
     kind: input.kind,
+    url: input.url || null,
     published: input.published,
   };
+}
+
+const CALENDAR_NAME = 'Agenda MinerSkills';
+
+/** Responde um documento iCalendar como download, com cache curto (5 min). */
+function sendCalendar(res: Response, filename: string, events: AgendaEventDTO[]) {
+  res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(buildCalendar(events, { siteUrl: env.WEB_ORIGIN, name: CALENDAR_NAME }));
 }
 
 export const agendaPublicRouter = Router();
@@ -57,6 +72,35 @@ agendaPublicRouter.get(
       orderBy: { startsAt: 'asc' },
     });
     res.json(events.map(eventDTO));
+  }),
+);
+
+/**
+ * Exportação iCalendar. O router é montado em `/api/agenda`, então as URLs são
+ * `/api/agenda/ics` e `/api/agenda/:id/ics` — e não `/api/agenda.ics`: o mount
+ * do Express casa o prefixo por segmento de caminho, e `/api/agenda.ics` é um
+ * segmento diferente que nunca chega a este router. As duas rotas ficam
+ * registradas ANTES de qualquer `/:id` para "ics" nunca ser lido como id.
+ */
+agendaPublicRouter.get(
+  '/ics',
+  asyncHandler(async (_req, res) => {
+    const events = await prisma.agendaEvent.findMany({
+      where: { published: true },
+      orderBy: { startsAt: 'asc' },
+    });
+    sendCalendar(res, 'minerskills-agenda.ics', events.map(eventDTO));
+  }),
+);
+
+agendaPublicRouter.get(
+  '/:id/ics',
+  asyncHandler(async (req, res) => {
+    const event = await prisma.agendaEvent.findFirst({
+      where: { id: req.params.id, published: true },
+    });
+    if (!event) throw ApiError.notFound('Evento não encontrado');
+    sendCalendar(res, `evento-${event.id}.ics`, [eventDTO(event)]);
   }),
 );
 

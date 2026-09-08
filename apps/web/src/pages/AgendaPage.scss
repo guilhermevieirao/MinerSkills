@@ -5,6 +5,39 @@
   flex-direction: column;
   gap: var(--ms-space-10);
 
+  // Cabeçalho de "Próximos eventos": título + link de assinatura do .ics
+  &__group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--ms-space-3);
+    margin-bottom: var(--ms-space-5);
+
+    .ms-agenda__group-title {
+      margin-bottom: 0;
+    }
+  }
+  &__subscribe {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ms-space-2);
+    font-family: var(--ms-font-mono);
+    font-size: var(--ms-text-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ms-text-dim);
+    transition: color var(--ms-dur) var(--ms-ease);
+    svg {
+      width: 16px;
+      height: 16px;
+      color: var(--ms-green);
+    }
+    &:hover {
+      color: var(--ms-green);
+    }
+  }
+
   &__group-title {
     display: flex;
     align-items: center;
@@ -111,5 +144,13 @@
       height: 14px;
       color: var(--ms-green);
     }
+  }
+
+  // Ações: Inscrever-se (quando há link), Google Calendar e download do .ics
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ms-space-2);
+    margin-top: var(--ms-space-4);
   }
 }
