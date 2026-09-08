@@ -107,15 +107,79 @@ Todos usam `fill="currentColor"` — a cor vem do contexto.
 
 `Button` (primary/outline/ghost/danger × sm/md/lg) · `LinkButton` · `SectionHeading`
 (com kicker) · `Card` · `FilterChip` · `Tag` · `Input` / `Textarea` / `Select` ·
-**`Field`** · `Spinner` · `Loader` · `Skeleton` · `EmptyState` · `Toast` ·
-`Lightbox` · `YouTubeEmbed`.
+**`Field`** · `Spinner` · `Loader` · `Skeleton` · `EmptyState` · **`QueryState`** ·
+**`ErrorState`** · **`MediaImage`** · skeletons (`CardGridSkeleton`, `ListSkeleton`,
+`ArticleSkeleton`, `HeroSkeleton`) · `Toast` · `Lightbox` · `YouTubeEmbed`.
 
 > **`Field`** associa automaticamente o `<label>` ao controle filho (injeta `id`,
 > `aria-invalid` e `aria-describedby`). Use-o sempre — é o que mantém os
 > formulários acessíveis a leitores de tela.
 
 **Layout:** `PublicLayout` · `Navbar` (transparente → sólida ao rolar) ·
-`MobileNav` (drawer) · `Footer` · `PageHero` · `SocialIcon`.
+`MobileNav` (drawer) · `Footer` · `PageHero` · `SocialIcon` · `NavigationProgress`
+(barra de 2px no topo enquanto o chunk da próxima página baixa).
+
+**PWA:** [`src/components/pwa/`](../apps/web/src/components/pwa/) — `ReloadPrompt`
+(barra "Nova versão disponível"), `OfflineBanner` (faixa abaixo da navbar) e
+`InstallPrompt` (botão "Instalar app" no rodapé). Detalhes em [pwa.md](pwa.md).
+
+---
+
+## Estados de carregamento e erro
+
+[`src/components/ui/QueryState.tsx`](../apps/web/src/components/ui/QueryState.tsx) ·
+[`ErrorState.tsx`](../apps/web/src/components/ui/ErrorState.tsx) ·
+[`skeletons.tsx`](../apps/web/src/components/ui/skeletons.tsx)
+
+Toda consulta à API numa página pública passa pelo `QueryState`:
+
+```tsx
+<QueryState
+  query={useAwards()}
+  skeleton={<CardGridSkeleton count={6} />}
+  isEmpty={(list) => list.length === 0}
+  empty={<EmptyState title="Sem conquistas cadastradas" />}
+>
+  {(list) => <Grid items={list} />}
+</QueryState>
+```
+
+- **Carregando** → o `skeleton`: `CardGridSkeleton({ count, aspect })`, `ListSkeleton({ rows })`,
+  `ArticleSkeleton()` ou `HeroSkeleton()`, montados com o `<Skeleton>` do kit e espelhando o
+  layout que vão substituir (sem salto quando o conteúdo chega). Ficam `aria-hidden`.
+- **Erro sem dados** → `ErrorState`: ícone `AlertTriangle`, título "Não foi possível carregar",
+  texto por status da API (`404`, `429`, `5xx`) e o botão **Tentar novamente** (refetch, com
+  spinner enquanto tenta). Offline (`navigator.onLine === false`) troca o ícone por `WifiOff`
+  e o título por "Você está offline"; o componente escuta `online`/`offline`.
+- **Vazio** → `empty` (normalmente um `EmptyState`).
+- `compact` transforma o erro numa faixa de uma linha (borda `--ms-warning`) para blocos com
+  fallback textual — a Home e o painel de detalhe das temporadas usam assim.
+- Dados já carregados nunca somem: um refetch em segundo plano que falha mantém a tela.
+
+Estilos em `ui-extras.scss` (`.ms-error`, `.ms-skel__*`, `.ms-media-img`), importado pelos
+próprios componentes — o kit principal continua em `ui.scss`.
+
+---
+
+## Imagens
+
+[`src/components/ui/MediaImage.tsx`](../apps/web/src/components/ui/MediaImage.tsx)
+
+Toda imagem vinda da API (`MediaAssetDTO`) é renderizada por `MediaImage` — nunca por
+`<img src={mediaUrl(...)}>` solto:
+
+| Prop | Efeito |
+| --- | --- |
+| `thumb` | Usa `thumbUrl` quando existe (grids, cards, listas). |
+| `priority` | Imagem acima da dobra: `loading="eager"` + `fetchpriority="high"` (hero da Home, capa do post). Sem ela: `loading="lazy"` + `decoding="async"`. |
+| `alt` | Padrão `media.alt ?? ''` (decorativa quando não há texto). |
+| `sizes` | Dica de largura para o navegador. |
+| `className` | Somada a `ms-media-img`. |
+
+`width`/`height` do registro vão para o `<img>`: o navegador reserva a proporção antes do
+download (sem salto de layout) e o container decide o tamanho final com
+`object-fit`/`aspect-ratio`, como já fazem `.ms-blog__cover`, `.ms-enc-card__photo` etc. A
+miniatura tem a mesma proporção do original, então os atributos valem para as duas.
 
 ---
 
@@ -136,6 +200,69 @@ Não é apenas "encolher" — o mobile é redesenhado:
 | Hero | Selo decorativo escondido; tipografia com `clamp()`. |
 
 Áreas seguras (`env(safe-area-inset-*)`) respeitadas nos drawers.
+
+---
+
+## Acessibilidade
+
+Além do foco visível (mixin `focus-ring`) e do `Field` que rotula os controles, o
+site cobre a navegação por teclado e por leitor de tela de ponta a ponta. Tudo sem
+biblioteca — só DOM.
+
+### Skip link
+
+`<a href="#conteudo" class="ms-skip-link">Pular para o conteúdo</a>` é o **primeiro
+elemento focável** de toda página pública (`PublicLayout`). Fica fora da tela
+(`top: -100%`) e aparece no topo, sobre a navbar, em fundo verde, enquanto tem o
+foco. O alvo é `<main id="conteudo" tabindex="-1">`, que recebe o foco de verdade
+(não só o scroll); o anel de foco do `main` é discreto e só aparece na navegação
+por teclado (`:focus-visible`).
+
+### Armadilha de foco — `useFocusTrap`
+
+[`src/lib/useFocusTrap.ts`](../apps/web/src/lib/useFocusTrap.ts):
+
+```ts
+useFocusTrap(ref, active, { onEscape?, initialFocus?: 'first' | 'container' });
+```
+
+Ao ativar, guarda o elemento focado e leva o foco para o primeiro focável do
+container (ou para o próprio container); Tab/Shift+Tab ciclam lá dentro; Escape
+chama `onEscape`; ao desativar, o foco **volta** para onde estava. Armadilhas se
+empilham (só a do topo responde ao teclado), o que permite modais aninhados no
+painel.
+
+| Onde | Container | Escape | Foco inicial |
+| --- | --- | --- | --- |
+| `MobileNav` (`role="dialog"`, `aria-label="Menu"`, `id="ms-mobilenav"`) | o `aside` | fecha o menu | botão "Fechar menu" |
+| `Lightbox` (`role="dialog"`, `aria-label="Foto ampliada"`) | `.ms-lightbox` | fecha; setas continuam trocando a foto | botão "Fechar" |
+| `Modal` do painel (`role="dialog"`, `aria-labelledby` no `h2`) | `.ms-modal__panel` | **fica com a pilha de modais** já existente (o hook não recebe `onEscape`) | o painel — o leitor de tela lê o título |
+
+O botão de menu da navbar expõe `aria-expanded` e `aria-controls="ms-mobilenav"`.
+
+### Anúncio de rota — `RouteAnnouncer`
+
+Num SPA o leitor de tela não percebe a troca de página. `RouteAnnouncer`
+(`PublicLayout`) é uma região viva invisível (`aria-live="polite"`,
+`aria-atomic="true"`, classe `ms-route-announcer`) que, a cada mudança de
+`pathname`, lê o `document.title` definido por `useDocumentHead` (após 300 ms —
+tempo da transição de saída) e move o foco para `#conteudo`, para que o próximo
+Tab continue do conteúdo novo. Nada acontece na carga inicial nem quando a
+navegação pediu `state.preserveScroll` (a página cuida do próprio foco, como o
+painel de membro em `/equipe`).
+
+### ARIA corrigidos
+
+- `MarqueeStrip` é decorativa: sem `role="marquee"`, com `aria-hidden="true"` na
+  faixa inteira (o texto repetido oito vezes não diz nada) e animação **pausada**
+  com `prefers-reduced-motion: reduce`.
+- `HexPattern` gera o id do `<pattern>` com `useId()` — a Home renderiza várias
+  instâncias, e ids repetidos faziam todos os `fill="url(#…)"` apontarem para o
+  primeiro SVG.
+- Regiões vivas do PWA (`OfflineBanner`, `ReloadPrompt`) existem antes de mudar de
+  conteúdo — leitores de tela ignoram regiões inseridas já preenchidas.
+
+Testes: `e2e/tests/a11y.spec.ts` (ver [testing.md](testing.md)).
 
 ---
 

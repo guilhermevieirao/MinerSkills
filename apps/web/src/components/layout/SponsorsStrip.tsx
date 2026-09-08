@@ -1,8 +1,9 @@
 import type { SponsorDTO } from '@minerskills/shared';
 import { SectionHeading } from '../ui';
+import { MediaImage } from '../ui/MediaImage';
 import { Reveal } from '../motion/Reveal';
 import { useSponsors, groupSponsorsByTier } from '../../features/sponsors/useSponsors';
-import { isWebUrl, mediaUrl } from '../../lib/format';
+import { isWebUrl } from '../../lib/format';
 import './SponsorsStrip.scss';
 
 /** Logo do patrocinador ou, sem imagem, o nome em destaque. */
@@ -10,14 +11,7 @@ function SponsorContent({ sponsor }: { sponsor: SponsorDTO }) {
   const logo = sponsor.logo;
   if (!logo) return <span className="ms-sponsors__name">{sponsor.name}</span>;
   return (
-    <img
-      className="ms-sponsors__logo"
-      src={mediaUrl(logo.thumbUrl ?? logo.url)}
-      alt={sponsor.name}
-      width={logo.width ?? undefined}
-      height={logo.height ?? undefined}
-      loading="lazy"
-    />
+    <MediaImage className="ms-sponsors__logo" media={logo} alt={sponsor.name} thumb />
   );
 }
 

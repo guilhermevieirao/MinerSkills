@@ -263,3 +263,8 @@
     font-size: var(--ms-text-sm);
   }
 }
+
+// faixa de erro discreta dos blocos de conteúdo (a página tem texto de fallback)
+.ms-home__notice {
+  margin-bottom: var(--ms-space-6);
+}

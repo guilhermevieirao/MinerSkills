@@ -1,30 +1,84 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, LinkIcon, Calendar } from 'lucide-react';
+import type { PostDetailDTO } from '@minerskills/shared';
 import { usePost } from '../features/posts/usePosts';
-import { Loader, EmptyState, LinkButton } from '../components/ui';
+import { EmptyState, LinkButton } from '../components/ui';
+import { QueryState } from '../components/ui/QueryState';
+import { ArticleSkeleton } from '../components/ui/skeletons';
+import { MediaImage } from '../components/ui/MediaImage';
 import { YouTubeEmbed } from '../components/ui/YouTubeEmbed';
 import { Lightbox } from '../components/ui/Lightbox';
+import { ApiError } from '../lib/api';
 import { formatDate, mediaUrl } from '../lib/format';
+import { absoluteUrl, SITE_NAME, useDocumentHead } from '../lib/useDocumentHead';
 import './BlogPostPage.scss';
+
+/** Slug que não existe (ou post despublicado): tela própria, sem "tentar novamente". */
+function isNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}
 
 export function BlogPostPage() {
   const { slug } = useParams();
-  const { data: post, isLoading, isError } = usePost(slug);
-  const [lightbox, setLightbox] = useState<number | null>(null);
+  const query = usePost(slug);
+  const post = query.data;
 
-  if (isLoading) return <div className="ms-section ms-container"><Loader /></div>;
-  if (isError || !post)
+  // schema.org/BlogPosting — memoizado: o efeito do head compara por referência
+  const jsonLd = useMemo(
+    () =>
+      post
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: post.excerpt,
+            datePublished: post.publishedAt ?? undefined,
+            image: post.cover ? absoluteUrl(mediaUrl(post.cover.url)) : undefined,
+            mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),
+            author: { '@type': 'Organization', name: SITE_NAME },
+            publisher: { '@type': 'Organization', name: SITE_NAME },
+          }
+        : null,
+    [post],
+  );
+
+  useDocumentHead({
+    title: post?.title ?? 'Blog',
+    description: post?.excerpt,
+    canonicalPath: post ? `/blog/${post.slug}` : undefined,
+    image: post?.cover ? mediaUrl(post.cover.url) : undefined,
+    type: post ? 'article' : 'website',
+    // slug inexistente/despublicado: sem noindex a tela vazia seria um soft-404 indexável
+    noindex: query.isError,
+    jsonLd,
+  });
+
+  if (isNotFound(query.error)) {
     return (
       <div className="ms-section ms-container">
         <EmptyState
           title="Post não encontrado"
           description="Este conteúdo pode ter sido removido."
-          action={<LinkButton to="/blog" variant="outline">Voltar ao blog</LinkButton>}
+          action={
+            <LinkButton to="/blog" variant="outline">
+              Voltar ao blog
+            </LinkButton>
+          }
         />
       </div>
     );
+  }
 
+  return (
+    <QueryState query={query} skeleton={<ArticleSkeleton />}>
+      {(data) => <PostArticle post={data} />}
+    </QueryState>
+  );
+}
+
+function PostArticle({ post }: { post: PostDetailDTO }) {
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const images = post.media.filter((m) => m.kind === 'image');
   const videos = post.media.filter((m) => m.kind === 'video');
 
@@ -33,7 +87,7 @@ export function BlogPostPage() {
       <header className="ms-post__header">
         {post.cover && (
           <div className="ms-post__hero">
-            <img src={mediaUrl(post.cover.url)} alt={post.cover.alt ?? post.title} />
+            <MediaImage media={post.cover} alt={post.cover.alt ?? post.title} priority />
             <div className="ms-post__hero-overlay" />
           </div>
         )}
@@ -84,11 +138,7 @@ export function BlogPostPage() {
                 onClick={() => setLightbox(i)}
                 aria-label="Ampliar imagem"
               >
-                <img
-                  src={mediaUrl(img.thumbUrl ?? img.url)}
-                  alt={img.alt ?? ''}
-                  loading="lazy"
-                />
+                <MediaImage media={img} alt={img.alt ?? ''} thumb />
               </button>
             ))}
           </section>

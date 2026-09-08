@@ -53,9 +53,11 @@ minerskills/
 │   ├── vite.config.ts          # envDir = raiz · proxy · PWA
 │   └── src/
 │       ├── styles/             # design system (tokens, mixins, motion, base)
-│       ├── components/         # brand · ui · layout · motion
+│       ├── components/         # brand · ui · layout · motion · pwa
 │       ├── features/<feature>/ # hooks de dados (TanStack Query)
-│       ├── pages/              # telas públicas
+│       ├── lib/                # api · queryClient · format · useDocumentHead
+│       ├── pages/              # telas públicas (um chunk por página)
+│       ├── router.tsx          # rotas lazy + errorElement
 │       └── admin/              # painel (chunk lazy, sem link público)
 └── e2e/                        # Playwright
 ```
@@ -98,6 +100,62 @@ Erros 5xx são logados com `pino` (cookies e senhas são redigidos).
 
 ---
 
+## Front-end: rotas, estados e head
+
+### Rotas lazy e erros de rota
+
+[`router.tsx`](../apps/web/src/router.tsx) monta um `createBrowserRouter`. A Home e o
+404 ficam no bundle principal (são as telas do primeiro acesso); **toda outra página
+pública é um chunk próprio**, declarado com a propriedade `lazy` do react-router 7:
+
+```ts
+{ path: '/blog', lazy: () => import('./pages/BlogPage').then((m) => ({ Component: m.BlogPage })) }
+```
+
+Por que `lazy` do router e não `React.lazy` + `Suspense`:
+
+- o router só **troca de rota depois** de baixar o módulo — a página atual continua na
+  tela e a `NavigationProgress` (barra de 2px no topo, `useNavigation().state ===
+  'loading'`) é o único sinal de espera;
+- o **id da rota não muda** (é o que a `PageTransition` do `PublicLayout` usa como
+  chave, via `useMatches`), então não há remontagem nem Suspense dentro da transição;
+- no acesso direto a uma URL lazy, `hydrateFallbackElement: <HeroSkeleton />` renderiza
+  o layout (Navbar, rodapé) imediatamente e só o miolo espera o chunk.
+
+Cada rota filha e a rota de layout têm `errorElement: <RouteErrorPage />`. Um erro de
+render de uma página, um chunk que não baixou (deploy novo invalidou o hash antigo) ou
+uma `Response` lançada por um loader caem nesse boundary **mantendo Navbar e rodapé**;
+um 404 do router reaproveita a tela do `NotFoundPage`. A tela oferece "Recarregar"
+(`location.reload()`) e "Início", e é `noindex`.
+
+### Padrão de página: QueryState, ErrorState, skeletons e MediaImage
+
+Toda página que consome a API passa pelo mesmo trio de
+[`components/ui`](../apps/web/src/components/ui/):
+
+| Componente | Papel |
+| --- | --- |
+| `QueryState<T>` | Recebe o `UseQueryResult` e decide: sem dados e carregando → `skeleton`; sem dados e com erro → `ErrorState` com "Tentar novamente" (`refetch`); `isEmpty(data)` → `empty`; senão `children(data)`. Dados já carregados nunca somem por um refetch que falhou. |
+| `ErrorState` | Ícone `WifiOff` + "Você está offline" quando `navigator.onLine === false` (reage aos eventos `online`/`offline`); senão `AlertTriangle` com texto por status (`404`, `429`, `5xx`). `compact` vira uma faixa de uma linha para páginas com fallback textual (Home). |
+| `skeletons.tsx` | `CardGridSkeleton`, `ListSkeleton`, `ArticleSkeleton`, `HeroSkeleton` — montados com o `<Skeleton>` do kit, espelhando o layout que vão substituir. |
+| `MediaImage` | O único jeito de renderizar uma `MediaAssetDTO`: `src` via `mediaUrl` (`thumb` usa a miniatura), `width`/`height` do registro (proporção reservada antes do download), `loading="lazy"` + `decoding="async"`, ou `fetchpriority="high"` com `priority` (hero, capa). |
+
+Regra prática: **nada de `<img src={mediaUrl(...)}>` nem de `isLoading ? <Loader />`
+nas páginas** — use `MediaImage` e `QueryState`. As classes que os testes e2e observam
+(`.ms-blog__card`, `.ms-gallery__item`, `.ms-event`…) ficam dentro de `children`.
+
+### Head por página
+
+[`lib/useDocumentHead.ts`](../apps/web/src/lib/useDocumentHead.ts) escreve `document.title`
+(`Página · MinerSkills #10019`), `meta description`/`robots`, Open Graph, Twitter Card,
+`canonical` e um bloco JSON-LD. Toda página pública chama o hook uma vez, no topo; a
+próxima página sobrescreve tudo (não há cleanup). Casos especiais: o post do blog envia
+`type: 'article'`, a capa como imagem e um `BlogPosting` (memoizado com `useMemo`, porque
+o efeito compara a referência); `/equipe/:slug` vira `type: 'profile'` com a foto do
+membro; 404 e a tela de erro são `noindex`.
+
+---
+
 ## Contrato compartilhado
 
 `packages/shared` é a fonte única de verdade entre front e back:
@@ -124,3 +182,5 @@ em tempo de compilação se divergirem.
 - Toda entrada validada com zod; todo HTML sanitizado no servidor.
 - Nenhum emoji na interface — apenas ícones da `lucide-react`.
 - Textos em pt-BR; a estrutura permite i18n no futuro sem refatorar.
+- Página pública nova: chunk `lazy` no `router.tsx`, `useDocumentHead` no topo,
+  `QueryState` em volta do que vem da API e `MediaImage` para toda imagem.

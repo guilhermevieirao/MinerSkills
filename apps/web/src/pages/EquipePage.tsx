@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X, Quote, CalendarDays, Users } from 'lucide-react';
@@ -15,8 +15,14 @@ import {
 } from '../features/encyclopedia/useEncyclopedia';
 import { useMemberTagMap, useMemberTags } from '../features/encyclopedia/useMemberTags';
 import { EntryIcon } from '../features/encyclopedia/roleIcons';
-import { FilterChip, EmptyState, Loader, Tag } from '../components/ui';
+import { FilterChip, EmptyState, Tag } from '../components/ui';
+import { QueryState } from '../components/ui/QueryState';
+import { CardGridSkeleton } from '../components/ui/skeletons';
+import { MediaImage } from '../components/ui/MediaImage';
 import { mediaUrl } from '../lib/format';
+import { useDocumentHead } from '../lib/useDocumentHead';
+import { useFocusTrap } from '../lib/useFocusTrap';
+import { useMediaQuery } from '../lib/useMediaQuery';
 import './EquipePage.scss';
 
 /** Filtro ativo como string estável: 'all' | 'robot' | 'tag:<key>' | 'gen:<geração>'. */
@@ -26,8 +32,20 @@ type TagMap = Map<string, MemberTagDTO>;
 
 const TEAM_PATH = '/equipe';
 
+const DESCRIPTION =
+  'Competidores, treinadores e robôs que constroem a história da MinerSkills.';
+
+/** Primeiro parágrafo do "Sobre", no tamanho de uma meta description. */
+function summarize(text: string, max = 160): string {
+  const first = text.split('\n\n')[0]?.trim() ?? '';
+  return first.length > max ? `${first.slice(0, max - 1).trimEnd()}…` : first;
+}
+
 /** Navegação interna da página: troca o membro na URL sem rolar ao topo (ver PublicLayout). */
 const KEEP_SCROLL = { state: { preserveScroll: true } };
+
+/** Mesmo limite de `below($bp-lg)` (EquipePage.scss): abaixo dele o detalhe é um painel fullscreen. */
+const MOBILE_QUERY = '(max-width: 1023px)';
 
 function toFilters(id: FilterId): EncyclopediaFilters {
   if (id === 'robot') return { kind: 'robot' };
@@ -69,7 +87,8 @@ export function EquipePage() {
   const active = chips.some((c) => c.id === chosenFilter) ? chosenFilter : 'all';
 
   const filters = useMemo(() => toFilters(active), [active]);
-  const { data, isLoading } = useEncyclopedia(filters);
+  const query = useEncyclopedia(filters);
+  const data = query.data;
   const entries = useMemo(() => data ?? [], [data]);
 
   // entrada selecionada (via slug na URL, ou a primeira no desktop)
@@ -77,6 +96,20 @@ export function EquipePage() {
     if (slug) return entries.find((e) => e.slug === slug);
     return entries[0];
   }, [entries, slug]);
+
+  // head: a lista é "Equipe"; com slug na URL, a página é do membro (perfil)
+  const headEntry = slug ? selected : undefined;
+  useDocumentHead(
+    headEntry
+      ? {
+          title: headEntry.name,
+          description: summarize(headEntry.about) || DESCRIPTION,
+          canonicalPath: `${TEAM_PATH}/${headEntry.slug}`,
+          image: headEntry.photo ? mediaUrl(headEntry.photo.url) : undefined,
+          type: 'profile',
+        }
+      : { title: 'Equipe', description: DESCRIPTION, canonicalPath: TEAM_PATH },
+  );
 
   // slug que não existe no filtro atual: volta para a lista (sem rolar ao topo)
   useEffect(() => {
@@ -89,18 +122,30 @@ export function EquipePage() {
     navigate(`${TEAM_PATH}/${e.slug}`, KEEP_SCROLL);
   const closeMobile = () => navigate(TEAM_PATH, KEEP_SCROLL);
 
+  // Painel fullscreen do mobile é um diálogo modal: o foco entra nele (botão
+  // Fechar), Tab cicla dentro, Esc fecha e o foco volta ao card que o abriu
+  // (o RouteAnnouncer não mexe no foco quando há `preserveScroll`). O trap só
+  // vale no mobile: no desktop o mesmo nó fica montado com `display: none` e,
+  // ativo, capturaria o Tab da página inteira.
+  const isMobile = useMediaQuery(MOBILE_QUERY);
+  const mobileRef = useRef<HTMLDivElement>(null);
+  const mobileTitleId = useId();
+  const mobileOpen = isMobile && !!slug && !!selected;
+  useFocusTrap(mobileRef, mobileOpen, { onEscape: closeMobile });
+
   return (
     <>
       <PageHero
         kicker="Equipe MinerSkills"
         title="Membros & Robôs"
-        subtitle="Competidores, treinadores e robôs que constroem a história da MinerSkills."
+        subtitle={DESCRIPTION}
       />
 
       <section className="ms-section ms-container">
+        {/* group (não tablist): as chips são botões com aria-pressed, não abas */}
         <div
           className="ms-enc__filters"
-          role="tablist"
+          role="group"
           aria-label="Filtrar a equipe por função"
         >
           {chips.map((c) => (
@@ -121,57 +166,58 @@ export function EquipePage() {
 
         <div className="ms-enc__layout">
           <div className="ms-enc__grid-wrap">
-            {isLoading ? (
-              <Loader />
-            ) : entries.length === 0 ? (
-              <EmptyState title="Nenhum registro" description="Ajuste os filtros." />
-            ) : (
-              <motion.div className="ms-enc__grid" layout>
-                <AnimatePresence mode="popLayout">
-                  {entries.map((e) => {
-                    const primary = primaryTag(e, tagMap);
-                    return (
-                      <motion.button
-                        key={e.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.3 }}
-                        className={`ms-enc-card ${selected?.id === e.id ? 'ms-enc-card--active' : ''}`}
-                        onClick={() => openEntry(e)}
-                      >
-                        <div className="ms-enc-card__photo">
-                          {e.photo ? (
-                            <img
-                              src={mediaUrl(e.photo.thumbUrl ?? e.photo.url)}
-                              alt={e.name}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="ms-enc-card__photo-fallback">
-                              <EntryIcon kind={e.kind} icon={primary?.icon} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="ms-enc-card__info">
-                          <span className="ms-enc-card__name">{e.name}</span>
-                          <span className="ms-enc-card__role">
-                            <span className="ms-enc-card__dot" />
-                            {e.role ?? primary?.label ?? 'Membro'}
-                          </span>
-                        </div>
-                        <EntryIcon
-                          kind={e.kind}
-                          icon={primary?.icon}
-                          className="ms-enc-card__role-icon"
-                        />
-                      </motion.button>
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.div>
-            )}
+            <QueryState
+              query={query}
+              skeleton={<CardGridSkeleton count={6} aspect="3 / 4" />}
+              isEmpty={(list) => list.length === 0}
+              empty={
+                <EmptyState title="Nenhum registro" description="Ajuste os filtros." />
+              }
+            >
+              {(list) => (
+                <motion.div className="ms-enc__grid" layout>
+                  <AnimatePresence mode="popLayout">
+                    {list.map((e) => {
+                      const primary = primaryTag(e, tagMap);
+                      return (
+                        <motion.button
+                          key={e.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.3 }}
+                          className={`ms-enc-card ${selected?.id === e.id ? 'ms-enc-card--active' : ''}`}
+                          onClick={() => openEntry(e)}
+                        >
+                          <div className="ms-enc-card__photo">
+                            {e.photo ? (
+                              <MediaImage media={e.photo} alt={e.name} thumb />
+                            ) : (
+                              <div className="ms-enc-card__photo-fallback">
+                                <EntryIcon kind={e.kind} icon={primary?.icon} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="ms-enc-card__info">
+                            <span className="ms-enc-card__name">{e.name}</span>
+                            <span className="ms-enc-card__role">
+                              <span className="ms-enc-card__dot" />
+                              {e.role ?? primary?.label ?? 'Membro'}
+                            </span>
+                          </div>
+                          <EntryIcon
+                            kind={e.kind}
+                            icon={primary?.icon}
+                            className="ms-enc-card__role-icon"
+                          />
+                        </motion.button>
+                      );
+                    })}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </QueryState>
           </div>
 
           {/* Painel de detalhe — lateral no desktop (a key remonta e anima a troca de membro) */}
@@ -187,11 +233,15 @@ export function EquipePage() {
         </div>
       </section>
 
-      {/* Painel de detalhe — fullscreen no mobile */}
+      {/* Painel de detalhe — fullscreen no mobile (diálogo modal; ver useFocusTrap acima) */}
       <AnimatePresence>
         {slug && selected && (
           <motion.div
+            ref={mobileRef}
             className="ms-enc__mobile-detail"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={mobileTitleId}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
@@ -204,7 +254,12 @@ export function EquipePage() {
             >
               <X />
             </button>
-            <DetailPanel key={selected.id} entry={selected} tagMap={tagMap} />
+            <DetailPanel
+              key={selected.id}
+              entry={selected}
+              tagMap={tagMap}
+              titleId={mobileTitleId}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -212,7 +267,16 @@ export function EquipePage() {
   );
 }
 
-function DetailPanel({ entry, tagMap }: { entry: EncyclopediaEntryDTO; tagMap: TagMap }) {
+function DetailPanel({
+  entry,
+  tagMap,
+  titleId,
+}: {
+  entry: EncyclopediaEntryDTO;
+  tagMap: TagMap;
+  /** Id do título — rótulo (`aria-labelledby`) do diálogo mobile. */
+  titleId?: string;
+}) {
   const primary = primaryTag(entry, tagMap);
   return (
     <motion.div
@@ -223,7 +287,7 @@ function DetailPanel({ entry, tagMap }: { entry: EncyclopediaEntryDTO; tagMap: T
     >
       <div className="ms-enc-detail__photo">
         {entry.photo ? (
-          <img src={mediaUrl(entry.photo.url)} alt={entry.name} />
+          <MediaImage media={entry.photo} alt={entry.name} />
         ) : (
           <div className="ms-enc-detail__photo-fallback">
             <EntryIcon kind={entry.kind} icon={primary?.icon} />
@@ -232,7 +296,9 @@ function DetailPanel({ entry, tagMap }: { entry: EncyclopediaEntryDTO; tagMap: T
       </div>
 
       <div className="ms-enc-detail__body">
-        <h2 className="ms-enc-detail__name">{entry.name}</h2>
+        <h2 className="ms-enc-detail__name" id={titleId}>
+          {entry.name}
+        </h2>
         <div className="ms-enc-detail__meta">
           {entry.age != null && (
             <span>

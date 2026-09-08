@@ -1,12 +1,16 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Award as AwardIcon, Bot, CalendarDays, ChevronDown, Layers } from 'lucide-react';
-import type { SeasonDTO } from '@minerskills/shared';
+import type { SeasonDTO, SeasonDetailDTO } from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
 import { useSeason, useSeasons } from '../features/seasons/useSeasons';
-import { EmptyState, Loader, Tag } from '../components/ui';
+import { EmptyState, Tag } from '../components/ui';
+import { QueryState } from '../components/ui/QueryState';
+import { ListSkeleton } from '../components/ui/skeletons';
+import { MediaImage } from '../components/ui/MediaImage';
 import { Reveal } from '../components/motion/Reveal';
-import { cx, formatDate, mediaUrl } from '../lib/format';
+import { cx, formatDate } from '../lib/format';
+import { useDocumentHead } from '../lib/useDocumentHead';
 import './TemporadasPage.scss';
 
 /** Abrir/fechar um card só troca o query param `t`: sem rolar ao topo (ver PublicLayout). */
@@ -16,41 +20,56 @@ function count(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`;
 }
 
+const DESCRIPTION =
+  'A cada ano a FRC revela um jogo novo. Aqui estão os robôs, os prêmios e os eventos de cada temporada da MinerSkills.';
+
 export function TemporadasPage() {
-  const { data, isLoading } = useSeasons();
+  const seasons = useSeasons();
   // A temporada expandida vive na URL (/temporadas?t=<slug>): o link é compartilhável.
   const [params, setParams] = useSearchParams();
   const expanded = params.get('t');
 
+  useDocumentHead({
+    title: 'Temporadas',
+    description: DESCRIPTION,
+    canonicalPath: '/temporadas',
+  });
+
   const toggle = (slug: string) =>
-    setParams(expanded === slug ? {} : { t: slug }, { replace: true, state: KEEP_SCROLL });
+    setParams(expanded === slug ? {} : { t: slug }, {
+      replace: true,
+      state: KEEP_SCROLL,
+    });
 
   return (
     <>
       <PageHero
         kicker="Linha do tempo competitiva"
         title="Temporadas"
-        subtitle="A cada ano a FRC revela um jogo novo. Aqui estão os robôs, os prêmios e os eventos de cada temporada da MinerSkills."
+        subtitle={DESCRIPTION}
       />
 
       <section className="ms-section ms-container">
-        {isLoading ? (
-          <Loader />
-        ) : !data || data.length === 0 ? (
-          <EmptyState icon={<Layers />} title="Nenhuma temporada cadastrada" />
-        ) : (
-          <div className="ms-seasons">
-            {data.map((s, i) => (
-              <SeasonCard
-                key={s.id}
-                season={s}
-                expanded={expanded === s.slug}
-                onToggle={() => toggle(s.slug)}
-                delay={i * 0.05}
-              />
-            ))}
-          </div>
-        )}
+        <QueryState
+          query={seasons}
+          skeleton={<ListSkeleton rows={3} />}
+          isEmpty={(list) => list.length === 0}
+          empty={<EmptyState icon={<Layers />} title="Nenhuma temporada cadastrada" />}
+        >
+          {(list) => (
+            <div className="ms-seasons">
+              {list.map((s, i) => (
+                <SeasonCard
+                  key={s.id}
+                  season={s}
+                  expanded={expanded === s.slug}
+                  onToggle={() => toggle(s.slug)}
+                  delay={i * 0.05}
+                />
+              ))}
+            </div>
+          )}
+        </QueryState>
       </section>
     </>
   );
@@ -81,11 +100,7 @@ function SeasonCard({
       {/* O cabeçalho inteiro abre o card; o botão dá o acesso por teclado. */}
       <div className="ms-season__head" onClick={onToggle}>
         <div className="ms-season__badge">
-          {season.badge ? (
-            <img src={mediaUrl(season.badge.thumbUrl ?? season.badge.url)} alt="" />
-          ) : (
-            <Layers />
-          )}
+          {season.badge ? <MediaImage media={season.badge} alt="" thumb /> : <Layers />}
         </div>
         <div className="ms-season__info">
           <span className="ms-season__year">{season.year}</span>
@@ -134,23 +149,23 @@ function SeasonCard({
 }
 
 function SeasonDetail({ slug }: { slug: string }) {
-  const { data, isLoading, isError } = useSeason(slug);
+  const season = useSeason(slug);
+  return (
+    <QueryState
+      query={season}
+      compact
+      skeleton={
+        <div className="ms-season__loading">
+          <ListSkeleton rows={2} />
+        </div>
+      }
+    >
+      {(data) => <SeasonColumns data={data} />}
+    </QueryState>
+  );
+}
 
-  if (isLoading) {
-    return (
-      <div className="ms-season__loading">
-        <Loader />
-      </div>
-    );
-  }
-  if (isError || !data) {
-    return (
-      <p className="ms-season__empty ms-season__loading">
-        Não foi possível carregar os detalhes da temporada.
-      </p>
-    );
-  }
-
+function SeasonColumns({ data }: { data: SeasonDetailDTO }) {
   return (
     <div className="ms-season__columns">
       <section className="ms-season__group">
@@ -165,11 +180,7 @@ function SeasonDetail({ slug }: { slug: string }) {
               <li key={r.id}>
                 <Link to={`/equipe/${r.slug}`} className="ms-season__robot">
                   <span className="ms-season__robot-photo">
-                    {r.photo ? (
-                      <img src={mediaUrl(r.photo.thumbUrl ?? r.photo.url)} alt="" loading="lazy" />
-                    ) : (
-                      <Bot />
-                    )}
+                    {r.photo ? <MediaImage media={r.photo} alt="" thumb /> : <Bot />}
                   </span>
                   <span className="ms-season__robot-name">{r.name}</span>
                   {r.role && <span className="ms-season__robot-role">{r.role}</span>}

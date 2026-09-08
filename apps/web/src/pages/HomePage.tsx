@@ -1,16 +1,10 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import {
-  ArrowRight,
-  Cpu,
-  Cog,
-  Rocket,
-  GraduationCap,
-  Trophy,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, Cpu, Cog, Rocket, GraduationCap, Trophy, Users } from 'lucide-react';
 import { usePageBlocks } from '../features/content/useContent';
 import { LinkButton, SectionHeading } from '../components/ui';
+import { ErrorState } from '../components/ui/ErrorState';
+import { MediaImage } from '../components/ui/MediaImage';
 import { Reveal, RevealGroup, RevealItem } from '../components/motion/Reveal';
 import { MarqueeStrip } from '../components/motion/MarqueeStrip';
 import { HexPattern } from '../components/motion/HexPattern';
@@ -18,7 +12,7 @@ import { NextCompetition } from '../components/layout/NextCompetition';
 import { SponsorsStrip } from '../components/layout/SponsorsStrip';
 import { StatCounter } from '../components/motion/StatCounter';
 import { LogoBadge } from '../components/brand/Logo';
-import { mediaUrl } from '../lib/format';
+import { useDocumentHead } from '../lib/useDocumentHead';
 import './HomePage.scss';
 
 const PILLARS = [
@@ -30,13 +24,21 @@ const PILLARS = [
 const STAT_ICONS = [Cpu, Trophy, Users, GraduationCap];
 
 export function HomePage() {
-  const { byKey, data } = usePageBlocks('landing');
+  const blocks = usePageBlocks('landing');
+  const { byKey, data } = blocks;
   const reduce = useReducedMotion();
 
   const hero = byKey('hero');
   const about = byKey('about');
   const cta = byKey('cta');
   const stats = (data ?? []).filter((b) => b.key.startsWith('stat_'));
+
+  // título vazio = só o nome do site; a descrição vem do bloco "Quem Somos"
+  useDocumentHead({
+    title: '',
+    description: about?.subtitle || about?.body || undefined,
+    canonicalPath: '/',
+  });
 
   return (
     <>
@@ -45,7 +47,7 @@ export function HomePage() {
         <HexPattern />
         {hero?.media && (
           <div className="ms-hero__bg" aria-hidden>
-            <img src={mediaUrl(hero.media.url)} alt="" />
+            <MediaImage media={hero.media} alt="" priority />
             <div className="ms-hero__bg-overlay" />
           </div>
         )}
@@ -72,8 +74,7 @@ export function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25 }}
           >
-            {hero?.body ??
-              'Robótica de porte industrial feita por estudantes mineiros.'}
+            {hero?.body ?? 'Robótica de porte industrial feita por estudantes mineiros.'}
           </motion.p>
           <motion.div
             className="ms-hero__actions"
@@ -106,6 +107,18 @@ export function HomePage() {
 
       {/* ─── SOBRE ────────────────────────────────────────── */}
       <section className="ms-section ms-container" id="sobre">
+        {/* Os textos têm fallback: um erro na API vira uma faixa discreta, não uma tela vazia */}
+        {blocks.isError && (
+          <div className="ms-home__notice">
+            <ErrorState
+              compact
+              error={blocks.error}
+              title="Não foi possível carregar os textos da página"
+              onRetry={() => void blocks.refetch()}
+              retrying={blocks.isFetching}
+            />
+          </div>
+        )}
         <div className="ms-about">
           <Reveal className="ms-about__text">
             <SectionHeading
@@ -154,9 +167,7 @@ export function HomePage() {
                     <Icon />
                   </div>
                   <h3 className="ms-pillar__title">{block?.title ?? p.fallbackTitle}</h3>
-                  {block?.subtitle && (
-                    <p className="ms-pillar__sub">{block.subtitle}</p>
-                  )}
+                  {block?.subtitle && <p className="ms-pillar__sub">{block.subtitle}</p>}
                   <p className="ms-pillar__body">{block?.body}</p>
                 </RevealItem>
               );

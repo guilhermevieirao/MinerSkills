@@ -1,13 +1,23 @@
-import { ArrowRight, ClipboardList, Users, MessageCircle, Rocket, CheckCircle2 } from 'lucide-react';
+import {
+  ArrowRight,
+  ClipboardList,
+  Users,
+  MessageCircle,
+  Rocket,
+  CheckCircle2,
+} from 'lucide-react';
 import { PageHero } from '../components/layout/PageHero';
 import { usePageBlocks } from '../features/content/useContent';
 import { LinkButton } from '../components/ui';
+import { QueryState } from '../components/ui/QueryState';
+import { ListSkeleton } from '../components/ui/skeletons';
 import { Reveal } from '../components/motion/Reveal';
 import { MarqueeStrip } from '../components/motion/MarqueeStrip';
 import { useSocialLinks } from '../features/social/useSocial';
 import { useApplicationsOpen } from '../features/contact/useContact';
 import { SocialIcon } from '../components/layout/SocialIcon';
 import { ContactForm } from '../components/forms/ContactForm';
+import { useDocumentHead } from '../lib/useDocumentHead';
 import './ComoEntrarPage.scss';
 
 const STEP_ICONS = [ClipboardList, Users, MessageCircle, Rocket];
@@ -15,16 +25,21 @@ const STEP_ICONS = [ClipboardList, Users, MessageCircle, Rocket];
 const CLOSED_FALLBACK = 'As inscrições estão encerradas no momento.';
 
 export function ComoEntrarPage() {
-  const { byKey, data } = usePageBlocks('como-entrar');
+  const blocks = usePageBlocks('como-entrar');
+  const { byKey } = blocks;
   const { data: social } = useSocialLinks();
   const { open, info } = useApplicationsOpen();
 
   const hero = byKey('hero');
-  const steps = (data ?? [])
-    .filter((b) => b.key.startsWith('step_'))
-    .sort((a, b) => a.order - b.order);
   const requisitos = byKey('requisitos');
   const cta = byKey('cta');
+
+  useDocumentHead({
+    title: 'Como Entrar',
+    description:
+      hero?.body || 'Processo seletivo da MinerSkills: etapas, requisitos e inscrição.',
+    canonicalPath: '/como-entrar',
+  });
 
   return (
     <>
@@ -41,26 +56,36 @@ export function ComoEntrarPage() {
       <MarqueeStrip text="INSCRIÇÕES · PROCESSO SELETIVO · #10019 ·" />
 
       <section className="ms-section ms-container">
-        <div className="ms-join__steps">
-          {steps.map((step, i) => {
-            const Icon = STEP_ICONS[i % STEP_ICONS.length]!;
+        {/* Etapas e requisitos vêm dos blocos; o formulário abaixo depende só das configurações */}
+        <QueryState query={blocks} skeleton={<ListSkeleton rows={4} />}>
+          {(data) => {
+            const steps = data
+              .filter((b) => b.key.startsWith('step_'))
+              .sort((a, b) => a.order - b.order);
             return (
-              <Reveal key={step.key} delay={i * 0.06}>
-                <div className="ms-join-step">
-                  <div className="ms-join-step__num">
-                    <Icon />
-                    <span>{String(i + 1).padStart(2, '0')}</span>
-                  </div>
-                  <div className="ms-join-step__content">
-                    <span className="ms-join-step__label">{step.subtitle}</span>
-                    <h3>{step.title}</h3>
-                    <p>{step.body}</p>
-                  </div>
-                </div>
-              </Reveal>
+              <div className="ms-join__steps">
+                {steps.map((step, i) => {
+                  const Icon = STEP_ICONS[i % STEP_ICONS.length]!;
+                  return (
+                    <Reveal key={step.key} delay={i * 0.06}>
+                      <div className="ms-join-step">
+                        <div className="ms-join-step__num">
+                          <Icon />
+                          <span>{String(i + 1).padStart(2, '0')}</span>
+                        </div>
+                        <div className="ms-join-step__content">
+                          <span className="ms-join-step__label">{step.subtitle}</span>
+                          <h3>{step.title}</h3>
+                          <p>{step.body}</p>
+                        </div>
+                      </div>
+                    </Reveal>
+                  );
+                })}
+              </div>
             );
-          })}
-        </div>
+          }}
+        </QueryState>
 
         {requisitos && (
           <Reveal>
@@ -68,7 +93,9 @@ export function ComoEntrarPage() {
               <div className="ms-join__requisitos-head">
                 <CheckCircle2 />
                 <div>
-                  <span className="ms-join__requisitos-kicker">{requisitos.subtitle}</span>
+                  <span className="ms-join__requisitos-kicker">
+                    {requisitos.subtitle}
+                  </span>
                   <h2>{requisitos.title}</h2>
                 </div>
               </div>

@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Trophy, Play, Check, XCircle, RotateCcw, Medal, Clock } from 'lucide-react';
-import type { QuizResultDTO } from '@minerskills/shared';
+import type { LeaderboardEntryDTO, QuizResultDTO } from '@minerskills/shared';
 import { nicknameSchema } from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
 import {
@@ -9,11 +9,17 @@ import {
   useLeaderboard,
   useSubmitQuiz,
 } from '../features/quiz/useQuiz';
-import { Button, Input, Loader, EmptyState, Field } from '../components/ui';
+import { Button, Input, EmptyState, Field } from '../components/ui';
+import { QueryState } from '../components/ui/QueryState';
+import { ListSkeleton } from '../components/ui/skeletons';
 import { useToast } from '../components/ui/Toast';
 import { formatDuration } from '../lib/format';
 import { queryClient } from '../lib/queryClient';
+import { useDocumentHead } from '../lib/useDocumentHead';
 import './QuizPage.scss';
+
+const DESCRIPTION =
+  'Teste seus conhecimentos sobre a MinerSkills, a FRC e a FIRST. Entre para o ranking!';
 
 type Phase = 'intro' | 'playing' | 'result';
 
@@ -27,9 +33,12 @@ export function QuizPage() {
   const startRef = useRef(0);
   const toast = useToast();
 
-  const { data: questions, isLoading, refetch } = useQuizQuestions(phase === 'playing');
-  const { data: leaderboard } = useLeaderboard();
+  const questionsQuery = useQuizQuestions(phase === 'playing');
+  const { data: questions, refetch } = questionsQuery;
+  const leaderboard = useLeaderboard();
   const submit = useSubmitQuiz();
+
+  useDocumentHead({ title: 'Quiz', description: DESCRIPTION, canonicalPath: '/quiz' });
 
   const total = questions?.length ?? 0;
   const q = questions?.[current];
@@ -89,11 +98,7 @@ export function QuizPage() {
 
   return (
     <>
-      <PageHero
-        kicker="Jogo"
-        title="Quiz MinerSkills"
-        subtitle="Teste seus conhecimentos sobre a MinerSkills, a FRC e a FIRST. Entre para o ranking!"
-      />
+      <PageHero kicker="Jogo" title="Quiz MinerSkills" subtitle={DESCRIPTION} />
 
       <section className="ms-section ms-container ms-quiz">
         <div className="ms-quiz__main">
@@ -137,40 +142,55 @@ export function QuizPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {isLoading || !q ? (
-                  <Loader label="Carregando perguntas…" />
-                ) : (
-                  <>
-                    <div className="ms-quiz__progress">
-                      <div className="ms-quiz__progress-bar" style={{ width: `${progress}%` }} />
-                    </div>
-                    <span className="ms-quiz__counter">
-                      Pergunta {current + 1} de {total}
-                    </span>
-                    <motion.h2
-                      key={q.id}
-                      className="ms-quiz__question"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                    >
-                      {q.question}
-                    </motion.h2>
-                    <div className="ms-quiz__options">
-                      {q.options.map((opt, i) => (
-                        <button
-                          key={opt.id}
-                          className={`ms-quiz__option ${answers[q.id] === opt.id ? 'ms-quiz__option--picked' : ''}`}
-                          onClick={() => choose(opt.id)}
+                <QueryState
+                  query={questionsQuery}
+                  skeleton={<ListSkeleton rows={4} />}
+                  isEmpty={(list) => list.length === 0}
+                  empty={
+                    <EmptyState
+                      title="Nenhuma pergunta disponível"
+                      description="Volte mais tarde para jogar."
+                    />
+                  }
+                >
+                  {() =>
+                    q && (
+                      <>
+                        <div className="ms-quiz__progress">
+                          <div
+                            className="ms-quiz__progress-bar"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="ms-quiz__counter">
+                          Pergunta {current + 1} de {total}
+                        </span>
+                        <motion.h2
+                          key={q.id}
+                          className="ms-quiz__question"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
                         >
-                          <span className="ms-quiz__option-letter">
-                            {String.fromCharCode(65 + i)}
-                          </span>
-                          {opt.text}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+                          {q.question}
+                        </motion.h2>
+                        <div className="ms-quiz__options">
+                          {q.options.map((opt, i) => (
+                            <button
+                              key={opt.id}
+                              className={`ms-quiz__option ${answers[q.id] === opt.id ? 'ms-quiz__option--picked' : ''}`}
+                              onClick={() => choose(opt.id)}
+                            >
+                              <span className="ms-quiz__option-letter">
+                                {String.fromCharCode(65 + i)}
+                              </span>
+                              {opt.text}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )
+                  }
+                </QueryState>
               </motion.div>
             )}
 
@@ -185,7 +205,9 @@ export function QuizPage() {
                 <div className="ms-quiz__result-score">
                   <span className="ms-quiz__result-big">
                     {result.score}
-                    <span className="ms-quiz__result-total">/{result.totalQuestions}</span>
+                    <span className="ms-quiz__result-total">
+                      /{result.totalQuestions}
+                    </span>
                   </span>
                   <div className="ms-quiz__result-meta">
                     <span>
@@ -233,26 +255,31 @@ export function QuizPage() {
           <h3 className="ms-quiz__lb-title">
             <Trophy /> Leaderboard
           </h3>
-          <Leaderboard entries={leaderboard} />
+          <QueryState
+            query={leaderboard}
+            compact
+            skeleton={<ListSkeleton rows={5} />}
+            isEmpty={(list) => list.length === 0}
+            empty={
+              <EmptyState title="Sem pontuações" description="Seja o primeiro a jogar!" />
+            }
+          >
+            {(list) => <Leaderboard entries={list} />}
+          </QueryState>
         </aside>
       </section>
     </>
   );
 }
 
-function Leaderboard({
-  entries,
-}: {
-  entries: ReturnType<typeof useLeaderboard>['data'];
-}) {
-  const list = useMemo(() => entries ?? [], [entries]);
-  if (list.length === 0) {
-    return <EmptyState title="Sem pontuações" description="Seja o primeiro a jogar!" />;
-  }
+function Leaderboard({ entries }: { entries: LeaderboardEntryDTO[] }) {
   return (
     <ol className="ms-lb">
-      {list.map((e, i) => (
-        <li key={e.id} className={`ms-lb__row ${i < 3 ? `ms-lb__row--top ms-lb__row--${i + 1}` : ''}`}>
+      {entries.map((e, i) => (
+        <li
+          key={e.id}
+          className={`ms-lb__row ${i < 3 ? `ms-lb__row--top ms-lb__row--${i + 1}` : ''}`}
+        >
           <span className="ms-lb__rank">{i + 1}</span>
           <span className="ms-lb__nick">{e.nickname}</span>
           <span className="ms-lb__score">

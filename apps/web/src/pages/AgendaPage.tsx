@@ -16,18 +16,30 @@ import {
 } from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
 import { useAgenda } from '../features/agenda/useAgenda';
-import { Loader, EmptyState, LinkButton, Tag } from '../components/ui';
+import { EmptyState, LinkButton, Tag } from '../components/ui';
+import { QueryState } from '../components/ui/QueryState';
+import { ListSkeleton } from '../components/ui/skeletons';
 import { Reveal } from '../components/motion/Reveal';
 import { formatDateTime, isWebUrl } from '../lib/format';
 import { API_URL } from '../lib/api';
+import { useDocumentHead } from '../lib/useDocumentHead';
 import './AgendaPage.scss';
 
 /** Arquivo .ics com todos os eventos publicados (assinável por qualquer calendário). */
 const AGENDA_ICS_URL = `${API_URL}/agenda/ics`;
 
+const DESCRIPTION = 'Competições, reuniões, workshops e eventos da MinerSkills.';
+
 export function AgendaPage() {
-  const { data, isLoading } = useAgenda();
+  const agenda = useAgenda();
+  const data = agenda.data;
   const now = Date.now();
+
+  useDocumentHead({
+    title: 'Agenda',
+    description: DESCRIPTION,
+    canonicalPath: '/agenda',
+  });
 
   const { upcoming, past } = useMemo(() => {
     const events = data ?? [];
@@ -43,53 +55,52 @@ export function AgendaPage() {
 
   return (
     <>
-      <PageHero
-        kicker="Programação"
-        title="Agenda"
-        subtitle="Competições, reuniões, workshops e eventos da MinerSkills."
-      />
+      <PageHero kicker="Programação" title="Agenda" subtitle={DESCRIPTION} />
 
       <section className="ms-section ms-container">
-        {isLoading ? (
-          <Loader />
-        ) : !data || data.length === 0 ? (
-          <EmptyState icon={<CalendarDays />} title="Nenhum evento agendado" />
-        ) : (
-          <div className="ms-agenda">
-            <div>
-              <div className="ms-agenda__group-head">
-                <h2 className="ms-agenda__group-title">
-                  <CalendarClock /> Próximos eventos
-                </h2>
-                <a className="ms-agenda__subscribe" href={AGENDA_ICS_URL}>
-                  <Rss /> Assinar agenda (.ics)
-                </a>
+        <QueryState
+          query={agenda}
+          skeleton={<ListSkeleton rows={4} />}
+          isEmpty={(events) => events.length === 0}
+          empty={<EmptyState icon={<CalendarDays />} title="Nenhum evento agendado" />}
+        >
+          {() => (
+            <div className="ms-agenda">
+              <div>
+                <div className="ms-agenda__group-head">
+                  <h2 className="ms-agenda__group-title">
+                    <CalendarClock /> Próximos eventos
+                  </h2>
+                  <a className="ms-agenda__subscribe" href={AGENDA_ICS_URL}>
+                    <Rss /> Assinar agenda (.ics)
+                  </a>
+                </div>
+                {upcoming.length === 0 ? (
+                  <p className="ms-agenda__empty">Nenhum evento futuro no momento.</p>
+                ) : (
+                  <div className="ms-agenda__list">
+                    {upcoming.map((e, i) => (
+                      <EventCard key={e.id} event={e} delay={i * 0.04} highlight />
+                    ))}
+                  </div>
+                )}
               </div>
-              {upcoming.length === 0 ? (
-                <p className="ms-agenda__empty">Nenhum evento futuro no momento.</p>
-              ) : (
-                <div className="ms-agenda__list">
-                  {upcoming.map((e, i) => (
-                    <EventCard key={e.id} event={e} delay={i * 0.04} highlight />
-                  ))}
+
+              {past.length > 0 && (
+                <div>
+                  <h2 className="ms-agenda__group-title ms-agenda__group-title--muted">
+                    <CalendarDays /> Eventos anteriores
+                  </h2>
+                  <div className="ms-agenda__list">
+                    {past.map((e, i) => (
+                      <EventCard key={e.id} event={e} delay={i * 0.03} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-
-            {past.length > 0 && (
-              <div>
-                <h2 className="ms-agenda__group-title ms-agenda__group-title--muted">
-                  <CalendarDays /> Eventos anteriores
-                </h2>
-                <div className="ms-agenda__list">
-                  {past.map((e, i) => (
-                    <EventCard key={e.id} event={e} delay={i * 0.03} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </QueryState>
       </section>
     </>
   );
@@ -137,7 +148,12 @@ function EventCard({
                 Inscrever-se <ExternalLink />
               </LinkButton>
             )}
-            <LinkButton to={googleCalendarUrl(event)} external size="sm" variant="outline">
+            <LinkButton
+              to={googleCalendarUrl(event)}
+              external
+              size="sm"
+              variant="outline"
+            >
               <CalendarPlus /> Google Calendar
             </LinkButton>
             <a

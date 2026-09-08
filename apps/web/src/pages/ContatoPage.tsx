@@ -4,19 +4,25 @@ import { SocialIcon } from '../components/layout/SocialIcon';
 import { Reveal } from '../components/motion/Reveal';
 import { ContactForm } from '../components/forms/ContactForm';
 import { useSetting, useSocialLinks } from '../features/social/useSocial';
+import { useDocumentHead } from '../lib/useDocumentHead';
 import './ContatoPage.scss';
+
+const DESCRIPTION =
+  'Dúvidas, parcerias, imprensa ou um convite para visitar a oficina: escreva para a equipe.';
 
 export function ContatoPage() {
   const email = useSetting('contact_email');
   const { data: social } = useSocialLinks();
 
+  useDocumentHead({
+    title: 'Contato',
+    description: DESCRIPTION,
+    canonicalPath: '/contato',
+  });
+
   return (
     <>
-      <PageHero
-        kicker="Fale com a gente"
-        title="Contato"
-        subtitle="Dúvidas, parcerias, imprensa ou um convite para visitar a oficina: escreva para a equipe."
-      />
+      <PageHero kicker="Fale com a gente" title="Contato" subtitle={DESCRIPTION} />
 
       <section className="ms-section ms-container ms-contact-page">
         <div className="ms-contact-page__grid">
