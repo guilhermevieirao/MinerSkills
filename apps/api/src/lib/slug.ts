@@ -33,7 +33,12 @@ export async function uniqueMemberTagKey(label: string): Promise<string> {
   return uniqueSlug('memberTag', label);
 }
 
-type SlugModel = 'post' | 'encyclopediaEntry' | 'memberTag';
+/** Slug único de Season a partir do nome (ignora o próprio id em updates). */
+export async function uniqueSeasonSlug(name: string, ignoreId?: string): Promise<string> {
+  return uniqueSlug('season', name, ignoreId);
+}
+
+type SlugModel = 'post' | 'encyclopediaEntry' | 'memberTag' | 'season';
 
 async function findExisting(model: SlugModel, candidate: string) {
   switch (model) {
@@ -46,6 +51,8 @@ async function findExisting(model: SlugModel, candidate: string) {
       });
     case 'memberTag':
       return prisma.memberTag.findUnique({ where: { key: candidate }, select: { id: true } });
+    case 'season':
+      return prisma.season.findUnique({ where: { slug: candidate }, select: { id: true } });
   }
 }
 

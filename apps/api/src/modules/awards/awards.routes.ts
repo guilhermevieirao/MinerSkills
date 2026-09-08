@@ -1,13 +1,22 @@
 import { Router } from 'express';
-import type { Award, MediaAsset } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { awardSchema, type AwardDTO } from '@minerskills/shared';
 import { prisma } from '../../lib/prisma.js';
 import { toMediaDTO } from '../../lib/serialize.js';
 import { asyncHandler } from '../../middleware/asyncHandler.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAdmin } from '../../middleware/auth.js';
+import { assertSeasonExists } from '../seasons/seasons.service.js';
 
-function awardDTO(a: Award & { media: MediaAsset | null }): AwardDTO {
+/** Include e DTO são reutilizados pelas rotas de temporada (prêmios da temporada). */
+export const awardInclude = {
+  media: true,
+  season: { select: { id: true, name: true, slug: true, year: true } },
+} satisfies Prisma.AwardInclude;
+
+type AwardRow = Prisma.AwardGetPayload<{ include: typeof awardInclude }>;
+
+export function awardDTO(a: AwardRow): AwardDTO {
   return {
     id: a.id,
     title: a.title,
@@ -17,6 +26,8 @@ function awardDTO(a: Award & { media: MediaAsset | null }): AwardDTO {
     highlight: a.highlight,
     order: a.order,
     media: toMediaDTO(a.media),
+    seasonId: a.seasonId,
+    seasonRef: a.season,
   };
 }
 
@@ -26,7 +37,7 @@ awardsPublicRouter.get(
   asyncHandler(async (_req, res) => {
     const awards = await prisma.award.findMany({
       orderBy: [{ order: 'asc' }, { year: 'desc' }],
-      include: { media: true },
+      include: awardInclude,
     });
     res.json(awards.map(awardDTO));
   }),
@@ -40,9 +51,10 @@ awardsAdminRouter.post(
   validate(awardSchema),
   asyncHandler(async (req, res) => {
     const data = req.body as import('@minerskills/shared').AwardInput;
+    await assertSeasonExists(data.seasonId);
     const award = await prisma.award.create({
-      data: { ...data, mediaId: data.mediaId ?? null },
-      include: { media: true },
+      data: { ...data, mediaId: data.mediaId ?? null, seasonId: data.seasonId ?? null },
+      include: awardInclude,
     });
     res.status(201).json(awardDTO(award));
   }),
@@ -53,10 +65,11 @@ awardsAdminRouter.put(
   validate(awardSchema),
   asyncHandler(async (req, res) => {
     const data = req.body as import('@minerskills/shared').AwardInput;
+    await assertSeasonExists(data.seasonId);
     const award = await prisma.award.update({
       where: { id: req.params.id },
-      data: { ...data, mediaId: data.mediaId ?? null },
-      include: { media: true },
+      data: { ...data, mediaId: data.mediaId ?? null, seasonId: data.seasonId ?? null },
+      include: awardInclude,
     });
     res.json(awardDTO(award));
   }),

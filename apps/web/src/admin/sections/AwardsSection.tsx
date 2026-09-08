@@ -3,13 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Star } from 'lucide-react';
 import { awardSchema, type AwardDTO, type AwardInput } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Textarea, Field, Loader, EmptyState } from '../../components/ui';
+import { Button, Input, Textarea, Select, Field, Loader, EmptyState } from '../../components/ui';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
 import { ApiError } from '../../lib/api';
+import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
 
 export function AwardsSection() {
   const { data, isLoading } = useQuery({ queryKey: ['admin-awards'], queryFn: adminApi.awards.list });
@@ -18,9 +19,12 @@ export function AwardsSection() {
   const [deleting, setDeleting] = useState<AwardDTO | null>(null);
   const toast = useToast();
 
+  // As temporadas contam prêmios vinculados: também precisam ser renovadas.
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin-awards'] });
     void queryClient.invalidateQueries({ queryKey: ['awards'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin-seasons'] });
+    void queryClient.invalidateQueries({ queryKey: SEASONS_QUERY_KEY });
   };
 
   const remove = async () => {
@@ -55,6 +59,7 @@ export function AwardsSection() {
                 <th>Título</th>
                 <th>Evento</th>
                 <th>Ano</th>
+                <th>Temporada</th>
                 <th>Destaque</th>
                 <th></th>
               </tr>
@@ -65,6 +70,7 @@ export function AwardsSection() {
                   <td>{a.title}</td>
                   <td>{a.event}</td>
                   <td>{a.year}</td>
+                  <td>{a.seasonRef?.name ?? '—'}</td>
                   <td>{a.highlight ? <Star style={{ width: 16, color: 'var(--ms-green)' }} /> : '—'}</td>
                   <td>
                     <div className="ms-adm__row-actions">
@@ -126,10 +132,15 @@ function AwardForm({
     highlight: initial?.highlight ?? false,
     order: initial?.order ?? 0,
     mediaId: initial?.media?.id ?? null,
+    seasonId: initial?.seasonId ?? null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const toast = useToast();
+  const { data: seasons } = useQuery({
+    queryKey: ['admin-seasons'],
+    queryFn: adminApi.seasons.list,
+  });
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +187,19 @@ function AwardForm({
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
+        </Field>
+        <Field label="Temporada" hint="Opcional: agrupa o prêmio na página Temporadas." error={errors.seasonId}>
+          <Select
+            value={form.seasonId ?? ''}
+            onChange={(e) => setForm({ ...form, seasonId: e.target.value || null })}
+          >
+            <option value="">—</option>
+            {(seasons ?? []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.year})
+              </option>
+            ))}
+          </Select>
         </Field>
         <MediaPicker
           value={form.mediaId ?? null}

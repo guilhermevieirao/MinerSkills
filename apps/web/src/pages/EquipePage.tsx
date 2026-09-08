@@ -244,6 +244,7 @@ function DetailPanel({ entry, tagMap }: { entry: EncyclopediaEntryDTO; tagMap: T
               <CalendarDays /> {entry.season}
             </span>
           )}
+          {entry.seasonRef && <Tag variant="muted">{entry.seasonRef.name}</Tag>}
           {entry.generation && (
             <Tag variant="muted">{GENERATION_LABELS[entry.generation as never]}</Tag>
           )}

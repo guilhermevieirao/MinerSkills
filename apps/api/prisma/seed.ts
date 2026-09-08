@@ -4,6 +4,7 @@ import { rm, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
   DEFAULT_MEMBER_TAGS,
+  DEFAULT_SPONSORS,
   GENERATIONS,
   AGENDA_KINDS,
   SETTING_KEYS,
@@ -12,7 +13,7 @@ import {
 import { prisma } from '../src/lib/prisma.js';
 import { env } from '../src/config/env.js';
 import { normalizeEmail } from '../src/lib/email.js';
-import { uniquePostSlug, uniqueEncyclopediaSlug } from '../src/lib/slug.js';
+import { uniquePostSlug, uniqueEncyclopediaSlug, uniqueSeasonSlug } from '../src/lib/slug.js';
 import { UPLOAD_DIRS } from '../src/middleware/upload.js';
 import { seedImage } from './seed-images.js';
 
@@ -23,7 +24,8 @@ const N = {
   posts: isTest ? 3 : 12,
   gallery: isTest ? 6 : 30,
   members: isTest ? 6 : 21,
-  robots: isTest ? 1 : 3,
+  // 2 no modo test: um robô por temporada do seed (Reefscape e Crescendo)
+  robots: isTest ? 2 : 3,
   forumTopics: isTest ? 4 : 16,
   awards: isTest ? 3 : 10,
   agenda: isTest ? 4 : 12,
@@ -50,9 +52,12 @@ async function clearAll() {
   await prisma.agendaEvent.deleteMany();
   await prisma.award.deleteMany();
   await prisma.socialLink.deleteMany();
+  await prisma.contactMessage.deleteMany(); // sem FK: qualquer posição serve
   await prisma.setting.deleteMany();
   await prisma.post.deleteMany();
   await prisma.encyclopediaEntry.deleteMany();
+  await prisma.season.deleteMany(); // depois de award/encyclopediaEntry (FK SetNull), antes de mediaAsset (selo)
+  await prisma.sponsor.deleteMany(); // antes de mediaAsset (logo)
   await prisma.mediaAsset.deleteMany();
   await prisma.admin.deleteMany();
 
@@ -415,6 +420,50 @@ async function seedMemberTags() {
   console.log(`  ✓ tags da equipe (${DEFAULT_MEMBER_TAGS.length})`);
 }
 
+/** Temporadas do seed por slug e por ano — usadas para vincular robôs e prêmios. */
+const seasonIdBySlug = new Map<string, string>();
+const seasonIdByYear = new Map<number, string>();
+
+async function seedSeasons() {
+  // Sem faker: não altera a sequência determinística das demais funções.
+  const seasons = [
+    {
+      name: 'Crescendo',
+      year: 2024,
+      game: 'CRESCENDO presented by Haas',
+      isCurrent: false,
+      summary:
+        'Temporada de estreia da MinerSkills na FRC. Os robôs lançavam notas em alto-falantes e amplificadores e, no fim da partida, escalavam a corrente do palco. A equipe foi reconhecida com o Rising All-Star Award.',
+    },
+    {
+      name: 'Reefscape',
+      year: 2025,
+      game: 'REEFSCAPE presented by Haas',
+      isCurrent: true,
+      summary:
+        'Segunda temporada da equipe. Os robôs pontuam corais nos recifes, removem algas do campo e, no final da partida, sobem na gaiola da barcaça.',
+    },
+  ];
+  for (let i = 0; i < seasons.length; i++) {
+    const s = seasons[i]!;
+    const badge = await seedImage({
+      label: s.name,
+      seed: 1300 + i,
+      picsumId: nextPicsum(),
+      alt: `Selo da temporada ${s.name} ${s.year}`,
+      width: 600,
+      height: 600,
+    });
+    const slug = await uniqueSeasonSlug(s.name);
+    const season = await prisma.season.create({
+      data: { ...s, slug, order: 0, badgeId: badge.id },
+    });
+    seasonIdBySlug.set(slug, season.id);
+    seasonIdByYear.set(s.year, season.id);
+  }
+  console.log(`  ✓ temporadas (${seasons.length})`);
+}
+
 async function seedEncyclopedia() {
   const tagKeys = DEFAULT_MEMBER_TAGS.map((t) => t.key);
   const labelByKey = new Map(DEFAULT_MEMBER_TAGS.map((t) => [t.key, t.label]));
@@ -455,30 +504,43 @@ async function seedEncyclopedia() {
     });
   }
 
-  const robotNames = ['R.O.B. Reefscape', 'R.O.B. Crescendo', 'R.O.B. Rebuilt'];
+  // Um robô por temporada do seed (vinculado pelo slug) e o da próxima
+  // temporada, que ainda não tem cadastro. O texto `season` continua como
+  // rótulo livre; o vínculo real é `seasonId`.
+  const robots = [
+    { name: 'R.O.B. Reefscape', seasonSlug: 'reefscape', year: 2025, isFormer: false },
+    { name: 'R.O.B. Crescendo', seasonSlug: 'crescendo', year: 2024, isFormer: true },
+    { name: 'R.O.B. Rebuilt', seasonSlug: null, year: 2026, isFormer: false },
+  ];
   for (let i = 0; i < N.robots; i++) {
-    const name = robotNames[i] ?? `R.O.B. ${i + 1}`;
+    const robot = robots[i] ?? {
+      name: `R.O.B. ${i + 1}`,
+      seasonSlug: null,
+      year: 2024 + i,
+      isFormer: true,
+    };
     const photo = await seedImage({
       label: 'Robô',
       seed: 900 + i,
       picsumId: nextPicsum(),
-      alt: name,
+      alt: robot.name,
       width: 900,
       height: 1000,
     });
-    const slug = await uniqueEncyclopediaSlug(name);
+    const slug = await uniqueEncyclopediaSlug(robot.name);
     await prisma.encyclopediaEntry.create({
       data: {
         kind: 'robot',
-        name,
+        name: robot.name,
         slug,
         role: 'Robô de Competição',
-        season: `Temporada ${2024 + i}`,
+        season: `Temporada ${robot.year}`,
         about: faker.lorem.paragraphs(2, '\n\n'),
         quote: null,
-        isFormer: i < N.robots - 1,
+        isFormer: robot.isFormer,
         order: 100 + i,
         photoId: photo.id,
+        seasonId: robot.seasonSlug ? (seasonIdBySlug.get(robot.seasonSlug) ?? null) : null,
         tags: { create: [] },
       },
     });
@@ -542,8 +604,9 @@ async function seedAwards() {
       description: faker.lorem.sentences(2),
     };
     const media = i < 3 ? await seedImage({ label: 'Prêmio', seed: 1100 + i, picsumId: nextPicsum(), alt: base.title, width: 800, height: 800 }) : null;
+    // vínculo pelo ano: Rising All-Star 2024 → Crescendo; 2025 → Reefscape
     await prisma.award.create({
-      data: { ...base, order: i, mediaId: media?.id ?? null },
+      data: { ...base, order: i, mediaId: media?.id ?? null, seasonId: seasonIdByYear.get(base.year) ?? null },
     });
   }
   console.log(`  ✓ prêmios (${N.awards})`);
@@ -577,6 +640,30 @@ async function seedAgenda() {
   console.log(`  ✓ agenda (${N.agenda} eventos)`);
 }
 
+/**
+ * Competição futura fixa (ambos os modos de seed): alimenta o contador
+ * "Próxima competição" da Home e os testes e2e de agenda (ICS, Google Calendar).
+ * 1º de março do ano que vem, 09:00 em Brasília. Sem faker: não altera a
+ * sequência determinística das demais funções.
+ */
+async function seedNextCompetition() {
+  const year = new Date().getFullYear() + 1;
+  await prisma.agendaEvent.create({
+    data: {
+      title: 'Regional FRC — Etapa Brasil',
+      description:
+        'Etapa regional da FIRST Robotics Competition. A equipe viaja com o robô da temporada; venha torcer pela MinerSkills.',
+      location: 'Arena de competição — a confirmar',
+      startsAt: new Date(`${year}-03-01T09:00:00-03:00`),
+      endsAt: new Date(`${year}-03-01T18:00:00-03:00`),
+      kind: 'competicao',
+      url: 'https://www.firstinspires.org',
+      published: true,
+    },
+  });
+  console.log('  ✓ agenda (competição futura fixa)');
+}
+
 async function seedSocial() {
   const links = [
     { platform: 'instagram', label: '@minerskills10019', url: 'https://instagram.com/minerskills10019', order: 0 },
@@ -603,6 +690,83 @@ async function seedSocial() {
   console.log('  ✓ redes sociais + settings');
 }
 
+async function seedSponsors() {
+  // Os mesmos três da migration/backfill (DEFAULT_SPONSORS), ordem = posição na lista.
+  // Sem faker: não altera a sequência determinística das demais funções.
+  for (let i = 0; i < DEFAULT_SPONSORS.length; i++) {
+    const s = DEFAULT_SPONSORS[i]!;
+    await prisma.sponsor.create({
+      data: { name: s.name, url: s.url, tier: s.tier, order: i, active: true },
+    });
+  }
+  console.log(`  ✓ patrocinadores (${DEFAULT_SPONSORS.length})`);
+}
+
+async function seedContact() {
+  // Duas mensagens fixas nos dois modos: uma inscrição nova e um contato já lido.
+  // O e2e (contact.spec.ts) cria as próprias mensagens e as remove ao final.
+  await prisma.contactMessage.create({
+    data: {
+      kind: 'inscricao',
+      name: 'Ana Beatriz Rocha',
+      email: 'ana.rocha@example.com',
+      phone: '(31) 99999-1234',
+      school: 'Escola SESI General Onésimo Becker de Araújo',
+      grade: '1º ano do ensino médio',
+      message:
+        'Adoro programação e queria muito participar da equipe na próxima temporada. Posso ajudar no software e na eletrônica.',
+      status: 'new',
+      createdAt: faker.date.recent({ days: 3 }),
+    },
+  });
+  const readAt = faker.date.recent({ days: 5 });
+  await prisma.contactMessage.create({
+    data: {
+      kind: 'contato',
+      name: 'Carlos Mendes',
+      email: 'carlos.mendes@example.com',
+      message:
+        'Sou professor de física e gostaria de levar meus alunos para conhecer a oficina da equipe. Como podemos combinar uma visita?',
+      status: 'read',
+      createdAt: new Date(readAt.getTime() - 2 * 3600000),
+      readAt,
+    },
+  });
+
+  // modo full: mais algumas mensagens variadas para a caixa de entrada não ficar vazia
+  if (!isTest) {
+    for (let i = 0; i < 6; i++) {
+      const kind = i % 2 === 0 ? 'inscricao' : 'contato';
+      const status = faker.helpers.arrayElement(['new', 'read', 'archived'] as const);
+      const createdAt = faker.date.recent({ days: 60 });
+      await prisma.contactMessage.create({
+        data: {
+          kind,
+          name: faker.person.fullName(),
+          email: faker.internet.email().toLowerCase(),
+          phone: i % 3 === 0 ? faker.phone.number() : null,
+          school:
+            kind === 'inscricao'
+              ? faker.helpers.arrayElement([
+                  'Escola SESI General Onésimo Becker de Araújo',
+                  'SENAI Euvaldo Lodi',
+                ])
+              : null,
+          grade:
+            kind === 'inscricao'
+              ? faker.helpers.arrayElement(['9º ano', '1º ano', '2º ano'])
+              : null,
+          message: faker.lorem.paragraph(),
+          status,
+          createdAt,
+          readAt: status === 'new' ? null : new Date(createdAt.getTime() + 3600000),
+        },
+      });
+    }
+  }
+  console.log(`  ✓ mensagens (${isTest ? 2 : 8})`);
+}
+
 async function main() {
   console.log(`🌱 Seed MinerSkills — modo=${env.SEED_MODE}, imagens=${env.SEED_IMAGE_SOURCE}`);
   await clearAll();
@@ -613,11 +777,16 @@ async function main() {
   await seedGallery();
   await seedQuiz();
   await seedMemberTags();
+  await seedSeasons();
   await seedEncyclopedia();
   await seedForum();
   await seedAwards();
   await seedAgenda();
+  await seedNextCompetition();
   await seedSocial();
+  await seedSponsors();
+  // por último: é a única função depois de seedAgenda() que usa faker
+  await seedContact();
   console.log('✅ Seed concluído.');
 }
 

@@ -13,15 +13,18 @@ import { ApiError } from '../../lib/errors.js';
 import { asyncHandler } from '../../middleware/asyncHandler.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAdmin } from '../../middleware/auth.js';
+import { assertSeasonExists } from '../seasons/seasons.service.js';
 
-const entryInclude = {
+/** Include e DTO são reutilizados pelas rotas de temporada (robôs da temporada). */
+export const entryInclude = {
   photo: true,
   tags: true,
+  seasonRef: { select: { id: true, name: true, slug: true, year: true } },
 } satisfies Prisma.EncyclopediaEntryInclude;
 
 type EntryRow = Prisma.EncyclopediaEntryGetPayload<{ include: typeof entryInclude }>;
 
-function entryDTO(e: EntryRow): EncyclopediaEntryDTO {
+export function entryDTO(e: EntryRow): EncyclopediaEntryDTO {
   return {
     id: e.id,
     kind: e.kind,
@@ -36,6 +39,8 @@ function entryDTO(e: EntryRow): EncyclopediaEntryDTO {
     isFormer: e.isFormer,
     order: e.order,
     photo: toMediaDTO(e.photo),
+    seasonId: e.seasonId,
+    seasonRef: e.seasonRef,
     tags: e.tags.map((t) => t.tag),
   };
 }
@@ -54,6 +59,8 @@ function buildData(input: EncyclopediaEntryInput, slug: string) {
     isFormer: input.isFormer,
     order: input.order,
     photoId: input.photoId ?? null,
+    // o vínculo com a temporada só existe para robôs
+    seasonId: input.kind === 'robot' ? (input.seasonId ?? null) : null,
   };
 }
 
@@ -139,6 +146,7 @@ encyclopediaAdminRouter.post(
   asyncHandler(async (req, res) => {
     const input = req.body as EncyclopediaEntryInput;
     const tags = await resolveTagKeys(input.tags);
+    if (input.kind === 'robot') await assertSeasonExists(input.seasonId);
     const slug = await uniqueEncyclopediaSlug(input.name);
     const entry = await prisma.encyclopediaEntry.create({
       data: {
@@ -157,6 +165,7 @@ encyclopediaAdminRouter.put(
   asyncHandler(async (req, res) => {
     const input = req.body as EncyclopediaEntryInput;
     const tags = await resolveTagKeys(input.tags);
+    if (input.kind === 'robot') await assertSeasonExists(input.seasonId);
     const slug = await uniqueEncyclopediaSlug(input.name, req.params.id);
     const entry = await prisma.$transaction(async (tx) => {
       await tx.encyclopediaTag.deleteMany({ where: { entryId: req.params.id } });

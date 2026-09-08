@@ -78,6 +78,9 @@
     font-size: var(--ms-text-xs);
     font-weight: 600;
   }
+  &__season {
+    margin-top: var(--ms-space-2);
+  }
 }
 
 .ms-award-card {
@@ -127,6 +130,9 @@
     font-size: var(--ms-text-xs);
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+  &__season {
+    margin-top: var(--ms-space-2);
   }
   p {
     color: var(--ms-text-dim);

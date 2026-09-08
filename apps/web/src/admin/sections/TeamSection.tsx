@@ -33,6 +33,7 @@ import { mediaUrl } from '../../lib/format';
 import { ApiError } from '../../lib/api';
 import { TagIcon } from '../../features/encyclopedia/roleIcons';
 import { MEMBER_TAGS_QUERY_KEY } from '../../features/encyclopedia/useMemberTags';
+import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
 
 export function TeamSection() {
   const { data, isLoading } = useQuery({ queryKey: ['admin-encyclopedia'], queryFn: adminApi.encyclopedia.list });
@@ -43,11 +44,14 @@ export function TeamSection() {
 
   // `usageCount` das tags é derivado dos registros: as listas de tags também
   // precisam ser invalidadas, senão a tela de tags mostra contagens antigas.
+  // As temporadas contam robôs vinculados: também precisam ser renovadas.
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin-encyclopedia'] });
     void queryClient.invalidateQueries({ queryKey: ['encyclopedia'] });
     void queryClient.invalidateQueries({ queryKey: ['admin-member-tags'] });
     void queryClient.invalidateQueries({ queryKey: MEMBER_TAGS_QUERY_KEY });
+    void queryClient.invalidateQueries({ queryKey: ['admin-seasons'] });
+    void queryClient.invalidateQueries({ queryKey: SEASONS_QUERY_KEY });
   };
 
   const remove = async () => {
@@ -178,11 +182,19 @@ function EntryForm({
     isFormer: initial?.isFormer ?? false,
     order: initial?.order ?? 0,
     photoId: initial?.photo?.id ?? null,
+    seasonId: initial?.seasonId ?? null,
     tags: initial?.tags ?? [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const toast = useToast();
+
+  // Temporadas cadastradas — só robôs têm o vínculo, então só eles carregam a lista.
+  const { data: seasons } = useQuery({
+    queryKey: ['admin-seasons'],
+    queryFn: adminApi.seasons.list,
+    enabled: form.kind === 'robot',
+  });
 
   const toggleTag = (key: string) =>
     setForm((f) => ({
@@ -201,7 +213,9 @@ function EntryForm({
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     const tags = known ? form.tags.filter((t) => known.has(t)) : form.tags;
-    const parsed = encyclopediaEntrySchema.safeParse({ ...form, tags });
+    // membro nunca leva temporada (a API também zera)
+    const seasonId = form.kind === 'robot' ? form.seasonId : null;
+    const parsed = encyclopediaEntrySchema.safeParse({ ...form, tags, seasonId });
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
@@ -246,8 +260,18 @@ function EntryForm({
             <Input value={form.role ?? ''} onChange={(e) => setForm({ ...form, role: e.target.value })} />
           </Field>
           {isRobot ? (
-            <Field label="Temporada">
-              <Input value={form.season ?? ''} onChange={(e) => setForm({ ...form, season: e.target.value })} />
+            <Field label="Temporada" hint="Vincula o robô à página Temporadas." error={errors.seasonId}>
+              <Select
+                value={form.seasonId ?? ''}
+                onChange={(e) => setForm({ ...form, seasonId: e.target.value || null })}
+              >
+                <option value="">—</option>
+                {(seasons ?? []).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.year})
+                  </option>
+                ))}
+              </Select>
             </Field>
           ) : (
             <Field label="Idade" error={errors.age}>
@@ -259,6 +283,12 @@ function EntryForm({
             </Field>
           )}
         </div>
+
+        {isRobot && (
+          <Field label="Rótulo da temporada" hint="Texto livre exibido no painel do robô (ex.: Temporada 2025).">
+            <Input value={form.season ?? ''} onChange={(e) => setForm({ ...form, season: e.target.value })} />
+          </Field>
+        )}
 
         {!isRobot && (
           <>

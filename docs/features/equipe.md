@@ -25,7 +25,9 @@ preservado) e, no painel, `/admin/enciclopedia` → `/admin/equipe`.
 | **Contador** | "N registros encontrados". |
 
 O detalhe traz foto, nome, idade (ou temporada, para robôs), geração, tags,
-seção **» Sobre** (parágrafos separados por linha em branco) e a citação.
+seção **» Sobre** (parágrafos separados por linha em branco) e a citação. Robôs
+vinculados a uma temporada (ver [temporadas.md](temporadas.md)) mostram o nome dela
+como tag ao lado das metas.
 
 ## Filtros
 
@@ -94,7 +96,8 @@ o desktop pré-seleciona o primeiro registro.
 | `name`, `slug` | Slug gerado automaticamente do nome, único. |
 | `role` | Rótulo exibido no card. |
 | `generation` | `1` \| `2` \| `3` (só membros). |
-| `age` / `season` | Membro / robô. |
+| `age` / `season` | Membro / robô. `season` é o rótulo de texto livre ("Rótulo da temporada" no painel). |
+| `seasonId` / `seasonRef` | Só robôs: vínculo com uma `Season` (select "Temporada" no painel, lista de `/admin/temporadas`). A API responde `400` (`Temporada inválida`, `details.path = seasonId`) se o id não existir e zera o campo em membros. Excluir a temporada deixa `null` (`SetNull`). `seasonRef` = `{ id, name, slug, year }` ou `null`. Ver [temporadas.md](temporadas.md). |
 | `about` | Texto do painel. Parágrafos = linha em branco. |
 | `quote` | Citação no rodapé do painel. |
 | `isFormer` | Ex-membro / robô antigo. |
@@ -109,7 +112,7 @@ o desktop pré-seleciona o primeiro registro.
 | `GET` | `/api/encyclopedia?kind&tag&generation&former` | Registros, com filtros. |
 | `GET` | `/api/encyclopedia/:slug` | Registro individual. |
 | `GET` | `/api/member-tags` | Tags ordenadas por `order`, `label`, com `usageCount`. |
-| `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/encyclopedia[/:id]` | CRUD de registros (valida as tags). |
+| `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/encyclopedia[/:id]` | CRUD de registros (valida as tags e o `seasonId`). |
 | `GET`/`POST`/`PUT`/`DELETE` | `/api/admin/member-tags[/:id]` | CRUD de tags (`key` gerada no `POST`, imutável no `PUT`; `DELETE` limpa os vínculos). |
 
 ## Referência visual

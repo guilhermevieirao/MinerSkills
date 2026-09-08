@@ -4,14 +4,16 @@ import {
   uniqueEncyclopediaSlug,
   uniqueMemberTagKey,
   uniquePostSlug,
+  uniqueSeasonSlug,
 } from './slug.js';
 
 // O prisma real importa env.js (que encerra o processo sem .env válido);
 // aqui só interessa o findUnique de cada modelo.
-const { postFind, entryFind, tagFind } = vi.hoisted(() => ({
+const { postFind, entryFind, tagFind, seasonFind } = vi.hoisted(() => ({
   postFind: vi.fn(),
   entryFind: vi.fn(),
   tagFind: vi.fn(),
+  seasonFind: vi.fn(),
 }));
 
 vi.mock('./prisma.js', () => ({
@@ -19,6 +21,7 @@ vi.mock('./prisma.js', () => ({
     post: { findUnique: postFind },
     encyclopediaEntry: { findUnique: entryFind },
     memberTag: { findUnique: tagFind },
+    season: { findUnique: seasonFind },
   },
 }));
 
@@ -26,6 +29,7 @@ beforeEach(() => {
   postFind.mockReset();
   entryFind.mockReset();
   tagFind.mockReset();
+  seasonFind.mockReset();
 });
 
 describe('slugBase', () => {
@@ -108,5 +112,22 @@ describe('uniquePostSlug', () => {
       where: { slug: 'titulo-do-post' },
       select: { id: true },
     });
+  });
+});
+
+describe('uniqueSeasonSlug', () => {
+  it('consulta Season pelo slug e sufixa em colisão', async () => {
+    seasonFind.mockResolvedValueOnce({ id: 'outra' }).mockResolvedValueOnce(null);
+    await expect(uniqueSeasonSlug('Reefscape')).resolves.toBe('reefscape-2');
+    expect(seasonFind).toHaveBeenNthCalledWith(1, {
+      where: { slug: 'reefscape' },
+      select: { id: true },
+    });
+    expect(entryFind).not.toHaveBeenCalled();
+  });
+
+  it('ignora o próprio id (renomear sem colisão mantém o slug)', async () => {
+    seasonFind.mockResolvedValueOnce({ id: 's1' });
+    await expect(uniqueSeasonSlug('Reefscape', 's1')).resolves.toBe('reefscape');
   });
 });

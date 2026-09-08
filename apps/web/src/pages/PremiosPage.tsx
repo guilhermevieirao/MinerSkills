@@ -1,7 +1,7 @@
 import { Award as AwardIcon, Star } from 'lucide-react';
 import { PageHero } from '../components/layout/PageHero';
 import { useAwards } from '../features/awards/useAwards';
-import { Loader, EmptyState } from '../components/ui';
+import { Loader, EmptyState, Tag } from '../components/ui';
 import { Reveal } from '../components/motion/Reveal';
 import { mediaUrl } from '../lib/format';
 import './PremiosPage.scss';
@@ -43,6 +43,11 @@ export function PremiosPage() {
                         <span className="ms-award-hero__year">{a.year}</span>
                         <h2>{a.title}</h2>
                         <span className="ms-award-hero__event">{a.event}</span>
+                        {a.seasonRef && (
+                          <div className="ms-award-hero__season">
+                            <Tag variant="muted">{a.seasonRef.name}</Tag>
+                          </div>
+                        )}
                         <p>{a.description}</p>
                       </div>
                     </div>
@@ -66,6 +71,11 @@ export function PremiosPage() {
                       <span className="ms-award-card__year">{a.year}</span>
                       <h3>{a.title}</h3>
                       <span className="ms-award-card__event">{a.event}</span>
+                      {a.seasonRef && (
+                        <div className="ms-award-card__season">
+                          <Tag variant="muted">{a.seasonRef.name}</Tag>
+                        </div>
+                      )}
                       <p>{a.description}</p>
                     </div>
                   </Reveal>
