@@ -110,6 +110,11 @@
     overflow-wrap: anywhere;
   }
 
+  // Linha extra abaixo das colunas — só existe quando o PWA pode ser instalado
+  &__install {
+    grid-column: 1 / -1;
+  }
+
   &__bottom {
     border-top: 1px solid var(--ms-border);
     @include container(var(--ms-container-wide));

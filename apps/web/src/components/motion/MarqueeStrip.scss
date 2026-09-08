@@ -25,4 +25,11 @@
     padding-inline: var(--ms-space-3);
     white-space: nowrap;
   }
+
+  // Faixa parada (no início do trilho) para quem pediu menos movimento.
+  @media (prefers-reduced-motion: reduce) {
+    &__track {
+      animation-play-state: paused;
+    }
+  }
 }

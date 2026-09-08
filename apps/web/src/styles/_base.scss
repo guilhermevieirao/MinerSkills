@@ -128,4 +128,41 @@ ol {
   flex: 1;
   display: flex;
   flex-direction: column;
+
+  // Recebe foco programático (skip link, troca de rota). O anel só aparece na
+  // navegação por teclado, e discreto — a área é a página inteira.
+  &:focus {
+    outline: none;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--ms-border-strong);
+    outline-offset: -2px;
+  }
+}
+
+// Link "Pular para o conteúdo": primeiro focável da página. Fica fora da tela
+// e só aparece (no topo, sobre a navbar) enquanto tem o foco do teclado.
+.ms-skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--ms-space-4);
+  z-index: calc(var(--ms-z-nav) + 1);
+  padding: var(--ms-space-2) var(--ms-space-4);
+  background: var(--ms-green);
+  color: var(--ms-on-green);
+  font-family: var(--ms-font-display);
+  font-weight: 600;
+  font-size: var(--ms-text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 0 0 var(--ms-radius-sm) var(--ms-radius-sm);
+  box-shadow: var(--ms-shadow);
+
+  &:focus,
+  &:focus-visible {
+    top: 0;
+    // o anel verde padrão sumiria sobre o fundo verde
+    outline: 2px solid var(--ms-on-green);
+    outline-offset: -4px;
+  }
 }

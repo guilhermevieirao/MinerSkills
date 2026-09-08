@@ -1,6 +1,7 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '../../lib/useFocusTrap';
 
 type ModalEntry = { onClose: () => void };
 
@@ -54,11 +55,25 @@ export function Modal({
     return () => popModal(current);
   }, []);
 
+  // O foco entra no painel (o leitor de tela lê o título) e o Tab não sai dele.
+  // O Escape continua com a pilha acima — por isso o hook não recebe onEscape.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useFocusTrap(panelRef, true, { initialFocus: 'container' });
+
   return createPortal(
     <div className="ms-modal" onClick={onClose}>
-      <div className="ms-modal__panel" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        className="ms-modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="ms-modal__head">
-          <h2>{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button className="ms-modal__close" onClick={onClose} aria-label="Fechar">
             <X />
           </button>

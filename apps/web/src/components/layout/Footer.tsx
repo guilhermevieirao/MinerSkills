@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { TEAM } from '@minerskills/shared';
 import { LogoBadge } from '../brand/Logo';
 import { SocialIcon } from './SocialIcon';
+import { InstallPrompt } from '../pwa/InstallPrompt';
 import { FOOTER_ITEMS } from './navItems';
 import { useSocialLinks, useSettings } from '../../features/social/useSocial';
 import { useSponsors, groupSponsorsByTier } from '../../features/sponsors/useSponsors';
@@ -78,6 +79,9 @@ export function Footer() {
           </div>
           <p className="ms-footer__credit">Apoio: {sponsorLine}</p>
         </div>
+
+        {/* Só aparece quando o navegador oferece instalar o PWA */}
+        <InstallPrompt className="ms-footer__install" />
       </div>
 
       <div className="ms-footer__bottom">

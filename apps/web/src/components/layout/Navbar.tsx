@@ -5,7 +5,7 @@ import { cx } from '../../lib/format';
 import { LogoWordmark } from '../brand/Logo';
 import { LinkButton } from '../ui';
 import { NAV_ITEMS, JOIN_ITEM } from './navItems';
-import { MobileNav } from './MobileNav';
+import { MobileNav, MOBILE_NAV_ID } from './MobileNav';
 import './Navbar.scss';
 
 export function Navbar() {
@@ -55,6 +55,8 @@ export function Navbar() {
               className="ms-nav__burger"
               onClick={() => setMenuOpen(true)}
               aria-label="Abrir menu"
+              aria-expanded={menuOpen}
+              aria-controls={MOBILE_NAV_ID}
             >
               <Menu />
             </button>

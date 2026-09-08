@@ -1,7 +1,8 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mediaUrl } from '../../lib/format';
+import { useFocusTrap } from '../../lib/useFocusTrap';
 import './Lightbox.scss';
 
 export interface LightboxItem {
@@ -23,6 +24,7 @@ export function Lightbox({
 }) {
   const open = index !== null;
   const current = open ? items[index] : undefined;
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const prev = useCallback(() => {
     if (index === null) return;
@@ -34,10 +36,12 @@ export function Lightbox({
     onNavigate((index + 1) % items.length);
   }, [index, items.length, onNavigate]);
 
+  // Tab fica dentro do lightbox, Esc fecha e o foco volta à foto que o abriu.
+  useFocusTrap(panelRef, open, { onEscape: onClose });
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') prev();
       if (e.key === 'ArrowRight') next();
     };
@@ -47,12 +51,13 @@ export function Lightbox({
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [open, onClose, prev, next]);
+  }, [open, prev, next]);
 
   return (
     <AnimatePresence>
       {open && current && (
         <motion.div
+          ref={panelRef}
           className="ms-lightbox"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -60,6 +65,7 @@ export function Lightbox({
           onClick={onClose}
           role="dialog"
           aria-modal="true"
+          aria-label="Foto ampliada"
         >
           <button className="ms-lightbox__close" onClick={onClose} aria-label="Fechar">
             <X />

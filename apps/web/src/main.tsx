@@ -5,6 +5,8 @@ import { RouterProvider } from 'react-router-dom';
 import { queryClient } from './lib/queryClient';
 import { router } from './router';
 import { ToastProvider } from './components/ui/Toast';
+import { OfflineBanner } from './components/pwa/OfflineBanner';
+import { ReloadPrompt } from './components/pwa/ReloadPrompt';
 
 // Fontes self-hosted (sem CDN externo — compatível com CSP e PWA offline)
 import '@fontsource/chakra-petch/400.css';
@@ -21,7 +23,10 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        {/* Faixa "offline" e aviso de nova versão vivem fora do router: valem para o site e o painel */}
+        <OfflineBanner />
         <RouterProvider router={router} />
+        <ReloadPrompt />
       </ToastProvider>
     </QueryClientProvider>
   </StrictMode>,

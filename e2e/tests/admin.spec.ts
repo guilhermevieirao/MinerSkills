@@ -155,7 +155,8 @@ test.describe('Área administrativa', () => {
     await page.goto('/admin/quiz');
     await page.getByRole('button', { name: /Nova pergunta/i }).click();
 
-    await page.getByLabel('Pergunta').fill(question);
+    // exact: o diálogo (aria-labelledby) chama-se "Nova pergunta" e também casaria
+    await page.getByLabel('Pergunta', { exact: true }).fill(question);
     await page.getByPlaceholder('Opção 1').fill('Resposta certa');
     await page.getByPlaceholder('Opção 2').fill('Resposta errada');
     await page.getByRole('button', { name: 'Salvar' }).click();
