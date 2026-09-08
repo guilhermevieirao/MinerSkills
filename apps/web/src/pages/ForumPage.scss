@@ -29,6 +29,17 @@
       justify-content: flex-end;
       gap: var(--ms-space-3);
     }
+
+    // Honeypot: fora da tela, sem display: none (robôs pulam campos invisíveis
+    // no DOM, mas preenchem os que só o CSS esconde).
+    .ms-hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
   }
 
   &__list {

@@ -26,18 +26,23 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-export function Button({
-  variant = 'primary',
-  size = 'md',
-  block,
-  loading,
-  className,
-  children,
-  disabled,
-  ...rest
-}: ButtonProps) {
+/** `forwardRef`: quem abre um painel pode devolver o foco ao botão depois. */
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = 'primary',
+    size = 'md',
+    block,
+    loading,
+    className,
+    children,
+    disabled,
+    ...rest
+  },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       className={cx(
         'ms-btn',
         `ms-btn--${variant}`,
@@ -52,7 +57,7 @@ export function Button({
       {children}
     </button>
   );
-}
+});
 
 interface LinkButtonProps {
   to: string;
@@ -123,7 +128,11 @@ export function Card({
   className,
   children,
   ...rest
-}: { hover?: boolean; children: ReactNode; className?: string } & React.HTMLAttributes<HTMLDivElement>) {
+}: {
+  hover?: boolean;
+  children: ReactNode;
+  className?: string;
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cx('ms-card', hover && 'ms-card--hover', className)} {...rest}>
       {children}
@@ -161,7 +170,9 @@ export function Tag({
   children: ReactNode;
   variant?: 'solid' | 'muted';
 }) {
-  return <span className={cx('ms-tag', variant && `ms-tag--${variant}`)}>{children}</span>;
+  return (
+    <span className={cx('ms-tag', variant && `ms-tag--${variant}`)}>{children}</span>
+  );
 }
 
 // ── Inputs ──
@@ -178,11 +189,12 @@ export const Textarea = forwardRef<
   return <textarea ref={ref} className={cx('ms-textarea', props.className)} {...props} />;
 });
 
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
-  function Select(props, ref) {
-    return <select ref={ref} className={cx('ms-select', props.className)} {...props} />;
-  },
-);
+export const Select = forwardRef<
+  HTMLSelectElement,
+  SelectHTMLAttributes<HTMLSelectElement>
+>(function Select(props, ref) {
+  return <select ref={ref} className={cx('ms-select', props.className)} {...props} />;
+});
 
 /**
  * Campo de formulário: associa automaticamente o <label> ao controle filho
@@ -254,7 +266,15 @@ export function Loader({ label = 'Carregando…' }: { label?: string }) {
   );
 }
 
-export function Skeleton({ height = 20, width = '100%', radius }: { height?: number | string; width?: number | string; radius?: number }) {
+export function Skeleton({
+  height = 20,
+  width = '100%',
+  radius,
+}: {
+  height?: number | string;
+  width?: number | string;
+  radius?: number;
+}) {
   return (
     <span
       className="ms-skeleton"

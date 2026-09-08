@@ -14,10 +14,16 @@ export const ADMIN = {
 /** Autentica no painel administrativo via a tela de login. */
 export async function login(page: Page): Promise<void> {
   await page.goto('/admin');
-  // já autenticado?
-  if (await page.locator('.ms-admin__sidebar').isVisible().catch(() => false)) return;
+  // O painel é um chunk sob demanda e ainda confere a sessão: espera aparecer
+  // OU a sidebar (contexto já autenticado, ex.: cookie obtido via page.request)
+  // OU o formulário de login — sem isso a checagem "já autenticado?" corre
+  // contra o carregamento e o teste fica esperando um formulário que não vem.
+  const sidebar = page.locator('.ms-admin__sidebar');
+  const emailField = page.getByLabel('E-mail');
+  await expect(sidebar.or(emailField)).toBeVisible();
+  if (await sidebar.isVisible()) return;
 
-  await page.getByLabel('E-mail').fill(ADMIN.email);
+  await emailField.fill(ADMIN.email);
   await page.getByLabel('Senha').fill(ADMIN.password);
   await page.getByRole('button', { name: /Entrar/i }).click();
   await page.locator('.ms-admin__sidebar').waitFor({ state: 'visible' });
@@ -33,4 +39,32 @@ export async function openAdminSidebar(page: Page, isMobile: boolean | undefined
   if (await sidebar.evaluate((el) => el.classList.contains('ms-admin__sidebar--open'))) return;
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(sidebar).toHaveClass(/ms-admin__sidebar--open/);
+}
+
+/**
+ * Cria um tópico e o aprova via API, devolvendo o id. Deixa o contexto de
+ * requisições (`page.request`, que compartilha os cookies do navegador)
+ * autenticado como admin. Mantém os testes independentes da lista
+ * compartilhada do fórum.
+ */
+export async function createApprovedTopic(page: Page, title: string): Promise<string> {
+  const created = await page.request.post('/api/forum/topics', {
+    data: { nickname: 'SetupBot', title, body: 'Tópico criado pelo setup do teste.' },
+  });
+  expect(created.status()).toBe(202);
+
+  const auth = await page.request.post('/api/admin/auth/login', {
+    data: { email: ADMIN.email, password: ADMIN.password },
+  });
+  expect(auth.ok()).toBeTruthy();
+
+  const list = await (await page.request.get('/api/admin/forum/topics')).json();
+  const topic = list.find((t: { title: string }) => t.title === title);
+  expect(topic, `tópico "${title}" não encontrado`).toBeTruthy();
+
+  const patched = await page.request.patch(`/api/admin/forum/topics/${topic.id}`, {
+    data: { status: 'approved' },
+  });
+  expect(patched.ok()).toBeTruthy();
+  return topic.id as string;
 }

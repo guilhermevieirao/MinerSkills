@@ -1,31 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
-import { login, ADMIN } from './helpers';
-
-/**
- * Cria um tópico e o aprova via API, devolvendo o id.
- * Mantém os testes independentes da lista compartilhada do fórum.
- */
-async function createApprovedTopic(page: Page, title: string): Promise<string> {
-  const created = await page.request.post('/api/forum/topics', {
-    data: { nickname: 'SetupBot', title, body: 'Tópico criado pelo setup do teste.' },
-  });
-  expect(created.status()).toBe(202);
-
-  const auth = await page.request.post('/api/admin/auth/login', {
-    data: { email: ADMIN.email, password: ADMIN.password },
-  });
-  expect(auth.ok()).toBeTruthy();
-
-  const list = await (await page.request.get('/api/admin/forum/topics')).json();
-  const topic = list.find((t: { title: string }) => t.title === title);
-  expect(topic, `tópico "${title}" não encontrado`).toBeTruthy();
-
-  const patched = await page.request.patch(`/api/admin/forum/topics/${topic.id}`, {
-    data: { status: 'approved' },
-  });
-  expect(patched.ok()).toBeTruthy();
-  return topic.id as string;
-}
+import { test, expect } from '@playwright/test';
+import { login, createApprovedTopic } from './helpers';
 
 test.describe('Fórum + moderação', () => {
   test('tópico novo fica invisível até o admin aprovar', async ({ page }) => {
