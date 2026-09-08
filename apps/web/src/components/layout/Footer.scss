@@ -106,6 +106,8 @@
     color: var(--ms-text-faint);
     font-size: var(--ms-text-xs);
     margin-top: var(--ms-space-3);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
   }
 
   &__bottom {

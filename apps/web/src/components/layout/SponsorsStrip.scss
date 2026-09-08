@@ -1,0 +1,131 @@
+@use '../../styles/mixins' as *;
+
+// ── Faixa de patrocinadores (Home) ──
+.ms-sponsors {
+  background: var(--ms-surface);
+  border-block: 1px solid var(--ms-border);
+
+  &__group {
+    margin-top: var(--ms-space-8);
+
+    @include below($bp-md) {
+      margin-top: var(--ms-space-6);
+    }
+  }
+
+  &__tier {
+    @include kicker;
+    color: var(--ms-text-faint);
+    font-size: var(--ms-text-xs);
+    text-align: center;
+    margin-bottom: var(--ms-space-4);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--ms-space-4);
+  }
+
+  &__item {
+    display: flex;
+  }
+
+  &__card {
+    @include card-surface;
+    @include focus-ring;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    min-height: 88px;
+    padding: var(--ms-space-4) var(--ms-space-6);
+    background: var(--ms-surface-2);
+    color: var(--ms-text);
+    transition:
+      transform var(--ms-dur) var(--ms-ease),
+      border-color var(--ms-dur) var(--ms-ease),
+      box-shadow var(--ms-dur) var(--ms-ease);
+
+    @include below($bp-sm) {
+      min-width: 132px;
+      min-height: 72px;
+      padding: var(--ms-space-3) var(--ms-space-4);
+    }
+  }
+  a.ms-sponsors__card:hover {
+    transform: translateY(-3px);
+    border-color: var(--ms-green-deep);
+    box-shadow: var(--ms-shadow-glow);
+  }
+
+  &__logo {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 180px;
+    max-height: 56px;
+    object-fit: contain;
+
+    @include below($bp-sm) {
+      max-width: 140px;
+      max-height: 44px;
+    }
+  }
+
+  &__name {
+    @include display-heading;
+    font-size: var(--ms-text-xl);
+    letter-spacing: 0.06em;
+    color: var(--ms-text);
+    white-space: nowrap;
+  }
+
+  // Patrocínio principal: cartões maiores e nome/logo em destaque
+  &__group--principal {
+    .ms-sponsors__card {
+      min-width: 240px;
+      min-height: 120px;
+      border-color: var(--ms-green-deep);
+
+      @include below($bp-sm) {
+        min-width: 180px;
+        min-height: 96px;
+      }
+    }
+    .ms-sponsors__logo {
+      max-width: 260px;
+      max-height: 80px;
+
+      @include below($bp-sm) {
+        max-width: 180px;
+        max-height: 60px;
+      }
+    }
+    .ms-sponsors__name {
+      font-size: var(--ms-text-3xl);
+      color: var(--ms-green);
+    }
+  }
+
+  // Parceiros: cartões mais discretos
+  &__group--parceiro {
+    .ms-sponsors__card {
+      min-width: 132px;
+      min-height: 72px;
+      padding: var(--ms-space-3) var(--ms-space-4);
+    }
+    .ms-sponsors__logo {
+      max-width: 140px;
+      max-height: 40px;
+    }
+    .ms-sponsors__name {
+      font-size: var(--ms-text-lg);
+      color: var(--ms-text-dim);
+    }
+  }
+}

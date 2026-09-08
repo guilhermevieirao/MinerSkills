@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { TEAM } from '@minerskills/shared';
 import { LogoBadge } from '../brand/Logo';
 import { SocialIcon } from './SocialIcon';
-import { NAV_ITEMS, JOIN_ITEM } from './navItems';
+import { FOOTER_ITEMS } from './navItems';
 import { useSocialLinks, useSettings } from '../../features/social/useSocial';
+import { useSponsors, groupSponsorsByTier } from '../../features/sponsors/useSponsors';
 import './Footer.scss';
 
 const YEAR = new Date().getFullYear();
@@ -12,15 +13,23 @@ const YEAR = new Date().getFullYear();
 const FALLBACK = {
   motto: 'Escavamos conhecimento, construímos o futuro.',
   cityLine: `${TEAM.city} — ${TEAM.state}`,
+  sponsors: 'FIEMG · SESI · SENAI',
 };
 
 export function Footer() {
   const { data: social } = useSocialLinks();
   const { data: settings } = useSettings();
+  const { data: sponsors } = useSponsors();
 
   const motto = settings?.team_motto?.trim() || FALLBACK.motto;
   const cityLine = settings?.city_line?.trim() || FALLBACK.cityLine;
   const contactEmail = settings?.contact_email?.trim();
+  // Patrocinadores ativos, principal primeiro; o texto fixo cobre carregamento e lista vazia.
+  const sponsorNames = groupSponsorsByTier(sponsors ?? [])
+    .flatMap((g) => g.items)
+    .map((s) => s.name)
+    .join(' · ');
+  const sponsorLine = sponsorNames || FALLBACK.sponsors;
 
   return (
     <footer className="ms-footer">
@@ -43,7 +52,7 @@ export function Footer() {
 
         <nav className="ms-footer__nav" aria-label="Rodapé">
           <span className="ms-footer__col-title">Navegação</span>
-          {[...NAV_ITEMS, JOIN_ITEM].map((item) => (
+          {FOOTER_ITEMS.map((item) => (
             <Link key={item.to} to={item.to} className="ms-footer__link">
               {item.label}
             </Link>
@@ -67,9 +76,7 @@ export function Footer() {
               </a>
             ))}
           </div>
-          <p className="ms-footer__credit">
-            Apoio: FIEMG · SESI · SENAI
-          </p>
+          <p className="ms-footer__credit">Apoio: {sponsorLine}</p>
         </div>
       </div>
 
