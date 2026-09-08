@@ -9,10 +9,94 @@
       name="description"
       content="MinerSkills #10019 — Equipe mineira de robótica da FIRST Robotics Competition (FRC). Escavamos conhecimento, construímos o futuro."
     />
-    <meta property="og:title" content="MinerSkills #10019" />
-    <meta property="og:description" content="Equipe de robótica FRC de Minas Gerais." />
+    <!--
+      O marcador VITE_SITE_URL (sintaxe de porcentagem) é substituído em dev e no
+      build pelo plugin siteUrlHtml (vite.config.ts): o valor chega sempre absoluto
+      e SEM barra final (com padrão quando a variável falta) — cada caminho abaixo
+      começa com "/". As tags são o fallback para bots que não executam JS; cada
+      página sobrescreve title/description/og/canonical em runtime via
+      useDocumentHead (src/lib/useDocumentHead.ts).
+    -->
+    <link rel="canonical" href="%VITE_SITE_URL%/" />
+    <meta property="og:site_name" content="MinerSkills #10019" />
+    <meta property="og:locale" content="pt_BR" />
     <meta property="og:type" content="website" />
+    <meta property="og:title" content="MinerSkills #10019 — FIRST Robotics Competition" />
+    <meta
+      property="og:description"
+      content="Equipe mineira de robótica da FIRST Robotics Competition (FRC). Escavamos conhecimento, construímos o futuro."
+    />
+    <meta property="og:url" content="%VITE_SITE_URL%/" />
+    <meta property="og:image" content="%VITE_SITE_URL%/icons/og-cover.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Selo da MinerSkills #10019 — FIRST Robotics Competition" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MinerSkills #10019 — FIRST Robotics Competition" />
+    <meta
+      name="twitter:description"
+      content="Equipe mineira de robótica da FIRST Robotics Competition (FRC). Escavamos conhecimento, construímos o futuro."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/icons/og-cover.png" />
     <title>MinerSkills #10019 — FIRST Robotics Competition</title>
+    <!--
+      Dados estruturados (schema.org). Bloco de dados, não script executável:
+      a CSP script-src 'self' não se aplica a type="application/ld+json".
+      Valores literais de TEAM (packages/shared/src/constants.ts).
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "%VITE_SITE_URL%/#organization",
+            "name": "MinerSkills #10019",
+            "alternateName": "MinerSkills",
+            "url": "%VITE_SITE_URL%/",
+            "logo": "%VITE_SITE_URL%/icons/icon-512.png",
+            "image": "%VITE_SITE_URL%/icons/og-cover.png",
+            "description": "Equipe mineira de robótica da FIRST Robotics Competition (FRC).",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Belo Horizonte / Contagem",
+              "addressRegion": "MG",
+              "addressCountry": "Brasil"
+            },
+            "sponsor": { "@type": "Organization", "name": "FIEMG" }
+          },
+          {
+            "@type": "SportsTeam",
+            "@id": "%VITE_SITE_URL%/#team",
+            "name": "MinerSkills #10019",
+            "alternateName": "MinerSkills",
+            "sport": "Robótica",
+            "url": "%VITE_SITE_URL%/",
+            "logo": "%VITE_SITE_URL%/icons/icon-512.png",
+            "parentOrganization": { "@id": "%VITE_SITE_URL%/#organization" },
+            "memberOf": {
+              "@type": "SportsOrganization",
+              "name": "FIRST Robotics Competition (FRC)",
+              "url": "https://www.firstinspires.org/robotics/frc"
+            },
+            "location": {
+              "@type": "Place",
+              "name": "Belo Horizonte / Contagem",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Belo Horizonte / Contagem",
+                "addressRegion": "MG",
+                "addressCountry": "Brasil"
+              }
+            },
+            "affiliation": [
+              { "@type": "EducationalOrganization", "name": "Escola SESI General Onésimo Becker de Araújo" },
+              { "@type": "EducationalOrganization", "name": "SENAI Euvaldo Lodi" }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

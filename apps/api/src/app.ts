@@ -36,6 +36,7 @@ import { agendaPublicRouter, agendaAdminRouter } from './modules/agenda/agenda.r
 import { sponsorsPublicRouter, sponsorsAdminRouter } from './modules/sponsors/sponsors.routes.js';
 import { contactPublicRouter, contactAdminRouter } from './modules/contact/contact.routes.js';
 import { seasonsPublicRouter, seasonsAdminRouter } from './modules/seasons/seasons.routes.js';
+import { seoRouter } from './modules/seo/seo.routes.js';
 import {
   socialPublicRouter,
   socialAdminRouter,
@@ -89,6 +90,12 @@ export function createApp(): Express {
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', env: env.NODE_ENV, provider: env.DATABASE_PROVIDER });
   });
+
+  // sitemap.xml, robots.txt e pré-visualização OG para bots sociais (fora de /api).
+  // O limiter entra só nesses caminhos: montado sem prefixo ele rodaria em toda
+  // requisição e contaria /api duas vezes (com o `app.use('/api', …)` abaixo).
+  app.use(['/sitemap.xml', '/robots.txt', '/og'], generalLimiter);
+  app.use(seoRouter);
 
   // rate limit geral em /api (login/forum/quiz têm limites adicionais próprios)
   app.use('/api', generalLimiter);

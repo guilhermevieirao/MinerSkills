@@ -41,6 +41,10 @@ RUN npm run build
 # ─── PROD: nginx servindo o SPA + proxy da API ───────────────
 FROM nginx:1.27-alpine AS prod
 COPY apps/web/nginx-security.conf /etc/nginx/snippets/minerskills-security.conf
+# Contexto http (map do user-agent dos bots de pré-visualização + upstream da
+# API): conf.d/*.conf é incluído em ordem alfabética, então 00-map.conf entra
+# antes do default.conf, que o referencia.
+COPY apps/web/nginx-map.conf /etc/nginx/conf.d/00-map.conf
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 80

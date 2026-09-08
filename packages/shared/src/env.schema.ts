@@ -53,6 +53,12 @@ export const serverEnvSchema = z.object({
   API_PORT: intFromEnv(3001),
   API_HOST: z.string().default('0.0.0.0'),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
+  /**
+   * URL pública canônica (sem barra final) usada pela API em sitemap.xml,
+   * robots.txt e na pré-visualização /og. VITE_SITE_URL é a equivalente do
+   * front — em produção as duas apontam para o mesmo domínio.
+   */
+  SITE_URL: z.string().url().default('http://localhost:5173'),
   TRUST_PROXY: hopsFromEnv(0),
   BODY_LIMIT: z.string().default('1mb'),
 

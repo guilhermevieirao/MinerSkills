@@ -51,6 +51,7 @@ Não existem `.env` dentro de `apps/api`, `apps/web` ou `e2e` — e não devem e
 | `API_HOST` | `0.0.0.0` | Interface de escuta. |
 | `WEB_PORT` | `8080` | Porta pública do nginx (stack de produção). |
 | `WEB_ORIGIN` | `http://localhost:5173` | Origem permitida no CORS. Deve ser a URL real do site. |
+| `SITE_URL` | `http://localhost:5173` | URL pública canônica (**sem barra final**) usada pela API em `sitemap.xml`, `robots.txt` e na pré-visualização `/og/*` para bots sociais. Em produção, o mesmo domínio de `VITE_SITE_URL` (a versão do front, embutida no bundle). Ver [seo.md](seo.md). |
 | `TRUST_PROXY` | `0` | Quantidade de **proxies confiáveis** (hops) à frente da API: `0` = nenhum (dev, `X-Forwarded-For` é ignorado); `1` = nginx (stack de produção); `2` = Caddy + nginx, por exemplo. Necessário para o rate limit por IP enxergar o IP real do cliente. `true`/`false` ainda são aceitos (→ `1`/`0`). |
 | `BODY_LIMIT` | `1mb` | Tamanho máximo do corpo JSON. |
 
@@ -100,7 +101,7 @@ Não existem `.env` dentro de `apps/api`, `apps/web` ou `e2e` — e não devem e
 | --- | --- | --- |
 | `VITE_API_URL` | `/api` | Base das chamadas à API. |
 | `VITE_UPLOADS_URL` | `/uploads` | Base das URLs de mídia. |
-| `VITE_SITE_URL` | `http://localhost:5173` | URL canônica do site. |
+| `VITE_SITE_URL` | `http://localhost:5173` | URL canônica do site (**sem barra final**): `og:url`/`og:image` do `index.html`, `canonical` e JSON-LD das páginas. Mesmo domínio de `SITE_URL`. |
 | `VITE_TEAM_NUMBER` | `10019` | Número da equipe. |
 | `VITE_TEAM_NAME` | `MinerSkills` | Nome da equipe. |
 | `VITE_DEV_PROXY_TARGET` | `http://localhost:3001` | Alvo do proxy do Vite dev-server. Em Docker vira `http://api:3001`. |
@@ -126,4 +127,4 @@ Os testes sobem servidores próprios, em portas separadas, para não colidirem c
 - [ ] `POSTGRES_PASSWORD` forte
 - [ ] `DATABASE_PROVIDER=postgresql` e `DATABASE_URL` apontando para o serviço `postgres`
 - [ ] `TRUST_PROXY=1` (a API fica atrás do nginx; some 1 por proxy extra à frente dele)
-- [ ] `WEB_ORIGIN` e `VITE_SITE_URL` com o domínio real (HTTPS)
+- [ ] `WEB_ORIGIN`, `SITE_URL` e `VITE_SITE_URL` com o domínio real (HTTPS, sem barra final) — os dois últimos alimentam sitemap, robots, canonical e Open Graph

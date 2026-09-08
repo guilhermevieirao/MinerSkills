@@ -44,7 +44,8 @@ DATABASE_URL="postgresql://minerskills:SENHA@postgres:5432/minerskills?schema=pu
 #                                            ^ host = nome do serviço, não localhost
 TRUST_PROXY=1
 WEB_ORIGIN=http://localhost:8080     # ou seu domínio
-VITE_SITE_URL=http://localhost:8080
+SITE_URL=http://localhost:8080       # sem barra final (sitemap/robots/og da API)
+VITE_SITE_URL=http://localhost:8080  # idem, embutido no bundle do front
 JWT_SECRET=<openssl rand -hex 32>
 POSTGRES_PASSWORD=<senha forte>
 ```
@@ -55,7 +56,7 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 | Serviço | Porta | Detalhes |
 | --- | --- | --- |
-| `web` | `WEB_PORT` (8080) | **nginx** servindo o SPA buildado + proxy de `/api` e `/uploads`. |
+| `web` | `WEB_PORT` (8080) | **nginx** servindo o SPA buildado + proxy de `/api`, `/uploads`, `/sitemap.xml`, `/robots.txt` e `/og/` para a API. |
 | `api` | interna | Sem porta publicada — só o nginx a acessa. |
 | `postgres` | interna | Volume `pgdata`. |
 
@@ -113,6 +114,25 @@ dentro do container resolve para `::1` primeiro e a checagem falharia com
 **Cabeçalhos de segurança do nginx** ficam em `nginx-security.conf` e são
 **incluídos em cada `location`** — o nginx descarta os `add_header` herdados quando o
 nível atual declara qualquer `add_header` próprio. Ver [security.md](security.md).
+
+**Contexto `http` do nginx (`nginx-map.conf`).** `map` e `upstream` não podem ficar
+num bloco `server`, então vivem em `apps/web/nginx-map.conf`, que o Dockerfile copia
+para `/etc/nginx/conf.d/00-map.conf`. O `nginx.conf` da imagem inclui `conf.d/*.conf`
+em ordem alfabética, por isso o `00-` — ele precisa ser carregado antes do
+`default.conf` (nosso `nginx.conf`), que usa a variável `$ms_preview_bot` (bots de
+pré-visualização de links, que recebem `/og/*` da API em vez do SPA) e o upstream
+`minerskills_api`. Ver [seo.md](seo.md). Para validar as três configurações sem subir
+o stack:
+
+```bash
+docker run --rm --add-host api:127.0.0.1 \
+  -v "$PWD/apps/web/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+  -v "$PWD/apps/web/nginx-map.conf:/etc/nginx/conf.d/00-map.conf:ro" \
+  -v "$PWD/apps/web/nginx-security.conf:/etc/nginx/snippets/minerskills-security.conf:ro" \
+  nginx:1.27-alpine nginx -t
+```
+
+(`--add-host` porque `proxy_pass http://api:3001` e o upstream resolvem o host no boot.)
 
 **Ícones do PWA** não são gerados no build da imagem (o `sharp` vive no workspace da
 API). São assets versionados em `apps/web/public/icons`; regere com `npm run icons`.
