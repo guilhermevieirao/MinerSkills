@@ -27,7 +27,7 @@ Detalhes em [security.md](../security.md).
 | `/admin/quiz` | Perguntas e opções; zerar leaderboard. |
 | `/admin/equipe` | **Equipe** — membros e robôs: foto, tags, geração, sobre, citação; robôs têm o select **Temporada** (vínculo com `/admin/temporadas`) e o campo livre "Rótulo da temporada". |
 | `/admin/equipe/tags` | **Tags da equipe** — nome, ícone e ordem das tags de membro. Excluir uma tag a remove de todos os registros. |
-| `/admin/forum` | Fila de moderação + todos os tópicos. |
+| `/admin/forum` | Fila de moderação; todos os tópicos (coluna **Moderado por**); aba **Denúncias** com badge de abertas, chips Abertas / Resolvidas e ações Ver tópico, Rejeitar conteúdo, Resolver e Reabrir. A sidebar soma pendentes + denúncias abertas no badge do item Fórum. |
 | `/admin/mensagens` | **Mensagens** — caixa de entrada das inscrições e contatos enviados pelo site: chips de status (Novas, Lidas, Arquivadas, Todas) e de tipo (Inscrições, Contatos, Todos), cards com prévia, modal com todos os campos (abrir uma mensagem nova já a marca como lida; e-mail vira `mailto:`), botões Arquivar / Marcar como nova / Excluir (com confirmação) e paginação. A sidebar mostra um badge com as novas e o dashboard, um alerta. |
 | `/admin/premios` | Prêmios, com destaque, badge e **Temporada** opcional. |
 | `/admin/temporadas` | **Temporadas** — jogos da FRC por ano: nome, ano, jogo, resumo, selo, ordem e **Temporada atual** (só uma; marcar desmarca as demais). A tabela mostra quantos robôs e prêmios estão vinculados; excluir não apaga nada (ficam sem temporada). |

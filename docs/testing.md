@@ -72,7 +72,7 @@ de erro diz exatamente isso.
 
 ---
 
-## O que a suíte e2e cobre (71 testes × 2 projetos)
+## O que a suíte e2e cobre (94 testes × 2 projetos)
 
 Alguns testes que alteram **estado global** (ordem da galeria, configurações do site) rodam
 só no projeto desktop, porque os dois projetos executam em paralelo sobre o mesmo banco.
@@ -80,9 +80,13 @@ só no projeto desktop, porque os dois projetos executam em paralelo sobre o mes
 | Arquivo | Cobertura |
 | --- | --- |
 | `public-pages.spec.ts` | Todas as telas públicas renderizam com dados do seed; ordenação da timeline; busca do blog; lightbox da galeria; links sociais do rodapé (com `noopener`); 404; **ausência de emojis**. |
+| `a11y.spec.ts` | **Acessibilidade por teclado**: o link "Pular para o conteúdo" é o primeiro focável e o Enter leva o foco a `#conteudo`; menu mobile (`role="dialog"`) prende o foco (Tab/Shift+Tab ciclam dentro de `#ms-mobilenav`), fecha com Escape e devolve o foco ao botão "Abrir menu", cujo `aria-expanded`/`aria-controls` acompanham o drawer (só mobile); lightbox da galeria prende o foco e o devolve à foto que o abriu (só desktop); `/` sem `[role="marquee"]` e ids de `<pattern>` únicos, `/equipe` sem `[role="tablist"]`; a troca de rota pelo rodapé preenche a região viva `.ms-route-announcer` e move o foco para `#conteudo`. |
+| `errors.spec.ts` | **Estados de erro e carregamento**: `GET /api/awards` respondendo 500 (via `page.route`) mostra "Tentar novamente" em `/premios` e, após `page.unroute` e o clique, os prêmios aparecem; `/api/posts` atrasado em 1,5 s exibe `.ms-skeleton` antes dos `.ms-blog__card`; `/rota-inexistente` mostra o 404 com `meta robots noindex`; clicar em "Blog" na navegação (drawer no mobile) carrega o chunk **lazy** sem recarregar o documento (marcador em `window` sobrevive) e troca o `document.title`. |
+| `seo.spec.ts` | **SEO**: um post do blog define `document.title` (com o título do post), `og:title` e `canonical`; `/` e `/equipe` têm títulos diferentes; `GET /sitemap.xml` (200, XML, rotas fixas, `/blog/`, `/equipe/`, `lastmod`, sem `/admin`); `GET /robots.txt` (`Disallow: /admin`, `Sitemap: http…`); `/og/blog/:slug` e `/og/equipe/:slug` (200 `text/html` com `og:*`, `X-Robots-Tag: noindex`, título escapado, sem o SPA) e `404` para slug desconhecido; `noindex` na rota inexistente; o teste do `map` do nginx (bot social recebe `/og`, Googlebot e navegador recebem o SPA) só roda com `E2E_NGINX=1 E2E_BASE_URL=http://localhost:8080` contra o stack de produção. |
 | `equipe.spec.ts` | Grid de cards; painel de detalhe (desktop); **deep-link** por slug que sobrevive a reload; **navegação SPA** — clicar num membro não recarrega nem remonta a página (marcador em `window` sobrevive, filtro ativo preservado); redirects das rotas antigas `/enciclopedia[/:slug]`; chips de filtro refletem as tags do banco; filtros reduzem e restauram os resultados. |
 | `quiz.spec.ts` | Fluxo completo (apelido → perguntas → resultado → leaderboard); validação de apelido; **o payload não revela `isCorrect`**. |
 | `forum-moderation.spec.ts` | Tópico novo **invisível até a aprovação**; **XSS neutralizado**; respostas também moderadas. |
+| `forum-report.spec.ts` | **Denúncias do fórum**: denúncia pela página do tópico (motivo + detalhes) com toast e registro conferido na API; painel `/admin/forum` → aba Denúncias mostra motivo, detalhes e "Ver tópico", **Resolver** tira das abertas e aparece em Resolvidas (o tópico segue aprovado); **honeypot** preenchido pela API responde `202` e o tópico não entra na fila nem na lista; duas denúncias iguais geram um único registro (dedupe por IP + alvo); tópico pendente não pode ser denunciado (`404`). Cada teste cria e aprova o próprio tópico com `createApprovedTopic()` (`helpers.ts`, antes local em `forum-moderation.spec.ts`), com título único por projeto. |
 | `admin.spec.ts` | **Nenhum link para `/admin` no site público**; `robots.txt`; login errado/certo; CRUD de post publicado aparecendo no blog; CRUD de agenda; CRUD de tag da equipe (aparece no formulário de membro e nos chips públicos, e é removida); nome de tag duplicado rejeitado; criar pergunta de quiz; logout encerrando a sessão de verdade. |
 | `admin-settings.spec.ts` | Painel de **Configurações**: o formulário lista todas as chaves de `SETTING_DEFINITIONS` com os valores do seed; alterar o lema, salvar e vê-lo no **rodapé** do site (só desktop), restaurando o valor original pela API; `PUT /bulk` com chave desconhecida responde 400. |
 | `gallery.spec.ts` | Painel da galeria: **edição de legenda** refletida na página pública e restaurada (desktop edita a primeira foto, mobile a última); **reordenação** pelos botões com "Salvar ordem" e conferência via `GET /api/gallery` (só desktop), restaurando a ordem original. |
@@ -92,7 +96,7 @@ só no projeto desktop, porque os dois projetos executam em paralelo sobre o mes
 | `agenda.spec.ts` | `.ics` da agenda e de um evento (cabeçalhos, `UID`, `404` para id desconhecido/despublicado); botões Google Calendar (`rel="noopener"`), `.ics` e "Assinar agenda"; contador da próxima competição na Home; painel: link de inscrição vira "Inscrever-se", entra no `.ics`, e o evento despublicado some da exportação (estado restaurado). |
 | `seasons.spec.ts` | **Temporadas**: `/temporadas` lista Reefscape e Crescendo do seed com exatamente uma **Temporada atual**; expandir Crescendo mostra um robô e o **Rising All-Star**, o deep link `?t=` sobrevive a reload e o robô leva a `/equipe/<slug>`; `GET /api/seasons/:slug` devolve `robots`/`awards`/`events` (só do ano) e `404` para slug inexistente; robôs e prêmios expõem `seasonRef`. Painel (serial, só desktop): cria "Temporada e2e", marca como atual (a original deixa de ser), restaura a original e exclui — com rede de segurança via API. |
 | `admins.spec.ts` | **Administradores e Minha conta**: cria um admin pelo painel; a própria linha tem "Você" e nenhum botão de excluir (a API responde 409); o novo admin entra, **troca a própria senha** (cookie reemitido, sessão segue válida), sai e volta com a nova; o admin principal remove o criado. |
-| `security.spec.ts` | 401 em todas as rotas admin (inclusive `/api/admin/admins`, `/api/admin/sponsors`, `/api/admin/contact` e `/api/admin/seasons`); mutações bloqueadas; troca de senha sem sessão bloqueada; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
+| `security.spec.ts` | 401 em todas as rotas admin (inclusive `/api/admin/admins`, `/api/admin/sponsors`, `/api/admin/contact`, `/api/admin/seasons` e `/api/admin/forum/reports`); mutações bloqueadas; troca de senha sem sessão bloqueada; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
 
 ---
 
@@ -107,12 +111,14 @@ exercita de forma indireta:
 | `apps/api/src/lib/slug.test.ts` | `slugBase` (acentos, corte sem hífen final, fallback) e os `unique*Slug` — sufixos `-2`, `-3` em colisão, ignorando o próprio id. |
 | `apps/api/src/modules/quiz/quiz.scoring.test.ts` | `scoreAnswers`: certo/errado/não respondido, pergunta sem opção correta ignorada, ordem das correções. |
 | `apps/api/src/lib/ics.test.ts` | `buildCalendar`: envelope VCALENDAR, `UID`, `DTSTAMP` fixo, `DTEND` padrão (+2h), escapes, `URL` padrão sem barra duplicada, dobra em 75 octetos UTF-8 e CRLF. |
+| `apps/api/src/modules/seo/seo.service.test.ts` | `escapeXml`, `normalizeSiteUrl`/`absoluteUrl` (barra final), `excerpt`, `buildSitemap` (urlset, `<loc>` absolutos, `<lastmod>` ISO só quando válido, sem duplicatas, `&` escapado), `buildRobots` e `buildOgHtml` (doctype, title/description/og/twitter/canonical/refresh, escape de HTML vindo dos dados, `twitter:card summary` sem imagem, datas só em `article`). |
 | `packages/shared/src/env.schema.test.ts` | Defaults, conversão de inteiros/CSV/`TRUST_PROXY`, `JWT_SECRET` curto e `DATABASE_URL` ausente falhando. |
 | `packages/shared/src/calendar.test.ts` | `toIcsDate` (UTC), `escapeIcsText` (RFC 5545), `eventEnd` e `googleCalendarUrl` (parâmetros, fim padrão, `location` opcional, codificação). |
 | `packages/shared/src/schemas/schemas.test.ts` | `refine`s e regexes dos schemas zod: agenda (`endsAt >= startsAt`), quiz (exatamente uma correta), tag de membro (ícone da lista curada), equipe (chave de tag em minúsculas). |
 | `packages/shared/src/schemas/season.test.ts` | `seasonSchema`: defaults (`order 0`, `isCurrent false`), opcionais nulos, ano fora de 1990..2100 / não inteiro / texto rejeitados, trim e obrigatoriedade do nome, limites de nome/jogo/resumo. |
 | `packages/shared/src/schemas/sponsor.test.ts` | `sponsorSchema`: defaults (`order 0`, `active true`), site e logo nulos ou preenchidos, site que não é URL, nível fora de `SPONSOR_TIERS`, nome obrigatório (até 120), ordem negativa/fracionária; `DEFAULT_SPONSORS` passam na validação. |
 | `packages/shared/src/schemas/contact.test.ts` | `contactMessageSchema` (nome curto, e-mail inválido, mensagem curta, honeypot `website` aceito, opcionais `null`), `contactStatusSchema` (status inválido) e `contactQuerySchema` (paginação padrão, filtros inválidos). |
+| `packages/shared/src/schemas/forum.test.ts` | Honeypot `website` aceito nos três schemas do fórum (valor inválido vira `'bot'`), motivo de denúncia desconhecido/ausente, detalhes acima de 500 caracteres, status da denúncia. |
 
 ```bash
 npm run test:unit                  # todos os workspaces (--workspaces --if-present)
@@ -187,7 +193,18 @@ da lista" — outro teste rodando em paralelo pode mudá-la.
 ao controle. Use `{ exact: true }` quando houver rótulos parecidos (ex.: "Título"
 colide com os botões "Título 2"/"Título 3" do editor).
 
-Helpers em `e2e/tests/helpers.ts`: `login()`, `openAdminSidebar()`, `ADMIN`.
+**Simule falhas da API com `page.route`.** Para testar `ErrorState`/skeletons, intercepte a
+rota (`route.fulfill({ status: 500, body: '{}' })` ou um `setTimeout` antes de
+`route.continue()`) e desfaça com `page.unroute` antes de clicar em "Tentar novamente".
+Lembre que o `queryClient` tenta mais duas vezes (com espera crescente) antes de marcar
+erro: espere o botão com `{ timeout: 15_000 }`.
+
+**Foco.** Para saber onde o foco está, use `toBeFocused()` num locator ou `page.evaluate` com
+`document.activeElement` (helper `focusIsInside(page, seletor)` em `a11y.spec.ts`). Depois de
+abrir um drawer/lightbox, espere o foco entrar (`expect.poll`) antes de mandar Tabs — o foco
+inicial é definido num efeito, não no clique.
+
+Helpers em `e2e/tests/helpers.ts`: `login()`, `openAdminSidebar()`, `createApprovedTopic()`, `ADMIN`.
 
 ---
 

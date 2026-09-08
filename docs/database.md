@@ -134,6 +134,7 @@ npm run db:migrate:new     # carimba postgresql + prisma migrate dev
 | `20260907121000_contact_messages` | Cria `ContactMessage` com os índices `[status, createdAt]` e `[kind, createdAt]`. Sem dados iniciais. |
 | `20260907122000_agenda_event_url` | `ALTER TABLE "AgendaEvent" ADD COLUMN "url" TEXT`. No SQLite o `db push` cria a coluna direto (sem backfill: campo opcional). |
 | `20260907123000_seasons` | Cria a tabela `Season` (índices `Season_slug_key` e `Season_year_idx`, FK `badgeId → MediaAsset` com `SET NULL`) e adiciona `seasonId` em `EncyclopediaEntry` e `Award` (índice + FK `Season` com `ON DELETE SET NULL`). |
+| `20260907124000_forum_reports` | Adiciona `moderatedBy` (`TEXT`, opcional, sem FK) em `ForumTopic` e `ForumReply` e cria `ForumReport` (índices `[status, createdAt]`, `[topicId]`, `[replyId]`; FKs para `ForumTopic`/`ForumReply` com `ON DELETE CASCADE ON UPDATE CASCADE`). Sem dados iniciais nem backfill; no SQLite as colunas e a tabela nascem pelo `db push`. |
 
 `20260907123000_seasons` não traz dados iniciais nem backfill: o seed cria Crescendo (2024)
 e Reefscape (2025, atual); em bancos já existentes o administrador cadastra as temporadas
@@ -207,7 +208,8 @@ npm run test:e2e
 | `QuizQuestion` + `QuizOption` + `QuizScore` | Quiz e leaderboard. |
 | `EncyclopediaEntry` + `EncyclopediaTag` | Membros e robôs, com tags de filtro (`EncyclopediaTag.tag` guarda a `key` da tag). Robôs têm `seasonId` opcional (FK `Season`, `SetNull`); o texto `season` continua como rótulo livre. |
 | `MemberTag` | Tags de membro gerenciadas pelo admin: `key` única e imutável, `label`, `icon`, `order`. Sem FK com `EncyclopediaTag` — ver "Regras de portabilidade". |
-| `ForumTopic` + `ForumReply` | Fórum com status de moderação. |
+| `ForumTopic` + `ForumReply` | Fórum com status de moderação. `moderatedBy` = id do admin que moderou (sem FK: o histórico sobrevive à exclusão do admin); só sai nas rotas do painel. |
+| `ForumReport` | Denúncias de visitantes sobre tópicos/respostas **aprovados** (`topicId` ou `replyId`, apagadas em cascata com o alvo): `reason` (`REPORT_REASONS`), `details`, `status` (`open`/`resolved`, `REPORT_STATUSES`), `resolvedAt`/`resolvedBy` (id do admin, sem FK) e `ipHash` (sha256 + segredo, só para não contar a mesma denúncia duas vezes em 24h) — o hash nunca sai pela API. Migration `20260907124000_forum_reports`. |
 | `Award` | Prêmios e conquistas, com `seasonId` opcional (FK `Season`, `SetNull`). |
 | `Season` | Temporadas da FRC: `name`, `slug` único, `year`, `game`, `summary`, `badge` (`MediaAsset`, `SetNull`), `order`, `isCurrent` (só uma é a atual — regra garantida na API, em transação, sem constraint). |
 | `AgendaEvent` | Agenda. `url` (opcional) é o link de inscrição/detalhes: vira o botão "Inscrever-se" no site e a propriedade `URL` do `.ics` (migration `20260907122000_agenda_event_url`). |

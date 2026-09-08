@@ -38,8 +38,10 @@ Base: `/api` · Respostas sempre em JSON · Textos de erro em pt-BR.
 | `GET` | `/api/quiz/leaderboard?limit` | Ranking (melhor pontuação por apelido). |
 | `GET` | `/api/forum/topics?page&perPage` | Tópicos **aprovados**. |
 | `GET` | `/api/forum/topics/:id` | Tópico + respostas aprovadas. |
-| `POST` | `/api/forum/topics` | Cria tópico → `202` **pendente de moderação**. Rate-limited. |
-| `POST` | `/api/forum/topics/:id/replies` | Cria resposta → `202` **pendente**. Rate-limited. |
+| `POST` | `/api/forum/topics` | Cria tópico → `202` **pendente de moderação**. Honeypot `website` preenchido: `202` sem gravar. Rate-limited. |
+| `POST` | `/api/forum/topics/:id/replies` | Cria resposta → `202` **pendente** (idem honeypot). Rate-limited. |
+| `POST` | `/api/forum/topics/:id/report` | Denuncia um tópico **aprovado** → `202 { message }`; `404` se pendente/inexistente. Corpo `{ reason: spam \| ofensivo \| off-topic \| outro, details? (≤ 500) }`. Honeypot preenchido ou repetição (mesmo IP + alvo em 24h): `202` sem gravar. Rate-limited (`forumLimiter`). |
+| `POST` | `/api/forum/replies/:id/report` | Idem, para respostas aprovadas. |
 | `GET` | `/api/awards` | Prêmios e conquistas (com `seasonId` e `seasonRef`). |
 | `GET` | `/api/seasons` | Temporadas (`SeasonDTO[]`, ordem `order ↑, year ↓`) com selo, `robotsCount` (só `kind = robot`) e `awardsCount`. |
 | `GET` | `/api/seasons/:slug` | `SeasonDetailDTO`: a temporada + `robots` (`EncyclopediaEntryDTO[]`), `awards` (`AwardDTO[]`) e `events` (eventos **publicados** cujo `startsAt` cai no ano civil da temporada, em UTC). `404` se não existir. |
@@ -51,6 +53,17 @@ Base: `/api` · Respostas sempre em JSON · Textos de erro em pt-BR.
 | `GET` | `/api/sponsors` | Patrocinadores **ativos** (`SponsorDTO[]`, com `logo`), em `order asc, name asc`. Alimentam a faixa da Home e a linha "Apoio" do rodapé. |
 | `POST` | `/api/contact` | Contato ou inscrição no processo seletivo (`contactMessageSchema`) → `202 { ok: true }`, sem devolver o registro. Honeypot (`website`) preenchido também responde `202` sem gravar; `kind: 'inscricao'` com `applications_open` diferente de `'true'` → `409`. Rate-limited (`RATE_LIMIT_CONTACT_MAX`). |
 | `GET` | `/uploads/*` | Mídia (estático, `nosniff`, cache imutável). |
+
+### Fora de `/api` — SEO
+
+Montadas na raiz da API (`app.use(seoRouter)` em `app.ts`, com o `generalLimiter` aplicado só a `/sitemap.xml`, `/robots.txt` e `/og` — montá-lo sem prefixo contaria cada requisição de `/api` duas vezes), porque buscadores e bots esperam esses caminhos na raiz do site; o Vite (dev/preview) e o nginx fazem proxy para a API. Detalhes em [seo.md](seo.md).
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/sitemap.xml` | Rotas fixas do SPA + `/blog/:slug` dos posts **publicados** (`lastmod` = `updatedAt`) + `/equipe/:slug` de todos os registros da equipe. URLs absolutas com `SITE_URL`. `application/xml`, `Cache-Control: public, max-age=3600`. |
+| `GET` | `/robots.txt` | `Allow: /`, `Disallow: /admin`, `Sitemap: <SITE_URL>/sitemap.xml`. `text/plain`, `max-age=3600`. |
+| `GET` | `/og/blog/:slug` | HTML mínimo de pré-visualização Open Graph do post (título, excerpt, capa ou `/icons/og-cover.png`, `canonical`, `meta refresh` para a página real; `og:type article` com `article:published_time`/`modified_time`). `404` se não existir ou não estiver publicado. `text/html`, `max-age=600`, `X-Robots-Tag: noindex, nofollow`. |
+| `GET` | `/og/equipe/:slug` | Idem para membro/robô (`og:type profile` para membros; foto ou capa padrão). `404` se não existir. |
 
 > As rotas de escrita públicas (`/forum/*`, `/quiz/submit`, `/contact`) respondem `202`/`201` sem
 > devolver o registro: nada do fórum aparece antes da aprovação do administrador, e as
@@ -151,10 +164,12 @@ Padrão `GET` (lista) · `POST` (cria) · `PUT /:id` (atualiza) · `DELETE /:id`
 | --- | --- | --- |
 | `GET` | `/api/admin/forum/moderation` | Fila: tópicos e respostas pendentes. |
 | `GET` | `/api/admin/forum/topics` | Todos os tópicos (qualquer status). |
-| `PATCH` | `/api/admin/forum/topics/:id` | `{ status: approved \| rejected \| pending }`. |
+| `PATCH` | `/api/admin/forum/topics/:id` | `{ status: approved \| rejected \| pending }`. Grava `moderatedAt` e `moderatedBy` (id do admin); a resposta inclui `moderatedBy`. |
 | `PATCH` | `/api/admin/forum/replies/:id` | Idem, para respostas. |
 | `DELETE` | `/api/admin/forum/topics/:id` | Remove tópico e respostas. |
 | `DELETE` | `/api/admin/forum/replies/:id` | Remove resposta. |
+| `GET` | `/api/admin/forum/reports?status=open\|resolved` | Denúncias (`ForumReportDTO[]`), mais recentes primeiro; sem `status`, todas. Cada item traz `target` (`type`, `id`, `topicId`, `topicTitle`, `excerpt`, `nickname`, `status`). |
+| `PATCH` | `/api/admin/forum/reports/:id` | `{ status: open \| resolved }` — `resolved` grava `resolvedAt`/`resolvedBy`; `open` os limpa. |
 | `DELETE` | `/api/admin/quiz/leaderboard` | **Zera o ranking.** |
 
 ### Caixa de entrada

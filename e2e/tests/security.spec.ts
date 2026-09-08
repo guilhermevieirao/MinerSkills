@@ -8,6 +8,7 @@ test.describe('Segurança', () => {
       '/api/admin/posts',
       '/api/admin/media',
       '/api/admin/forum/moderation',
+      '/api/admin/forum/reports',
       '/api/admin/encyclopedia',
       '/api/admin/member-tags',
       '/api/admin/agenda',

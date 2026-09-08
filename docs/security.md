@@ -42,7 +42,16 @@ requisições autenticadas — por isso não há token anti-CSRF adicional.
 
 **Rota administrativa:** `/admin` só é alcançável digitando a URL. Não há nenhum
 link para ela no site público (há teste automatizado verificando isso) e o
-`robots.txt` a bloqueia. O bundle do admin é um chunk separado, carregado sob demanda.
+`robots.txt` (servido pela API) a bloqueia. O bundle do admin é um chunk separado,
+carregado sob demanda.
+
+**Pré-visualização para bots (`/og/*`):** `GET /og/blog/:slug` e `/og/equipe/:slug`
+devolvem um HTML mínimo com as metatags Open Graph do conteúdo, que o nginx entrega
+aos bots de pré-visualização de links (WhatsApp, Facebook, X, LinkedIn, Discord,
+Telegram, Slack) no lugar do SPA — nunca a buscadores, para não configurar
+*cloaking*. Só saem dados que a API pública já expõe (post publicado, registro da
+equipe); tudo é escapado (`escapeHtml`) e a resposta leva `X-Robots-Tag: noindex`.
+Ver [seo.md](seo.md).
 
 ---
 
@@ -77,6 +86,24 @@ pessoais, e a mais exposta a robôs. Camadas, na ordem em que rodam:
 Não há envio de e-mail: nada do formulário sai do servidor (nem para um SMTP), e o
 `notifyNewMessage()` de `lib/notify.ts` registra apenas `{ id, kind }` no log — o
 conteúdo, que pode ter dados de menores, fica só no banco.
+
+### Fórum: honeypot e denúncias
+
+Os envios do fórum (`POST /api/forum/topics`, `POST /api/forum/topics/:id/replies`) e as
+denúncias de conteúdo publicado (`POST /api/forum/topics/:id/report`,
+`POST /api/forum/replies/:id/report`) — ver [features/forum.md](features/forum.md) —
+reaproveitam as camadas do contato:
+
+| Camada | Implementação |
+| --- | --- |
+| Rate limit | `forumLimiter` (`RATE_LIMIT_FORUM_MAX`, 10 por IP a cada 15 min): tópicos, respostas **e denúncias** dividem o mesmo balde. |
+| Honeypot | O mesmo campo `website` (`HONEYPOT_FIELD`) nos três formulários — tópico, resposta e denúncia —, fora da tela via CSS (`.ms-hp`), nunca `type="hidden"`. Os schemas aceitam qualquer valor (inválido vira `'bot'` via `.catch()`); preenchido, a rota responde o `202` de sucesso **sem gravar**. |
+| Alvo da denúncia | Só tópicos e respostas **aprovados** podem ser denunciados — `404` caso contrário, sem distinguir pendente de inexistente. |
+| Dedupe | `ipHash = sha256(ip + '\|' + JWT_SECRET)`; se já existe uma denúncia **aberta** do mesmo hash para o mesmo alvo nas últimas 24h, a rota responde `202` sem gravar outra. Um visitante não infla a fila repetindo o clique. |
+| Texto puro | `stripHtml` nos `details`; `reason` restrito a `REPORT_REASONS` pelo schema. |
+| IP | Nunca em claro: só o `ipHash`, que **não sai pela API** (`ForumReportDTO` não o inclui). |
+| Resposta | Sempre `202 { message: 'Denúncia registrada.' }` — quem denuncia não descobre se o registro foi descartado por repetição ou pelo honeypot. Só o painel (`/api/admin/forum/reports`, com sessão) lê as denúncias. |
+| Autoria | Aprovar/rejeitar grava `moderatedBy` e resolver uma denúncia grava `resolvedBy` com o id do admin da sessão (`req.admin.sub`), sem FK: o histórico sobrevive à exclusão do admin. Esses campos só saem nas rotas do painel. |
 
 ---
 
@@ -176,6 +203,11 @@ Apenas erros 5xx registram o stack.
 
 `e2e/tests/forum-moderation.spec.ts` verifica que payloads XSS ficam inertes e que
 nada aparece publicamente sem aprovação.
+
+`e2e/tests/forum-report.spec.ts` envia o honeypot do fórum preenchido pela API e confirma
+o `202` sem o tópico entrar na fila; denuncia um tópico duas vezes e confirma um único
+registro; tenta denunciar um tópico pendente e recebe `404`; e exercita a denúncia pela
+página e a resolução no painel.
 
 `e2e/tests/admins.spec.ts` cria um administrador pelo painel, confirma que a própria
 conta não pode ser excluída (na tela e na API), troca a senha do novo admin com a

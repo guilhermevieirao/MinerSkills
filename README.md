@@ -63,6 +63,7 @@ Veja [docs/docker.md](docs/docker.md).
 | [docs/testing.md](docs/testing.md) | Unitários (Vitest), e2e com Playwright (headless e headed) e CI |
 | [docs/docker.md](docs/docker.md) | Stacks de desenvolvimento e produção |
 | [docs/pwa.md](docs/pwa.md) | Manifest, service worker e estratégias de cache |
+| [docs/seo.md](docs/seo.md) | Head por página, Open Graph, sitemap/robots pela API e pré-visualização de links para bots |
 | [docs/features/](docs/features/) | Um documento por tela/módulo |
 
 ---
@@ -84,7 +85,7 @@ Veja [docs/docker.md](docs/docker.md).
 | `npm run test:unit` | Testes unitários (vitest) de API e shared |
 | `npm run test:e2e` | Testes end-to-end (headless) |
 | `npm run test:e2e:headed` | Testes end-to-end com navegador visível |
-| `npm run icons` | Regera os ícones do PWA a partir do selo da marca |
+| `npm run icons` | Regera os ícones do PWA e a capa Open Graph (`og-cover.png`) a partir do selo da marca |
 
 ---
 
@@ -97,7 +98,8 @@ Quiz com leaderboard ·
 Fórum moderado · Prêmios · Temporadas (linha do tempo competitiva: robôs, prêmios e eventos de cada ano) ·
 Agenda (com exportação de calendário: `.ics` assinável, Google Calendar e contador da próxima competição na Home) ·
 Como Entrar (com inscrição no processo seletivo) · Contato · Redes sociais ·
-Patrocinadores (faixa na Home e rodapé).
+Patrocinadores (faixa na Home e rodapé) ·
+SEO (título e Open Graph por página, `sitemap.xml` e `robots.txt` pela API, pré-visualização de links para WhatsApp e redes sociais).
 
 **Administrativo** (`/admin`, sem link público) — Todo o conteúdo acima é gerenciável:
 blog com editor rich-text, upload de mídia e biblioteca de mídia (usos, alt e exclusão segura),
