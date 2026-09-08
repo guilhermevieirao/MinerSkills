@@ -47,6 +47,32 @@
     }
   }
 
+  // ── Inscrição (formulário ou aviso de inscrições fechadas) ──
+  &__apply {
+    scroll-margin-top: var(--ms-space-10);
+
+    &:not(:empty) {
+      margin-bottom: var(--ms-space-8);
+    }
+  }
+
+  &__closed {
+    @include card-surface;
+    padding: var(--ms-space-6);
+    background: var(--ms-surface-2);
+
+    h2 {
+      font-size: var(--ms-text-xl);
+      margin-bottom: var(--ms-space-2);
+    }
+    p {
+      color: var(--ms-text-dim);
+      line-height: 1.7;
+      margin-bottom: var(--ms-space-5);
+      white-space: pre-line;
+    }
+  }
+
   &__cta {
     text-align: center;
     padding: var(--ms-space-8);

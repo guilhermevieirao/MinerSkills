@@ -19,3 +19,6 @@ export const loginLimiter = rateLimit({
 export const forumLimiter = rateLimit({ ...common, limit: env.RATE_LIMIT_FORUM_MAX });
 
 export const quizLimiter = rateLimit({ ...common, limit: env.RATE_LIMIT_QUIZ_MAX });
+
+/** Formulário público de contato/inscrição: poucos envios por IP bastam para um humano. */
+export const contactLimiter = rateLimit({ ...common, limit: env.RATE_LIMIT_CONTACT_MAX });

@@ -75,8 +75,12 @@ export default defineConfig({
         SEED_MODE: 'test',
         // limites de rate-limit generosos para não derrubar a suíte
         RATE_LIMIT_MAX: '10000',
+        // o limitador de login conta a tentativa na entrada e só desconta no sucesso:
+        // com vários workers logando ao mesmo tempo, 5 por IP vira 429 sem falha real
+        RATE_LIMIT_LOGIN_MAX: '1000',
         RATE_LIMIT_FORUM_MAX: '1000',
         RATE_LIMIT_QUIZ_MAX: '1000',
+        RATE_LIMIT_CONTACT_MAX: '1000',
       },
     },
     {

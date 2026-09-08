@@ -5,14 +5,19 @@ import { LinkButton } from '../components/ui';
 import { Reveal } from '../components/motion/Reveal';
 import { MarqueeStrip } from '../components/motion/MarqueeStrip';
 import { useSocialLinks } from '../features/social/useSocial';
+import { useApplicationsOpen } from '../features/contact/useContact';
 import { SocialIcon } from '../components/layout/SocialIcon';
+import { ContactForm } from '../components/forms/ContactForm';
 import './ComoEntrarPage.scss';
 
 const STEP_ICONS = [ClipboardList, Users, MessageCircle, Rocket];
 
+const CLOSED_FALLBACK = 'As inscrições estão encerradas no momento.';
+
 export function ComoEntrarPage() {
   const { byKey, data } = usePageBlocks('como-entrar');
   const { data: social } = useSocialLinks();
+  const { open, info } = useApplicationsOpen();
 
   const hero = byKey('hero');
   const steps = (data ?? [])
@@ -71,6 +76,26 @@ export function ComoEntrarPage() {
             </div>
           </Reveal>
         )}
+
+        {/* Inscrição: formulário quando aberta, aviso quando fechada, nada enquanto carrega */}
+        <div className="ms-join__apply" id="inscricao">
+          {open === true && (
+            <Reveal>
+              <ContactForm kind="inscricao" title="Inscreva-se" />
+            </Reveal>
+          )}
+          {open === false && (
+            <Reveal>
+              <div className="ms-join__closed">
+                <h2>Inscreva-se</h2>
+                <p>{info ?? CLOSED_FALLBACK}</p>
+                <LinkButton to="/agenda" variant="outline">
+                  Ver datas na agenda <ArrowRight />
+                </LinkButton>
+              </div>
+            </Reveal>
+          )}
+        </div>
 
         {cta && (
           <Reveal>

@@ -58,6 +58,26 @@ link para ela no site público (há teste automatizado verificando isso) e o
 - **Apelidos:** 3–20 caracteres, regex de caracteres permitidos, HTML removido.
 - Corpo JSON limitado a `BODY_LIMIT` (1mb).
 
+### Formulários públicos
+
+`POST /api/contact` (página Contato e inscrição em Como Entrar — ver
+[features/contato.md](features/contato.md)) é a única rota pública que grava dados
+pessoais, e a mais exposta a robôs. Camadas, na ordem em que rodam:
+
+| Camada | Implementação |
+| --- | --- |
+| Rate limit | `RATE_LIMIT_CONTACT_MAX` (5 envios por IP a cada 15 min) — antes mesmo da validação. |
+| Validação | `contactMessageSchema` (zod, o mesmo do front): tamanhos, e-mail, tipo. |
+| Honeypot | Campo `website` (`HONEYPOT_FIELD`) presente no HTML mas fora da tela via CSS (`position: absolute; left: -9999px`, `tabIndex=-1`, `aria-hidden`) — **nunca** `type="hidden"`, que os robôs pulam. O schema aceita qualquer valor (um `400` revelaria o mecanismo — valor longo ou não textual vira preenchido via `.catch()`); se vier preenchido a rota responde `202` **sem gravar**. |
+| Inscrição fechada | `kind: 'inscricao'` com `applications_open` diferente de `'true'` → `409`, independentemente do que o front mostrava. |
+| Texto puro | `stripHtml` em nome, mensagem, escola, série e telefone antes de gravar (`&`, `<` e `>` ficam como digitados); o texto limpo passa pelo schema de novo, para uma tag removida não deixar nome ou mensagem abaixo do mínimo. |
+| IP | Nunca em claro: `ipHash = sha256(ip + '|' + JWT_SECRET)`; `userAgent` cortado em 200 caracteres. Servem só para agrupar abuso e **não saem pela API** (o DTO não os inclui). |
+| Resposta | `202 { ok: true }`, sem o registro — só o painel (`/api/admin/contact`, com sessão) lê as mensagens. |
+
+Não há envio de e-mail: nada do formulário sai do servidor (nem para um SMTP), e o
+`notifyNewMessage()` de `lib/notify.ts` registra apenas `{ id, kind }` no log — o
+conteúdo, que pode ter dados de menores, fica só no banco.
+
 ---
 
 ## Integridade do quiz
@@ -122,6 +142,7 @@ As fontes são **self-hosted**, então não há origem externa em `font-src`.
 | Login e troca de senha | 5 falhas / 15 min | `RATE_LIMIT_LOGIN_MAX` |
 | Fórum | 10 / 15 min | `RATE_LIMIT_FORUM_MAX` |
 | Quiz | 30 / 15 min | `RATE_LIMIT_QUIZ_MAX` |
+| Contato / inscrição | 5 / 15 min | `RATE_LIMIT_CONTACT_MAX` |
 
 Em produção, `TRUST_PROXY=1` é **necessário** para que o IP real (atrás do nginx)
 seja usado — sem isso, todos os visitantes compartilham o mesmo balde.
@@ -159,6 +180,9 @@ nada aparece publicamente sem aprovação.
 `e2e/tests/admins.spec.ts` cria um administrador pelo painel, confirma que a própria
 conta não pode ser excluída (na tela e na API), troca a senha do novo admin com a
 sessão preservada, entra com a senha nova e remove o registro ao final.
+
+`e2e/tests/contact.spec.ts` envia o honeypot preenchido pela API e confirma o `202`
+sem nenhum registro na caixa de entrada, além de exercitar o envio real e o painel.
 
 ---
 

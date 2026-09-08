@@ -74,6 +74,7 @@ Não existem `.env` dentro de `apps/api`, `apps/web` ou `e2e` — e não devem e
 | `RATE_LIMIT_LOGIN_MAX` | `5` | Tentativas de login por janela (só conta as que **falham**). |
 | `RATE_LIMIT_FORUM_MAX` | `10` | Posts/respostas no fórum por janela. |
 | `RATE_LIMIT_QUIZ_MAX` | `30` | Submissões de quiz por janela. |
+| `RATE_LIMIT_CONTACT_MAX` | `5` | Envios do formulário de contato/inscrição (`POST /api/contact`) por janela. Cinco mensagens em 15 min já é muito para um visitante real; a suíte e2e sobe o valor para `1000`. |
 
 ### Uploads
 

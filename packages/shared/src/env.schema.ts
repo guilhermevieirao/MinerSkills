@@ -68,6 +68,7 @@ export const serverEnvSchema = z.object({
   RATE_LIMIT_LOGIN_MAX: intFromEnv(5),
   RATE_LIMIT_FORUM_MAX: intFromEnv(10),
   RATE_LIMIT_QUIZ_MAX: intFromEnv(30),
+  RATE_LIMIT_CONTACT_MAX: intFromEnv(5),
 
   UPLOADS_DIR: z.string().default('./data/uploads'),
   UPLOAD_IMAGE_MAX_MB: intFromEnv(8),
