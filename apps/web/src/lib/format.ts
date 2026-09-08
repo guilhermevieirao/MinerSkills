@@ -11,6 +11,14 @@ export function mediaUrl(url: string | null | undefined): string {
   return url;
 }
 
+/**
+ * Só links http(s) viram `<a>` no site — o zod (`z.string().url()`) aceita
+ * qualquer URL absoluta, inclusive `javascript:` e `data:`.
+ */
+export function isWebUrl(url: string | null | undefined): url is string {
+  return /^https?:\/\//i.test(url ?? '');
+}
+
 export function formatDate(iso: string, pattern = "d 'de' MMMM 'de' yyyy"): string {
   return format(new Date(iso), pattern, { locale: ptBR });
 }

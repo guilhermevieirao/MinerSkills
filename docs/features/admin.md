@@ -19,18 +19,21 @@ Detalhes em [security.md](../security.md).
 
 | Rota | O quê |
 | --- | --- |
-| `/admin` | **Dashboard** — contadores e alerta de moderação pendente. |
+| `/admin` | **Dashboard** — contadores (inclusive Patrocinadores e Temporadas), alerta de moderação pendente e alerta de mensagens novas na caixa de entrada. |
 | `/admin/paginas` | **Blocos de conteúdo** (landing, história, como entrar) + **Timeline**. |
 | `/admin/blog` | Posts: editor rich-text, capa, fotos, vídeos, YouTube, links, rascunho/publicado. |
 | `/admin/galeria` | Upload múltiplo, **legenda editável** por foto, **reordenação** (arraste pela alça ou botões "Mover para cima/baixo", com "Salvar ordem"/"Descartar"), exclusão. |
 | `/admin/midia` | **Biblioteca de mídia** — tudo o que foi enviado (imagens e vídeos): filtro por tipo, busca pelo nome do arquivo, contagem de usos por card, edição do texto alternativo e lista de onde cada arquivo é usado. Exclusão em dois passos: se a mídia estiver em uso a API responde 409 e o painel pede confirmação forçada ("Excluir mesmo assim"). Dashboard ganhou o card **Mídias**. |
 | `/admin/quiz` | Perguntas e opções; zerar leaderboard. |
-| `/admin/equipe` | **Equipe** — membros e robôs: foto, tags, geração, sobre, citação. |
+| `/admin/equipe` | **Equipe** — membros e robôs: foto, tags, geração, sobre, citação; robôs têm o select **Temporada** (vínculo com `/admin/temporadas`) e o campo livre "Rótulo da temporada". |
 | `/admin/equipe/tags` | **Tags da equipe** — nome, ícone e ordem das tags de membro. Excluir uma tag a remove de todos os registros. |
 | `/admin/forum` | Fila de moderação + todos os tópicos. |
-| `/admin/premios` | Prêmios, com destaque e badge. |
-| `/admin/agenda` | Eventos, com data/hora e tipo. |
+| `/admin/mensagens` | **Mensagens** — caixa de entrada das inscrições e contatos enviados pelo site: chips de status (Novas, Lidas, Arquivadas, Todas) e de tipo (Inscrições, Contatos, Todos), cards com prévia, modal com todos os campos (abrir uma mensagem nova já a marca como lida; e-mail vira `mailto:`), botões Arquivar / Marcar como nova / Excluir (com confirmação) e paginação. A sidebar mostra um badge com as novas e o dashboard, um alerta. |
+| `/admin/premios` | Prêmios, com destaque, badge e **Temporada** opcional. |
+| `/admin/temporadas` | **Temporadas** — jogos da FRC por ano: nome, ano, jogo, resumo, selo, ordem e **Temporada atual** (só uma; marcar desmarca as demais). A tabela mostra quantos robôs e prêmios estão vinculados; excluir não apaga nada (ficam sem temporada). |
+| `/admin/agenda` | Eventos, com data/hora, tipo e link de inscrição ou detalhes (opcional). |
 | `/admin/social` | Links de redes sociais (aparecem no rodapé e em Como Entrar). |
+| `/admin/patrocinadores` | **Patrocinadores** — nome, site, nível (principal / apoio / parceiro), logo (`<MediaPicker>`), ordem e ativo. Aparecem na faixa da Home e na linha "Apoio" do rodapé. |
 | `/admin/configuracoes` | **Configurações** — lema, cidade, e-mail de contato, inscrições abertas e aviso. |
 | `/admin/administradores` | **Administradores** — quem entra no painel: nome, e-mail e senha. A própria conta não pode ser excluída e sempre resta ao menos um admin. |
 | `/admin/conta` | **Minha conta** — nome e e-mail da sessão e **troca de senha** (exige a senha atual; a sessão continua ativa). |

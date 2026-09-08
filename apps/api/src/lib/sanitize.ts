@@ -25,7 +25,18 @@ export function sanitizePostHtml(dirty: string): string {
   });
 }
 
-/** Texto puro: remove qualquer HTML (fórum, apelidos, títulos). */
+/**
+ * Texto puro: remove qualquer HTML (fórum, apelidos, títulos, mensagens).
+ * O sanitize-html devolve o texto re-escapado (`&` → `&amp;`, `<` → `&lt;`,
+ * `>` → `&gt;`), mas o resultado vai para colunas de texto puro e o front
+ * escapa ao renderizar — então essa única passada é desfeita aqui. A ordem
+ * importa: `&amp;` por último, para um `&lt;` digitado (que o parser decodifica
+ * e o sanitize re-escapa como `&amp;lt;`) voltar a `&lt;`, e não virar `<`.
+ */
 export function stripHtml(dirty: string): string {
-  return sanitizeHtml(dirty, { allowedTags: [], allowedAttributes: {} }).trim();
+  return sanitizeHtml(dirty, { allowedTags: [], allowedAttributes: {} })
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .trim();
 }

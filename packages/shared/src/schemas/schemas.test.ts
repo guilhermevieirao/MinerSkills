@@ -19,24 +19,21 @@ describe('agendaEventSchema', () => {
     expect(parsed.endsAt).toBeUndefined();
   });
 
-  it('aceita término igual ou posterior ao início', () => {
-    expect(
-      agendaEventSchema.safeParse({ ...evento, endsAt: evento.startsAt }).success,
-    ).toBe(true);
+  it('aceita término posterior ao início', () => {
     expect(
       agendaEventSchema.safeParse({ ...evento, endsAt: '2026-03-12T18:00:00-03:00' })
         .success,
     ).toBe(true);
   });
 
-  it('rejeita término anterior ao início', () => {
-    const result = agendaEventSchema.safeParse({
-      ...evento,
-      endsAt: '2026-03-09T18:00:00-03:00',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0]?.path).toEqual(['endsAt']);
+  it('rejeita término igual ou anterior ao início', () => {
+    // igual não serve: o .ics exige DTEND posterior a DTSTART (RFC 5545)
+    for (const endsAt of [evento.startsAt, '2026-03-09T18:00:00-03:00']) {
+      const result = agendaEventSchema.safeParse({ ...evento, endsAt });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0]?.path).toEqual(['endsAt']);
+      }
     }
   });
 

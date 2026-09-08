@@ -1,6 +1,6 @@
 # Configurações
 
-**Onde aparece:** rodapé (todas as páginas) e, em fase futura, Como Entrar ·
+**Onde aparece:** rodapé (todas as páginas) e Como Entrar (bloco Inscreva-se) ·
 **Admin:** `/admin/configuracoes` ·
 **Componente:** `apps/web/src/admin/sections/SettingsSection.tsx`
 
@@ -19,8 +19,8 @@ Definidas em [`constants.ts`](../../packages/shared/src/constants.ts)
 | `team_motto` | Lema da equipe | `text` | Rodapé, abaixo do nome da equipe. |
 | `city_line` | Cidade / região | `text` | Rodapé: "FIRST Robotics Competition · {city_line}". |
 | `contact_email` | E-mail de contato | `email` | Rodapé, como link `mailto:` (só quando preenchido). |
-| `applications_open` | Inscrições abertas | `boolean` | Reservado para Como Entrar exibir o formulário de inscrição (fase futura). |
-| `applications_info` | Aviso sobre inscrições | `textarea` | Reservado para Como Entrar, enquanto as inscrições estão fechadas (fase futura). |
+| `applications_open` | Inscrições abertas | `boolean` | Como Entrar: com `'true'` o bloco **Inscreva-se** exibe o formulário de inscrição; a API recusa inscrições (`409`) quando fechado. |
+| `applications_info` | Aviso sobre inscrições | `textarea` | Como Entrar, no lugar do formulário, enquanto as inscrições estão fechadas. |
 
 Valores booleanos são gravados como `'true'` / `'false'`; todo valor tem no máximo
 2000 caracteres (`settingSchema`).

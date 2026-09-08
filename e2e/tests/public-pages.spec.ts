@@ -99,7 +99,7 @@ test.describe('Páginas públicas', () => {
     // os classifique como Extended_Pictographic.
     const TYPOGRAPHIC = new Set(['©', '®', '™']);
 
-    for (const path of ['/', '/historia', '/blog', '/premios', '/como-entrar', '/agenda']) {
+    for (const path of ['/', '/historia', '/blog', '/premios', '/como-entrar', '/agenda', '/contato', '/temporadas']) {
       await page.goto(path);
       await page.waitForLoadState('networkidle');
       const text = await page.locator('body').innerText();

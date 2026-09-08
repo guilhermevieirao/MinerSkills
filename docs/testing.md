@@ -72,7 +72,7 @@ de erro diz exatamente isso.
 
 ---
 
-## O que a suíte e2e cobre (52 testes × 2 projetos)
+## O que a suíte e2e cobre (71 testes × 2 projetos)
 
 Alguns testes que alteram **estado global** (ordem da galeria, configurações do site) rodam
 só no projeto desktop, porque os dois projetos executam em paralelo sobre o mesmo banco.
@@ -87,8 +87,12 @@ só no projeto desktop, porque os dois projetos executam em paralelo sobre o mes
 | `admin-settings.spec.ts` | Painel de **Configurações**: o formulário lista todas as chaves de `SETTING_DEFINITIONS` com os valores do seed; alterar o lema, salvar e vê-lo no **rodapé** do site (só desktop), restaurando o valor original pela API; `PUT /bulk` com chave desconhecida responde 400. |
 | `gallery.spec.ts` | Painel da galeria: **edição de legenda** refletida na página pública e restaurada (desktop edita a primeira foto, mobile a última); **reordenação** pelos botões com "Salvar ordem" e conferência via `GET /api/gallery` (só desktop), restaurando a ordem original. |
 | `media.spec.ts` | **Biblioteca de mídia**: mídia enviada pela API e vinculada a um prêmio novo; busca, "Usada em 1", detalhes com "Onde é usada", edição do alt, exclusão em dois passos (409 → "Excluir mesmo assim") e o prêmio sobrevive sem badge (`SetNull`); o mesmo contrato do 409 (`details` por tipo) e do `?force=1` direto na API. O prêmio é removido ao final. |
+| `sponsors.spec.ts` | **Patrocinadores**: o rodapé de `/` mostra "Apoio:" com FIEMG; a Home exibe a faixa `.ms-sponsors` com FIEMG como link externo. Painel (serial, só desktop): cria "Patrocinador e2e" de nível Parceiro, vê-o na faixa (sem link) e no rodapé, exclui com confirmação; limpeza via API no `afterAll`. |
+| `contact.spec.ts` | **Contato e inscrição** (em série): envio pela página `/contato`; **honeypot** preenchido pela API responde `202` e nada aparece na caixa de entrada; painel `/admin/mensagens` mostra a mensagem como Nova, abrir marca como Lida, Arquivar, chip Arquivadas, Excluir com confirmação; Como Entrar exibe o formulário (seed `applications_open = 'true'`) e envia uma inscrição, removida pela API ao final. No máximo 3 `POST /api/contact` por projeto — o `playwright.config.ts` eleva `RATE_LIMIT_CONTACT_MAX` para `1000`. |
+| `agenda.spec.ts` | `.ics` da agenda e de um evento (cabeçalhos, `UID`, `404` para id desconhecido/despublicado); botões Google Calendar (`rel="noopener"`), `.ics` e "Assinar agenda"; contador da próxima competição na Home; painel: link de inscrição vira "Inscrever-se", entra no `.ics`, e o evento despublicado some da exportação (estado restaurado). |
+| `seasons.spec.ts` | **Temporadas**: `/temporadas` lista Reefscape e Crescendo do seed com exatamente uma **Temporada atual**; expandir Crescendo mostra um robô e o **Rising All-Star**, o deep link `?t=` sobrevive a reload e o robô leva a `/equipe/<slug>`; `GET /api/seasons/:slug` devolve `robots`/`awards`/`events` (só do ano) e `404` para slug inexistente; robôs e prêmios expõem `seasonRef`. Painel (serial, só desktop): cria "Temporada e2e", marca como atual (a original deixa de ser), restaura a original e exclui — com rede de segurança via API. |
 | `admins.spec.ts` | **Administradores e Minha conta**: cria um admin pelo painel; a própria linha tem "Você" e nenhum botão de excluir (a API responde 409); o novo admin entra, **troca a própria senha** (cookie reemitido, sessão segue válida), sai e volta com a nova; o admin principal remove o criado. |
-| `security.spec.ts` | 401 em todas as rotas admin (inclusive `/api/admin/admins`); mutações bloqueadas; troca de senha sem sessão bloqueada; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
+| `security.spec.ts` | 401 em todas as rotas admin (inclusive `/api/admin/admins`, `/api/admin/sponsors`, `/api/admin/contact` e `/api/admin/seasons`); mutações bloqueadas; troca de senha sem sessão bloqueada; flags do cookie; validação zod; `X-Powered-By` ausente; `nosniff` nos uploads; healthcheck. |
 
 ---
 
@@ -102,8 +106,13 @@ exercita de forma indireta:
 | `apps/api/src/lib/sanitize.test.ts` | `sanitizePostHtml` (remove `<script>`, mantém a allowlist, só aceita iframe do YouTube, links ganham `rel`/`target`) e `stripHtml`. |
 | `apps/api/src/lib/slug.test.ts` | `slugBase` (acentos, corte sem hífen final, fallback) e os `unique*Slug` — sufixos `-2`, `-3` em colisão, ignorando o próprio id. |
 | `apps/api/src/modules/quiz/quiz.scoring.test.ts` | `scoreAnswers`: certo/errado/não respondido, pergunta sem opção correta ignorada, ordem das correções. |
+| `apps/api/src/lib/ics.test.ts` | `buildCalendar`: envelope VCALENDAR, `UID`, `DTSTAMP` fixo, `DTEND` padrão (+2h), escapes, `URL` padrão sem barra duplicada, dobra em 75 octetos UTF-8 e CRLF. |
 | `packages/shared/src/env.schema.test.ts` | Defaults, conversão de inteiros/CSV/`TRUST_PROXY`, `JWT_SECRET` curto e `DATABASE_URL` ausente falhando. |
+| `packages/shared/src/calendar.test.ts` | `toIcsDate` (UTC), `escapeIcsText` (RFC 5545), `eventEnd` e `googleCalendarUrl` (parâmetros, fim padrão, `location` opcional, codificação). |
 | `packages/shared/src/schemas/schemas.test.ts` | `refine`s e regexes dos schemas zod: agenda (`endsAt >= startsAt`), quiz (exatamente uma correta), tag de membro (ícone da lista curada), equipe (chave de tag em minúsculas). |
+| `packages/shared/src/schemas/season.test.ts` | `seasonSchema`: defaults (`order 0`, `isCurrent false`), opcionais nulos, ano fora de 1990..2100 / não inteiro / texto rejeitados, trim e obrigatoriedade do nome, limites de nome/jogo/resumo. |
+| `packages/shared/src/schemas/sponsor.test.ts` | `sponsorSchema`: defaults (`order 0`, `active true`), site e logo nulos ou preenchidos, site que não é URL, nível fora de `SPONSOR_TIERS`, nome obrigatório (até 120), ordem negativa/fracionária; `DEFAULT_SPONSORS` passam na validação. |
+| `packages/shared/src/schemas/contact.test.ts` | `contactMessageSchema` (nome curto, e-mail inválido, mensagem curta, honeypot `website` aceito, opcionais `null`), `contactStatusSchema` (status inválido) e `contactQuerySchema` (paginação padrão, filtros inválidos). |
 
 ```bash
 npm run test:unit                  # todos os workspaces (--workspaces --if-present)

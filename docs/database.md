@@ -82,6 +82,14 @@ em `EncyclopediaTag` sem `MemberTag` correspondente viram tags (`label = key`, s
 ícone) para nenhum filtro sumir do site. Tags existentes nunca são alteradas nem
 apagadas — uma tag excluída pelo admin não volta.
 
+Os **patrocinadores** iniciais (`DEFAULT_SPONSORS` em `constants.ts`: FIEMG, SESI e
+SENAI — até então fixos no rodapé) seguem o mesmo esquema:
+
+| Provider | Como |
+| --- | --- |
+| PostgreSQL | Migration `20260907120000_sponsors` (cria a tabela, o índice e a FK, e insere os três com ids fixos `spon_fiemg`, `spon_sesi`, `spon_senai`, cada um com `WHERE NOT EXISTS`). |
+| SQLite | `apps/api/prisma/backfill-sponsors.ts`: com a tabela vazia cria `DEFAULT_SPONSORS` (ordem = posição na lista); nunca altera nem apaga registros. Executado pelo agregador; isolado, `npx tsx prisma/backfill-sponsors.ts` dentro de `apps/api`. |
+
 ### Agregador de backfills (SQLite)
 
 Como o SQLite nunca roda migrations, os **dados iniciais** que no PostgreSQL chegam
@@ -93,8 +101,9 @@ cada boot. Isolado: `npm run db:backfill -w apps/api`.
 Cada frente que precisar de dados iniciais acrescenta o seu: um arquivo
 `prisma/backfill-<tema>.ts` que **exporta** a função (e só executa quando é o módulo
 principal, para continuar rodável sozinho) e uma linha na lista do agregador, em ordem
-de dependência. Hoje a lista contém `backfillMemberTags` e `backfillAdminEmails`
-(normaliza e-mails de admin gravados com outra caixa).
+de dependência. Hoje a lista contém `backfillMemberTags`, `backfillAdminEmails`
+(normaliza e-mails de admin gravados com outra caixa) e `backfillSponsors`
+(patrocinadores iniciais).
 
 ---
 
@@ -116,6 +125,19 @@ Requer o PostgreSQL de pé:
 docker compose --profile postgres up -d postgres
 npm run db:migrate:new     # carimba postgresql + prisma migrate dev
 ```
+
+### Migrations da Fase 2
+
+| Migration | O quê |
+| --- | --- |
+| `20260907120000_sponsors` | Cria `Sponsor` (índice `[active, order]`, FK `logoId → MediaAsset` com `SET NULL`) e insere FIEMG, SESI e SENAI com ids fixos (`WHERE NOT EXISTS`). |
+| `20260907121000_contact_messages` | Cria `ContactMessage` com os índices `[status, createdAt]` e `[kind, createdAt]`. Sem dados iniciais. |
+| `20260907122000_agenda_event_url` | `ALTER TABLE "AgendaEvent" ADD COLUMN "url" TEXT`. No SQLite o `db push` cria a coluna direto (sem backfill: campo opcional). |
+| `20260907123000_seasons` | Cria a tabela `Season` (índices `Season_slug_key` e `Season_year_idx`, FK `badgeId → MediaAsset` com `SET NULL`) e adiciona `seasonId` em `EncyclopediaEntry` e `Award` (índice + FK `Season` com `ON DELETE SET NULL`). |
+
+`20260907123000_seasons` não traz dados iniciais nem backfill: o seed cria Crescendo (2024)
+e Reefscape (2025, atual); em bancos já existentes o administrador cadastra as temporadas
+em `/admin/temporadas` e vincula robôs e prêmios.
 
 ---
 
@@ -183,12 +205,15 @@ npm run test:e2e
 | `Post` + `PostMedia` / `PostYoutube` / `PostLink` | Blog: conteúdo, fotos/vídeos, embeds e links. |
 | `GalleryPhoto` | Galeria pública. |
 | `QuizQuestion` + `QuizOption` + `QuizScore` | Quiz e leaderboard. |
-| `EncyclopediaEntry` + `EncyclopediaTag` | Membros e robôs, com tags de filtro (`EncyclopediaTag.tag` guarda a `key` da tag). |
+| `EncyclopediaEntry` + `EncyclopediaTag` | Membros e robôs, com tags de filtro (`EncyclopediaTag.tag` guarda a `key` da tag). Robôs têm `seasonId` opcional (FK `Season`, `SetNull`); o texto `season` continua como rótulo livre. |
 | `MemberTag` | Tags de membro gerenciadas pelo admin: `key` única e imutável, `label`, `icon`, `order`. Sem FK com `EncyclopediaTag` — ver "Regras de portabilidade". |
 | `ForumTopic` + `ForumReply` | Fórum com status de moderação. |
-| `Award` | Prêmios e conquistas. |
-| `AgendaEvent` | Agenda. |
+| `Award` | Prêmios e conquistas, com `seasonId` opcional (FK `Season`, `SetNull`). |
+| `Season` | Temporadas da FRC: `name`, `slug` único, `year`, `game`, `summary`, `badge` (`MediaAsset`, `SetNull`), `order`, `isCurrent` (só uma é a atual — regra garantida na API, em transação, sem constraint). |
+| `AgendaEvent` | Agenda. `url` (opcional) é o link de inscrição/detalhes: vira o botão "Inscrever-se" no site e a propriedade `URL` do `.ics` (migration `20260907122000_agenda_event_url`). |
 | `SocialLink` | Redes sociais. |
+| `Sponsor` | Patrocinadores: `name`, `url`, `tier` (`SPONSOR_TIERS`), `logoId` → `MediaAsset` (SetNull), `order`, `active`; índice `[active, order]`. |
+| `ContactMessage` | Mensagens do site (`kind` = inscrição/contato) lidas em `/admin/mensagens`: `status` (`new`/`read`/`archived`), `readAt` da primeira leitura, IP só como hash (`ipHash` = sha256 + segredo) e `userAgent` truncado — nenhum dos dois sai pela API. Migration `20260907121000_contact_messages`; no SQLite a tabela nasce pelo `db push` (sem backfill). |
 | `Setting` | Configurações chave/valor editáveis em `/admin/configuracoes`; chaves restritas a `SETTING_DEFINITIONS` (`packages/shared`). |
 
 ---
@@ -200,8 +225,13 @@ npm run test:e2e
 
 | Variável | Efeito |
 | --- | --- |
-| `SEED_MODE=full` | Site completo: 12 posts, 30 fotos, 24 membros/robôs, 16 tópicos… |
+| `SEED_MODE=full` | Site completo: 12 posts, 30 fotos, 24 membros/robôs, 16 tópicos, 8 mensagens na caixa de entrada… |
 | `SEED_MODE=test` | Dataset pequeno e estável, usado pelos testes e2e. |
+
+Nos dois modos o seed cria ainda as temporadas Crescendo (2024) e Reefscape (2025, atual),
+os três patrocinadores de `DEFAULT_SPONSORS`, uma competição futura fixa na agenda
+(1º de março do ano seguinte — alimenta o contador da Home e os testes do `.ics`) e duas
+mensagens fixas (uma inscrição nova e um contato já lido).
 | `SEED_IMAGE_SOURCE=remote` | Baixa fotos de `picsum.photos` (IDs fixos). |
 | `SEED_IMAGE_SOURCE=local` | Gera placeholders da marca com sharp — **funciona offline**. |
 

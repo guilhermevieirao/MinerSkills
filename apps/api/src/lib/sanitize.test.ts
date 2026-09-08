@@ -51,4 +51,15 @@ describe('stripHtml', () => {
   it('mantém texto puro intacto', () => {
     expect(stripHtml('Fulano de Tal')).toBe('Fulano de Tal');
   });
+
+  it('não converte &, < e > em entidades HTML', () => {
+    expect(stripHtml('Ana & Bia, x < y e y > z')).toBe('Ana & Bia, x < y e y > z');
+    expect(stripHtml('Quero saber sobre C++ & Java')).toBe('Quero saber sobre C++ & Java');
+  });
+
+  it('remove a tag e mantém o texto em volta legível', () => {
+    expect(stripHtml('a <b>&amp;</b> b')).toBe('a & b');
+    // entidade digitada literalmente continua como texto, não vira tag
+    expect(stripHtml('&amp;lt;b&amp;gt;')).toBe('&lt;b&gt;');
+  });
 });

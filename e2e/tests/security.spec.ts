@@ -13,6 +13,9 @@ test.describe('Segurança', () => {
       '/api/admin/agenda',
       '/api/admin/social-links',
       '/api/admin/admins',
+      '/api/admin/sponsors',
+      '/api/admin/contact',
+      '/api/admin/seasons',
     ];
     for (const route of routes) {
       const resp = await request.get(route);

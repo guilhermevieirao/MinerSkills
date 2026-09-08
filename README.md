@@ -94,12 +94,18 @@ Veja [docs/docker.md](docs/docker.md).
 Blog (fotos, vídeos e embeds do YouTube) · Galeria (grid dinâmico + lightbox) ·
 Equipe (membros e robôs, com tags gerenciadas pelo admin; filtros + painel de detalhe) ·
 Quiz com leaderboard ·
-Fórum moderado · Prêmios · Agenda · Como Entrar · Redes sociais.
+Fórum moderado · Prêmios · Temporadas (linha do tempo competitiva: robôs, prêmios e eventos de cada ano) ·
+Agenda (com exportação de calendário: `.ics` assinável, Google Calendar e contador da próxima competição na Home) ·
+Como Entrar (com inscrição no processo seletivo) · Contato · Redes sociais ·
+Patrocinadores (faixa na Home e rodapé).
 
 **Administrativo** (`/admin`, sem link público) — Todo o conteúdo acima é gerenciável:
 blog com editor rich-text, upload de mídia e biblioteca de mídia (usos, alt e exclusão segura),
 galeria (legendas e ordem das fotos), perguntas do quiz, equipe e suas tags,
-fila de moderação do fórum, prêmios, agenda, textos das páginas, timeline, redes sociais,
+fila de moderação do fórum, prêmios, agenda (com link de inscrição),
+temporadas (com "Temporada atual" única e vínculo de robôs e prêmios),
+textos das páginas, timeline, redes sociais, patrocinadores (logo, nível e link),
+caixa de entrada de mensagens (inscrições e contatos do site, com status novo/lido/arquivado),
 configurações gerais (lema, cidade, e-mail de contato, inscrições) e administradores
 (cadastro de quem entra no painel e troca da própria senha).
 
