@@ -54,6 +54,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Infra de produção: nada sobe, só validação. O runner tem Docker e
+      # shellcheck; o .env copiado acima já define DOMAIN, POSTGRES_* etc.
+      - name: Validar docker-compose.prod.yml
+        run: docker compose -f docker-compose.prod.yml config --quiet
+
+      - name: Validar Caddyfile
+        run: >
+          docker run --rm -e DOMAIN=localhost -e ACME_EMAIL=
+          -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile
+
+      - name: Shellcheck dos scripts de backup
+        run: shellcheck -S warning scripts/*.sh scripts/backup/*.sh
+
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

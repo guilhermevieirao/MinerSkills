@@ -49,11 +49,23 @@ Não existem `.env` dentro de `apps/api`, `apps/web` ou `e2e` — e não devem e
 | --- | --- | --- |
 | `API_PORT` | `3001` | Porta da API. |
 | `API_HOST` | `0.0.0.0` | Interface de escuta. |
-| `WEB_PORT` | `8080` | Porta pública do nginx (stack de produção). |
 | `WEB_ORIGIN` | `http://localhost:5173` | Origem permitida no CORS. Deve ser a URL real do site. |
 | `SITE_URL` | `http://localhost:5173` | URL pública canônica (**sem barra final**) usada pela API em `sitemap.xml`, `robots.txt` e na pré-visualização `/og/*` para bots sociais. Em produção, o mesmo domínio de `VITE_SITE_URL` (a versão do front, embutida no bundle). Ver [seo.md](seo.md). |
-| `TRUST_PROXY` | `0` | Quantidade de **proxies confiáveis** (hops) à frente da API: `0` = nenhum (dev, `X-Forwarded-For` é ignorado); `1` = nginx (stack de produção); `2` = Caddy + nginx, por exemplo. Necessário para o rate limit por IP enxergar o IP real do cliente. `true`/`false` ainda são aceitos (→ `1`/`0`). |
+| `TRUST_PROXY` | `0` | Quantidade de **proxies confiáveis** (hops) à frente da API: `0` = nenhum (dev, `X-Forwarded-For` é ignorado); `1` = só o nginx; `2` = Caddy + nginx — o **padrão do `docker-compose.prod.yml`** (some 1 por proxy extra, como Cloudflare). Necessário para o rate limit por IP enxergar o IP real do cliente. `true`/`false` ainda são aceitos (→ `1`/`0`). |
 | `BODY_LIMIT` | `1mb` | Tamanho máximo do corpo JSON. |
+
+### HTTPS e backup (stack de produção)
+
+Usadas só pelo `docker-compose.prod.yml` — ver [docker.md](docker.md#produção--docker-composeprodyml)
+e [backup.md](backup.md).
+
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `DOMAIN` | `localhost` | Domínio público servido pelo Caddy, que emite e renova o certificado (Let's Encrypt). `localhost` = certificado interno autoassinado, só para testar o stack. |
+| `ACME_EMAIL` | — (vazio) | E-mail da conta ACME, para avisos de expiração do certificado. Opcional; com `DOMAIN=localhost` deixe vazio. |
+| `BACKUP_DIR` | `./backups` | Pasta do **host** que recebe os backups (dump do Postgres + tar dos uploads). Está no `.gitignore`. |
+| `BACKUP_INTERVAL_HOURS` | `24` | Intervalo entre backups automáticos do serviço `backup` (um ao subir e depois a cada N horas). |
+| `BACKUP_KEEP_DAYS` | `14` | Retenção: backups mais antigos que N dias são apagados (`0` = nunca). |
 
 ### Autenticação (admin)
 
@@ -126,5 +138,7 @@ Os testes sobem servidores próprios, em portas separadas, para não colidirem c
 - [ ] `ADMIN_PASSWORD` forte (e trocado após o primeiro login)
 - [ ] `POSTGRES_PASSWORD` forte
 - [ ] `DATABASE_PROVIDER=postgresql` e `DATABASE_URL` apontando para o serviço `postgres`
-- [ ] `TRUST_PROXY=1` (a API fica atrás do nginx; some 1 por proxy extra à frente dele)
-- [ ] `WEB_ORIGIN`, `SITE_URL` e `VITE_SITE_URL` com o domínio real (HTTPS, sem barra final) — os dois últimos alimentam sitemap, robots, canonical e Open Graph
+- [ ] `DOMAIN` com o domínio real (DNS já apontando para a máquina) e `ACME_EMAIL` preenchido
+- [ ] `TRUST_PROXY=2` (Caddy + nginx à frente da API; some 1 por proxy extra)
+- [ ] `WEB_ORIGIN`, `SITE_URL` e `VITE_SITE_URL` com o domínio real (`https://`, sem barra final) — os dois últimos alimentam sitemap, robots, canonical e Open Graph
+- [ ] `BACKUP_DIR` numa pasta com espaço, copiada para fora da máquina de tempos em tempos ([backup.md](backup.md))

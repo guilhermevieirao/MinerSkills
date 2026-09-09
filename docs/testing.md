@@ -216,7 +216,7 @@ próprio run), em dois jobs:
 
 | Job | Passos |
 | --- | --- |
-| **quality** | `npm ci` → `cp .env.example .env` → `npm run db:generate` → `npm run lint` → `npm run typecheck` → `npm run test:unit` → `npm run build` |
+| **quality** | `npm ci` → `cp .env.example .env` → `npm run db:generate` → `npm run lint` → `npm run typecheck` → `npm run test:unit` → `npm run build` → validação da infra de produção: `docker compose -f docker-compose.prod.yml config`, `caddy validate` do `Caddyfile` (via imagem `caddy`) e `shellcheck` dos scripts de backup. Nada sobe — só a configuração é conferida. |
 | **e2e** (`needs: quality`) | `npx playwright install --with-deps chromium` → `npm run test:e2e`. Com `CI=true` o Playwright usa **1 worker** e **2 retries**, e não reaproveita servidores já abertos. Em falha, o relatório (`e2e/playwright-report/`) é anexado como artefato `playwright-report` do run (7 dias). |
 
 O job e2e usa o SQLite padrão (`data/e2e.db`), então não precisa de serviço de banco;

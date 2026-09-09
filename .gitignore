@@ -21,6 +21,8 @@ apps/api/prisma/schema.prisma
 # Runtime data (SQLite db + uploads volume).
 # Os diretórios de upload são criados no boot por ensureUploadDirs().
 apps/api/data/
+# Backups gerados pelo serviço `backup` e por scripts/backup*.sh
+backups/
 
 # Test artifacts
 e2e/test-results/

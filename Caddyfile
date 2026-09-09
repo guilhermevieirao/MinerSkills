@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────
+#  MinerSkills — Caddy (borda TLS do stack de produção)
+#
+#  Caddy fica na frente do nginx (serviço `web`): obtém e renova o
+#  certificado sozinho (Let's Encrypt / ZeroSSL), redireciona http://
+#  para https:// (308) e envia HSTS. O nginx segue servindo o SPA e
+#  fazendo proxy da API — nada muda nele além dos cabeçalhos
+#  X-Forwarded-* que já repassa.
+#
+#  Variáveis (do .env da raiz, via docker-compose.prod.yml):
+#    DOMAIN      domínio público (ex.: minerskills.com.br). Com
+#                `localhost` o Caddy emite um certificado interno,
+#                autoassinado — bom para testar o stack na máquina
+#                (curl -k / aceitar o aviso do navegador).
+#    ACME_EMAIL  e-mail da conta ACME (avisos de expiração). Pode
+#                ficar vazio; com DOMAIN=localhost deixe vazio.
+#
+#  Validar sem subir o stack:
+#    docker run --rm -e DOMAIN=localhost -e ACME_EMAIL= \
+#      -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+#      caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile
+# ─────────────────────────────────────────────────────────────
+
+{$DOMAIN} {
+	# `tls <email>` define o e-mail da conta ACME. Quando ACME_EMAIL está
+	# vazio a linha vira só `tls`, que é válido (TLS automático, sem e-mail)
+	# — por isso o e-mail não vai na opção global `email`, que exige valor.
+	tls {$ACME_EMAIL}
+
+	header {
+		# um ano; inclui subdomínios. Só sai em respostas HTTPS.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# os demais cabeçalhos de segurança (CSP, nosniff…) vêm do nginx
+		-Server
+	}
+
+	# Caddy repassa Host e acrescenta X-Forwarded-For / X-Forwarded-Proto;
+	# o nginx soma o próprio hop — por isso TRUST_PROXY=2 na API.
+	reverse_proxy web:80
+}

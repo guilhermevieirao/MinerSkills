@@ -153,6 +153,18 @@ Permissions-Policy: geolocation=(), microphone=(), camera=()
 As fontes são **self-hosted**, então não há origem externa em `font-src`.
 `i.ytimg.com` aparece apenas para as miniaturas dos vídeos.
 
+**Borda TLS** (Caddy, [`Caddyfile`](../Caddyfile), stack de produção): certificado
+automático com renovação, redirect `http://` → `https://` (308) e
+
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+só em respostas HTTPS. O cabeçalho `Server` do Caddy é removido. O Caddy também
+preenche `X-Forwarded-For` e `X-Forwarded-Proto`; o nginx soma o próprio hop e repassa
+o esquema **do cliente** (`$ms_forwarded_proto`), não o da conexão interna — assim a
+API sabe que a requisição chegou por HTTPS.
+
 > ⚠️ **Atenção ao editar o `nginx.conf`:** o nginx só herda `add_header` de níveis
 > superiores quando o nível atual **não declara nenhum**. Por isso os cabeçalhos de
 > segurança ficam num snippet **incluído em cada `location`**. Se você adicionar um
@@ -171,8 +183,10 @@ As fontes são **self-hosted**, então não há origem externa em `font-src`.
 | Quiz | 30 / 15 min | `RATE_LIMIT_QUIZ_MAX` |
 | Contato / inscrição | 5 / 15 min | `RATE_LIMIT_CONTACT_MAX` |
 
-Em produção, `TRUST_PROXY=1` é **necessário** para que o IP real (atrás do nginx)
-seja usado — sem isso, todos os visitantes compartilham o mesmo balde.
+Em produção, `TRUST_PROXY` precisa ser a quantidade exata de proxies à frente da API
+para que o IP real seja usado — no `docker-compose.prod.yml` são **2** (Caddy + nginx),
+e é esse o padrão do compose. Com menos, todos os visitantes viram o IP do proxy e
+dividem o mesmo balde; com mais, um cliente forja `X-Forwarded-For` e escapa do limite.
 
 ---
 
@@ -224,7 +238,7 @@ sem nenhum registro na caixa de entrada, além de exercitar o envio real e o pai
 - [ ] `ADMIN_PASSWORD` forte e trocado após o primeiro acesso — agora em `/admin/conta`, sem mexer no `.env`
 - [ ] `POSTGRES_PASSWORD` forte
 - [ ] `NODE_ENV=production` (ativa o `Secure` no cookie)
-- [ ] `TRUST_PROXY=1` (quantidade de proxies à frente da API; some 1 por proxy extra)
-- [ ] `WEB_ORIGIN` com o domínio real
-- [ ] **HTTPS** no proxy de borda (o cookie `Secure` exige)
-- [ ] Considerar adicionar `Strict-Transport-Security` no proxy TLS
+- [ ] `TRUST_PROXY=2` (Caddy + nginx; some 1 por proxy extra à frente)
+- [ ] `WEB_ORIGIN`, `SITE_URL` e `VITE_SITE_URL` com o domínio real em `https://`
+- [ ] `DOMAIN` apontando para a máquina — o Caddy cuida do **HTTPS** (o cookie `Secure` exige) e do `Strict-Transport-Security`
+- [ ] Backups saindo em `BACKUP_DIR` e **copiados para fora da máquina**; restauração testada ([backup.md](backup.md))

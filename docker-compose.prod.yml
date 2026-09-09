@@ -1,19 +1,44 @@
 # ─────────────────────────────────────────────────────────────
-#  MinerSkills — stack de PRODUÇÃO (nginx + API + PostgreSQL)
+#  MinerSkills — stack de PRODUÇÃO
+#  Caddy (HTTPS) → nginx (SPA + proxy) → API → PostgreSQL, + backup
 #
 #  Antes de subir, ajuste no .env da raiz:
 #    NODE_ENV=production
 #    DATABASE_PROVIDER=postgresql
 #    DATABASE_URL="postgresql://<user>:<pass>@postgres:5432/<db>?schema=public"
-#    TRUST_PROXY=1
-#    WEB_ORIGIN=http://localhost:8080   (ou seu domínio)
+#    DOMAIN=minerskills.com.br        (localhost = certificado interno, p/ testes)
+#    ACME_EMAIL=contato@...           (opcional; avisos de expiração do certificado)
+#    WEB_ORIGIN=https://<DOMAIN>  SITE_URL=https://<DOMAIN>  VITE_SITE_URL=https://<DOMAIN>
+#    TRUST_PROXY=2                    (Caddy + nginx à frente da API)
 #    JWT_SECRET=<openssl rand -hex 32>
+#    BACKUP_DIR=./backups  BACKUP_INTERVAL_HOURS=24  BACKUP_KEEP_DAYS=14
 #
-#  Uso: docker compose -f docker-compose.prod.yml up --build
+#  Uso: docker compose -f docker-compose.prod.yml up --build -d
+#  Docs: docs/docker.md · docs/backup.md · docs/security.md
 # ─────────────────────────────────────────────────────────────
 name: minerskills-prod
 
 services:
+  # ─── Borda TLS ───────────────────────────────────────────────
+  # Único serviço com portas publicadas. Obtém/renova o certificado,
+  # redireciona http→https (308) e envia HSTS; o resto é proxy para o nginx.
+  caddy:
+    image: caddy:2.10-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp' # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificados e conta ACME — não apagar entre deploys
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
   web:
     build:
       context: .
@@ -26,8 +51,10 @@ services:
         VITE_SITE_URL: ${VITE_SITE_URL}
         VITE_TEAM_NUMBER: ${VITE_TEAM_NUMBER:-10019}
         VITE_TEAM_NAME: ${VITE_TEAM_NAME:-MinerSkills}
-    ports:
-      - '${WEB_PORT:-8080}:80'
+    # sem `ports`: só o Caddy fala com o nginx. Expor o 80 direto no host
+    # passaria por cima do TLS (e o cookie Secure do admin não funcionaria).
+    expose:
+      - '80'
     depends_on:
       api:
         condition: service_healthy
@@ -41,11 +68,11 @@ services:
     env_file: .env
     environment:
       # Só o que muda DENTRO do container; o resto vem do .env (environment vence
-      # env_file). TRUST_PROXY: 1 é só o fallback para o nginx do stack — com mais
-      # proxies à frente (Caddy, Cloudflare…), o valor do .env prevalece.
+      # env_file). TRUST_PROXY: 2 é o padrão deste stack (Caddy + nginx à frente
+      # da API); com outro proxy ainda antes (Cloudflare…), suba no .env.
       NODE_ENV: production
       API_HOST: 0.0.0.0
-      TRUST_PROXY: ${TRUST_PROXY:-1}
+      TRUST_PROXY: ${TRUST_PROXY:-2}
       UPLOADS_DIR: ./data/uploads
     volumes:
       - uploads:/app/apps/api/data
@@ -76,6 +103,34 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # ─── Backup ──────────────────────────────────────────────────
+  # Mesma imagem do banco (traz pg_dump/pg_restore na versão certa). Faz um
+  # backup ao subir e depois a cada BACKUP_INTERVAL_HOURS: dump do Postgres +
+  # tar.gz dos uploads em BACKUP_DIR (pasta do host), apagando os mais antigos
+  # que BACKUP_KEEP_DAYS. Manual: scripts/backup.sh · restauração: scripts/restore.sh
+  backup:
+    image: postgres:17-alpine
+    entrypoint: ['sh', '/backup/backup-loop.sh']
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_DIR: /backups
+      DATA_DIR: /data
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./scripts/backup:/backup:ro
+      - uploads:/data:ro # só leitura: o backup nunca escreve nos uploads
+      - ${BACKUP_DIR:-./backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   uploads:
   pgdata:
+  caddy_data:
+  caddy_config:

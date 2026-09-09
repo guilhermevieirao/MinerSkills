@@ -42,7 +42,7 @@ Depois do primeiro acesso, troque a senha em `/admin/conta` e cadastre outras pe
 docker compose up            # dev com hot reload (SQLite)
 docker compose --profile postgres up   # + PostgreSQL
 
-docker compose -f docker-compose.prod.yml up --build   # produção (nginx + API + Postgres)
+docker compose -f docker-compose.prod.yml up --build -d   # produção (Caddy HTTPS + nginx + API + Postgres + backup)
 ```
 
 Veja [docs/docker.md](docs/docker.md).
@@ -61,7 +61,8 @@ Veja [docs/docker.md](docs/docker.md).
 | [docs/security.md](docs/security.md) | Práticas e controles de segurança |
 | [docs/uploads.md](docs/uploads.md) | Pipeline de upload de imagens e vídeos |
 | [docs/testing.md](docs/testing.md) | Unitários (Vitest), e2e com Playwright (headless e headed) e CI |
-| [docs/docker.md](docs/docker.md) | Stacks de desenvolvimento e produção |
+| [docs/docker.md](docs/docker.md) | Stacks de desenvolvimento e produção (Caddy com HTTPS automático na borda) |
+| [docs/backup.md](docs/backup.md) | Backup automático do banco e dos uploads, restauração e teste de restauração |
 | [docs/pwa.md](docs/pwa.md) | Manifest, service worker e estratégias de cache |
 | [docs/seo.md](docs/seo.md) | Head por página, Open Graph, sitemap/robots pela API e pré-visualização de links para bots |
 | [docs/features/](docs/features/) | Um documento por tela/módulo |
@@ -86,6 +87,8 @@ Veja [docs/docker.md](docs/docker.md).
 | `npm run test:e2e` | Testes end-to-end (headless) |
 | `npm run test:e2e:headed` | Testes end-to-end com navegador visível |
 | `npm run icons` | Regera os ícones do PWA e a capa Open Graph (`og-cover.png`) a partir do selo da marca |
+| `scripts/backup.sh` / `scripts/restore.sh` | Backup manual e restauração do stack de produção ([docs/backup.md](docs/backup.md)) |
+| `scripts/backup-sqlite.sh` | Cópia do SQLite e dos uploads do ambiente de desenvolvimento |
 
 ---
 
