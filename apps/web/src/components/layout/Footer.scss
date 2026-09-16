@@ -5,73 +5,64 @@
     margin-top: auto;
     background: var(--ms-surface);
     border-top: 1px solid var(--ms-border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 
+    // marca + colunas de links
     &__inner {
-      @include container(var(--ms-container-wide));
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: var(--ms-space-8);
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.6fr);
+      gap: var(--ms-space-10);
       padding-block: var(--ms-space-10);
 
       @include below($bp-lg) {
-        grid-template-columns: 1fr 1fr;
-      }
-      @include below($bp-sm) {
         grid-template-columns: 1fr;
-        gap: var(--ms-space-6);
+        gap: var(--ms-space-8);
+        padding-block: var(--ms-space-8);
       }
     }
 
+    // ── Marca, contato, redes, apoio, app ──
     &__brand {
       display: flex;
-      gap: var(--ms-space-4);
+      flex-direction: column;
       align-items: flex-start;
+      gap: var(--ms-space-3);
+      min-width: 0;
+    }
+    &__identity {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-3);
     }
     &__badge {
-      width: 64px;
-      height: 64px;
+      width: 48px;
+      height: 48px;
       color: var(--ms-green);
       flex-shrink: 0;
     }
     &__name {
       @include display-heading;
-      font-size: var(--ms-text-xl);
+      font-size: var(--ms-text-lg);
       color: var(--ms-text);
     }
     &__tag {
-      color: var(--ms-green);
+      color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
-      margin-top: var(--ms-space-1);
+      margin-top: 2px;
     }
     &__meta {
       color: var(--ms-text-faint);
-      font-size: var(--ms-text-xs);
-      margin-top: var(--ms-space-2);
+      font-size: var(--ms-text-caption);
     }
     &__mail {
       color: var(--ms-text-dim);
-      overflow-wrap: anywhere;
-      transition: color var(--ms-dur) var(--ms-ease);
-      &:hover {
-        color: var(--ms-green);
-      }
-    }
-
-    &__nav,
-    &__social {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ms-space-2);
-    }
-    &__col-title {
-      @include kicker;
-      margin-bottom: var(--ms-space-2);
-    }
-    &__link {
-      color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
-      transition: color var(--ms-dur) var(--ms-ease);
-      &:hover {
+      overflow-wrap: anywhere;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--ms-border-strong);
+      transition: color var(--ms-dur-fast) var(--ms-ease);
+      @include hover {
         color: var(--ms-green);
       }
     }
@@ -79,62 +70,105 @@
     &__icons {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--ms-space-2);
+      gap: var(--ms-space-3);
+      margin-top: var(--ms-space-2);
     }
     &__icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 42px;
-      height: 42px;
-      border-radius: var(--ms-radius-sm);
-      border: 1px solid var(--ms-border);
+      display: inline-grid;
+      place-items: center;
+      width: var(--ms-touch);
+      height: var(--ms-touch);
+      border-radius: var(--ms-radius-md);
+      border: 1px solid var(--ms-border-control);
       color: var(--ms-text-dim);
-      transition: all var(--ms-dur) var(--ms-ease);
+      transition:
+        color var(--ms-dur-fast) var(--ms-ease),
+        background-color var(--ms-dur-fast) var(--ms-ease),
+        border-color var(--ms-dur-fast) var(--ms-ease);
 
       svg {
-        width: 20px;
-        height: 20px;
+        width: var(--ms-icon);
+        height: var(--ms-icon);
       }
-      &:hover {
+      @include hover {
         color: var(--ms-on-green);
         background: var(--ms-green);
         border-color: var(--ms-green);
-        transform: translateY(-2px);
       }
     }
     &__credit {
       color: var(--ms-text-faint);
-      font-size: var(--ms-text-xs);
-      margin-top: var(--ms-space-3);
-      line-height: 1.6;
+      font-size: var(--ms-text-caption);
+      line-height: var(--ms-lh-body);
       overflow-wrap: anywhere;
     }
-
-    // Linha extra abaixo das colunas — só existe quando o PWA pode ser instalado
     &__install {
-      grid-column: 1 / -1;
+      margin-top: var(--ms-space-2);
     }
 
+    // ── Colunas de links ──
+    &__nav {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--ms-space-6);
+
+      @include below($bp-md) {
+        grid-template-columns: 1fr;
+        gap: var(--ms-space-5);
+      }
+    }
+    &__col {
+      min-width: 0;
+      ul {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+    &__col-title {
+      @include kicker;
+      margin-bottom: var(--ms-space-2);
+    }
+    &__link {
+      display: flex;
+      align-items: center;
+      min-height: 40px;
+      padding-block: var(--ms-space-1);
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      transition: color var(--ms-dur-fast) var(--ms-ease);
+      @include touch-target;
+
+      @include hover {
+        color: var(--ms-text);
+      }
+      &[aria-current='page'] {
+        color: var(--ms-green);
+      }
+    }
+
+    // ── Barra inferior (borda de ponta a ponta, conteúdo no container) ──
     &__bottom {
       border-top: 1px solid var(--ms-border);
-      @include container(var(--ms-container-wide));
+    }
+    &__bottom-inner {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
+      gap: var(--ms-space-2) var(--ms-space-4);
       padding-block: var(--ms-space-4);
       color: var(--ms-text-faint);
-      font-size: var(--ms-text-xs);
+      font-size: var(--ms-text-caption);
 
       @include below($bp-sm) {
-        flex-direction: column;
-        gap: var(--ms-space-2);
+        justify-content: center;
         text-align: center;
       }
     }
     &__mono {
       font-family: var(--ms-font-mono);
-      letter-spacing: 0.1em;
+      letter-spacing: var(--ms-tracking-kicker);
+      font-size: var(--ms-text-xs);
     }
   }
 }

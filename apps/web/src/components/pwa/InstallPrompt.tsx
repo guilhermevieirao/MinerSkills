@@ -43,10 +43,17 @@ function isStandalone(): boolean {
 }
 
 /**
- * Botão discreto "Instalar app". Só aparece quando o navegador ofereceu a
- * instalação; some depois de instalado ou quando o site já roda como app.
+ * Botão discreto "Instalar app" (com uma linha de benefício opcional). Só
+ * aparece quando o navegador ofereceu a instalação; some depois de instalado
+ * ou quando o site já roda como app.
  */
-export function InstallPrompt({ className }: { className?: string }) {
+export function InstallPrompt({
+  className,
+  description,
+}: {
+  className?: string;
+  description?: string;
+}) {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(() =>
     isStandalone() ? null : pending,
   );
@@ -73,6 +80,7 @@ export function InstallPrompt({ className }: { className?: string }) {
 
   return (
     <div className={cx('ms-pwa-install', className)}>
+      {description && <p className="ms-pwa-install__text">{description}</p>}
       <Button size="sm" variant="outline" onClick={() => void install()}>
         <Download aria-hidden /> Instalar app
       </Button>

@@ -4,11 +4,10 @@
   .ms-next {
     background: var(--ms-surface);
     border-bottom: 1px solid var(--ms-border);
-    padding-block: var(--ms-space-10);
 
     &__inner {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: minmax(0, 1.2fr) auto;
       gap: var(--ms-space-8);
       align-items: center;
 
@@ -19,40 +18,49 @@
     }
 
     &__info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ms-space-4);
       min-width: 0;
+
       .ms-heading {
-        margin-bottom: var(--ms-space-4);
+        margin-bottom: 0;
       }
     }
 
     &__meta {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--ms-space-4);
+      gap: var(--ms-space-2) var(--ms-space-5);
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+
       span {
         display: inline-flex;
         align-items: center;
         gap: var(--ms-space-2);
-        color: var(--ms-text-dim);
-        font-size: var(--ms-text-sm);
       }
       svg {
-        width: 16px;
-        height: 16px;
-        color: var(--ms-green);
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-green-deep);
         flex-shrink: 0;
       }
     }
 
     &__timer {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--ms-space-5);
+      justify-content: flex-end;
 
-      @include from($bp-lg) {
-        align-items: flex-end;
+      @include below($bp-lg) {
+        justify-content: flex-start;
       }
+    }
+
+    // esqueleto com a mesma altura da faixa real
+    &--loading .ms-next__info {
+      width: 100%;
     }
   }
 }

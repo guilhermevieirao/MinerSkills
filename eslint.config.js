@@ -66,6 +66,8 @@ export default tseslint.config(
       // Foco no primeiro campo de um diálogo recém-aberto é o comportamento esperado
       // (WAI-ARIA dialog); a regra proíbe qualquer autoFocus.
       'jsx-a11y/no-autofocus': 'off',
+      // `role="list"` em <ul> sem marcador: o Safari/VoiceOver perde a semântica de lista com list-style: none
+      'jsx-a11y/no-redundant-roles': ['error', { ul: ['list'], ol: ['list'] }],
       // Vídeos enviados pela equipe não têm faixa de legenda para oferecer.
       'jsx-a11y/media-has-caption': 'off',
     },

@@ -1,117 +1,157 @@
 @use '../../styles/mixins' as *;
 
 @layer components {
+  // ── Cabeçalho fixo ──
   .ms-nav {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: var(--ms-z-nav);
-    height: var(--ms-navbar-h);
+    height: var(--ms-header-h);
+    padding-top: env(safe-area-inset-top, 0px);
     display: flex;
     align-items: center;
+    border-bottom: 1px solid transparent;
     transition:
-      background var(--ms-dur) var(--ms-ease),
+      background-color var(--ms-dur) var(--ms-ease),
       border-color var(--ms-dur) var(--ms-ease),
       backdrop-filter var(--ms-dur) var(--ms-ease);
-    border-bottom: 1px solid transparent;
 
+    // Transparente sobre o hero da Home; sólida assim que a página rola.
     &--solid {
-      background: rgba(10, 10, 10, 0.82);
+      background: var(--ms-scrim);
       backdrop-filter: blur(14px);
       border-bottom-color: var(--ms-border);
     }
 
     &__inner {
-      @include container(var(--ms-container-wide));
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: var(--ms-space-4);
+      height: 100%;
     }
 
     &__brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      color: var(--ms-text);
       flex-shrink: 0;
+      color: var(--ms-text);
+      border-radius: var(--ms-radius-sm);
     }
     &__logo {
-      height: 34px;
+      height: 30px;
       width: auto;
       color: var(--ms-green);
+
+      @include below($bp-md) {
+        height: 26px;
+      }
     }
 
+    // ── Menu completo (a partir de 1024px) ──
     &__links {
-      display: flex;
+      display: none;
+
+      @include from($bp-lg) {
+        display: flex;
+        align-items: center;
+        gap: var(--ms-space-1);
+        flex: 1;
+        min-width: 0;
+        margin-left: var(--ms-space-4);
+      }
+    }
+
+    // Item da navbar: link direto ou gatilho de grupo (o Dropdown recebe esta
+    // classe). Aninhado em .ms-nav para vencer o reset de `.ms-dropdown__trigger`.
+    .ms-nav__link {
+      display: inline-flex;
       align-items: center;
       gap: var(--ms-space-1);
-
-      @include below($bp-xl) {
-        display: none;
-      }
-    }
-
-    &__link {
-      padding: 0.4rem 0.7rem;
-      font-family: var(--ms-font-display);
-      font-size: var(--ms-text-sm);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      min-height: var(--ms-control-sm);
+      padding: 0 var(--ms-space-3);
+      border: 0;
+      border-radius: var(--ms-radius-pill);
+      background: transparent;
       color: var(--ms-text-dim);
-      border-radius: var(--ms-radius-sm);
-      position: relative;
-      transition: color var(--ms-dur) var(--ms-ease);
+      font-family: var(--ms-font-body);
+      font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-medium);
+      line-height: 1;
+      white-space: nowrap;
+      transition:
+        color var(--ms-dur-fast) var(--ms-ease),
+        background-color var(--ms-dur-fast) var(--ms-ease);
 
-      &:hover {
-        color: var(--ms-text);
+      svg {
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-text-faint);
       }
-      &--active {
-        color: var(--ms-green);
-        &::after {
-          content: '';
-          position: absolute;
-          left: 0.7rem;
-          right: 0.7rem;
-          bottom: -2px;
-          height: 2px;
-          background: var(--ms-green);
-          border-radius: 2px;
-        }
+
+      @include hover {
+        color: var(--ms-text);
+        background: var(--ms-surface-2);
+      }
+      &:focus-visible,
+      &[aria-expanded='true'] {
+        color: var(--ms-text);
+        background: var(--ms-surface-2);
       }
     }
-
-    &__actions {
-      display: flex;
-      align-items: center;
-      gap: var(--ms-space-3);
-      flex-shrink: 0;
+    // rota atual (link) ou grupo que contém a rota atual (gatilho)
+    .ms-nav__link--active,
+    .ms-nav__link.ms-dropdown__trigger--active {
+      color: var(--ms-green);
+      background: var(--ms-green-soft);
+      svg {
+        color: var(--ms-green);
+      }
     }
 
     &__cta {
-      @include below($bp-md) {
+      margin-left: auto;
+    }
+
+    &__menu {
+      min-width: 320px;
+    }
+
+    // ── Compacto (abaixo de 1024px): chamada curta + botão do drawer ──
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-2);
+      margin-left: auto;
+
+      @include from($bp-lg) {
         display: none;
       }
     }
 
     &__burger {
-      display: none;
-      background: transparent;
-      border: 1px solid var(--ms-border);
-      border-radius: var(--ms-radius-sm);
+      display: inline-grid;
+      place-items: center;
+      width: var(--ms-touch);
+      height: var(--ms-touch);
+      flex-shrink: 0;
+      border-radius: var(--ms-radius-md);
+      border: 1px solid var(--ms-border-control);
+      background: var(--ms-surface-2);
       color: var(--ms-text);
-      padding: 0.4rem;
-      align-items: center;
-      justify-content: center;
+      transition:
+        border-color var(--ms-dur-fast) var(--ms-ease),
+        color var(--ms-dur-fast) var(--ms-ease);
 
       svg {
         width: 22px;
         height: 22px;
       }
 
-      @include below($bp-xl) {
-        display: inline-flex;
+      @include hover {
+        border-color: var(--ms-green);
+        color: var(--ms-green);
       }
     }
   }

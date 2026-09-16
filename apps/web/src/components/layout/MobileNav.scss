@@ -1,78 +1,180 @@
+@use '../../styles/mixins' as *;
+
 @layer components {
+  // ── Drawer de navegação (abaixo de 1024px) ──
   .ms-mobilenav {
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
-    width: min(84vw, 340px);
-    background: var(--ms-surface);
-    border-left: 1px solid var(--ms-border);
     z-index: var(--ms-z-drawer);
+    width: min(88vw, 360px);
     display: flex;
     flex-direction: column;
-    padding: var(--ms-space-5);
-    padding-top: max(var(--ms-space-5), env(safe-area-inset-top));
+    background: var(--ms-surface);
+    border-left: 1px solid var(--ms-border);
+    box-shadow: var(--ms-elev-3);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    // Fechado: fora da tela e invisível (a visibilidade só muda DEPOIS do deslize).
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform var(--ms-dur-slow) var(--ms-ease),
+      visibility 0s linear var(--ms-dur-slow);
+
+    &--open {
+      transform: none;
+      visibility: visible;
+      transition:
+        transform var(--ms-dur-slow) var(--ms-ease),
+        visibility 0s;
+    }
+
+    // Tablet: painel mais largo, grupos em duas colunas
+    @include from($bp-md) {
+      width: min(92vw, 560px);
+    }
+    // Menu completo na navbar: o drawer não existe
+    @include from($bp-lg) {
+      display: none;
+    }
 
     &__overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(2px);
       z-index: var(--ms-z-drawer);
+      background: var(--ms-overlay);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--ms-dur) var(--ms-ease);
+
+      &--open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      @include from($bp-lg) {
+        display: none;
+      }
     }
 
     &__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: var(--ms-space-6);
+      gap: var(--ms-space-3);
+      min-height: var(--ms-navbar-h);
+      padding-inline: var(--ms-space-4) var(--ms-space-3);
+      border-bottom: 1px solid var(--ms-border-subtle);
+    }
+    &__brand {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ms-space-2);
+      color: var(--ms-text);
+      font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-semibold);
     }
     &__logo {
-      height: 40px;
+      height: 26px;
+      width: auto;
       color: var(--ms-green);
     }
     &__close {
+      display: inline-grid;
+      place-items: center;
+      width: var(--ms-touch);
+      height: var(--ms-touch);
+      border: 0;
+      border-radius: var(--ms-radius-md);
       background: transparent;
-      border: none;
       color: var(--ms-text-dim);
-      padding: var(--ms-space-2);
+      transition:
+        background-color var(--ms-dur-fast) var(--ms-ease),
+        color var(--ms-dur-fast) var(--ms-ease);
+
       svg {
-        width: 24px;
-        height: 24px;
+        width: var(--ms-icon-lg);
+        height: var(--ms-icon-lg);
       }
-      &:hover {
-        color: var(--ms-green);
+      @include hover {
+        background: var(--ms-surface-2);
+        color: var(--ms-text);
       }
     }
 
-    &__links {
+    &__nav {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-1);
-      overflow-y: auto;
+      gap: var(--ms-space-5);
+      padding: var(--ms-space-4) var(--ms-space-3) var(--ms-space-6);
+
+      @include from($bp-md) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: start;
+        column-gap: var(--ms-space-6);
+        padding-inline: var(--ms-space-5);
+      }
+    }
+
+    &__kicker {
+      @include kicker;
+      margin: 0 0 var(--ms-space-2) var(--ms-space-3);
+    }
+
+    &__list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     &__link {
-      font-family: var(--ms-font-display);
-      font-size: var(--ms-text-lg);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-3);
+      min-height: 48px;
+      padding: 0 var(--ms-space-3);
+      border-radius: var(--ms-radius-md);
       color: var(--ms-text-dim);
-      padding: var(--ms-space-3) var(--ms-space-3);
-      border-radius: var(--ms-radius-sm);
-      border-left: 3px solid transparent;
-      transition: all var(--ms-dur) var(--ms-ease);
+      font-size: var(--ms-text-base);
+      font-weight: var(--ms-fw-medium);
+      transition:
+        background-color var(--ms-dur-fast) var(--ms-ease),
+        color var(--ms-dur-fast) var(--ms-ease);
 
-      &:hover {
-        color: var(--ms-text);
+      svg {
+        width: var(--ms-icon);
+        height: var(--ms-icon);
+        color: var(--ms-green-deep);
+        flex-shrink: 0;
+      }
+
+      @include hover {
         background: var(--ms-surface-2);
+        color: var(--ms-text);
+      }
+      &:focus-visible {
+        background: var(--ms-surface-2);
+        color: var(--ms-text);
       }
       &--active {
         color: var(--ms-green);
-        border-left-color: var(--ms-green);
-        background: var(--ms-surface-2);
+        background: var(--ms-green-soft);
+        svg {
+          color: var(--ms-green);
+        }
       }
+    }
+
+    &__foot {
+      padding: var(--ms-space-4);
+      border-top: 1px solid var(--ms-border-subtle);
     }
   }
 }

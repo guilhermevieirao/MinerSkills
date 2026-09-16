@@ -67,7 +67,9 @@ export function Countdown({ target }: CountdownProps) {
       {units.map((u) => (
         <span key={u.plural} className="ms-countdown__unit" aria-hidden>
           <span className="ms-countdown__value">{pad(u.value)}</span>
-          <span className="ms-countdown__label">{u.value === 1 ? u.singular : u.plural}</span>
+          <span className="ms-countdown__label">
+            {u.value === 1 ? u.singular : u.plural}
+          </span>
         </span>
       ))}
     </time>

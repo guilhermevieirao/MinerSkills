@@ -7,7 +7,7 @@
     left: 50%;
     bottom: max(var(--ms-space-5), env(safe-area-inset-bottom));
     transform: translateX(-50%);
-    z-index: var(--ms-z-toast);
+    z-index: var(--ms-z-system);
     display: flex;
     align-items: center;
     gap: var(--ms-space-3);
@@ -17,7 +17,7 @@
     @include card-surface;
     border-color: var(--ms-border-strong);
     border-left: 3px solid var(--ms-green);
-    box-shadow: var(--ms-shadow);
+    box-shadow: var(--ms-elev-2);
     color: var(--ms-text);
     font-size: var(--ms-text-sm);
 
@@ -27,8 +27,8 @@
     }
 
     &__icon {
-      width: 20px;
-      height: 20px;
+      width: var(--ms-icon);
+      height: var(--ms-icon);
       flex-shrink: 0;
       color: var(--ms-green);
     }
@@ -50,26 +50,26 @@
     }
   }
 
-  // ── Sem conexão (OfflineBanner) ──
+  // ── Sem conexão (OfflineBanner): pílula na base, acima dos toasts ──
   .ms-pwa-offline {
     position: fixed;
-    top: var(--ms-navbar-h);
-    left: 0;
-    right: 0;
-    z-index: calc(var(--ms-z-nav) + 1);
+    left: 50%;
+    bottom: max(var(--ms-space-5), env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: var(--ms-z-system);
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: var(--ms-space-2);
+    width: max-content;
+    max-width: calc(100vw - 2 * var(--ms-space-4));
     padding: var(--ms-space-2) var(--ms-space-4);
-    background: var(--ms-warning);
-    color: var(--ms-on-green);
-    font-family: var(--ms-font-display);
-    font-weight: 600;
-    font-size: var(--ms-text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    text-align: center;
+    border-radius: var(--ms-radius-pill);
+    background: var(--ms-surface-3);
+    border: 1px solid var(--ms-warning-line);
+    box-shadow: var(--ms-elev-2);
+    color: var(--ms-text);
+    font-size: var(--ms-text-sm);
+    font-weight: var(--ms-fw-medium);
 
     // Região viva sempre presente; sem filhos, não ocupa espaço.
     &:empty {
@@ -77,15 +77,24 @@
     }
 
     &__icon {
-      width: 16px;
-      height: 16px;
+      width: var(--ms-icon-sm);
+      height: var(--ms-icon-sm);
       flex-shrink: 0;
+      color: var(--ms-warning);
     }
   }
 
   // ── Instalar app (InstallPrompt) ──
   .ms-pwa-install {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
+    gap: var(--ms-space-2);
+
+    &__text {
+      color: var(--ms-text-faint);
+      font-size: var(--ms-text-caption);
+      max-width: 36ch;
+    }
   }
 }

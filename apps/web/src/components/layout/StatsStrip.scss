@@ -1,0 +1,61 @@
+@use '../../styles/mixins' as *;
+
+@layer components {
+  .ms-stats {
+    background: var(--ms-bg);
+    border-block: 1px solid var(--ms-border);
+
+    &__grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+
+      @include below($bp-md) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      @include below($bp-sm) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    // valor acima da legenda (o <dt> vem antes no DOM; a coluna invertida cuida da ordem visual)
+    &__item {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: var(--ms-space-1);
+      padding: var(--ms-space-6) var(--ms-space-5);
+      border-left: 1px solid var(--ms-border);
+      min-width: 0;
+
+      &:first-child {
+        border-left: 0;
+      }
+      @include below($bp-md) {
+        padding: var(--ms-space-5) var(--ms-space-4);
+        &:nth-child(odd) {
+          border-left: 0;
+        }
+        &:nth-child(n + 3) {
+          border-top: 1px solid var(--ms-border);
+        }
+      }
+      @include below($bp-sm) {
+        border-left: 0;
+        &:nth-child(n + 2) {
+          border-top: 1px solid var(--ms-border);
+        }
+      }
+    }
+
+    &__value {
+      @include display-heading(1);
+      font-size: var(--ms-display-num);
+      color: var(--ms-text);
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+    &__label {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+    }
+  }
+}

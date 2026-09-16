@@ -75,8 +75,9 @@ test.describe('Erros e carregamento', () => {
       window.__msSpaMarker = 'ok';
     });
 
-    // no mobile a navegação fica no drawer
+    // no mobile a navegação fica no drawer; no desktop, Blog está no grupo "Conteúdo"
     if (isMobile) await page.getByRole('button', { name: 'Abrir menu' }).click();
+    else await page.getByRole('button', { name: 'Conteúdo' }).click();
     await page
       .getByRole('navigation', { name: 'Navegação principal' })
       .getByRole('link', { name: 'Blog', exact: true })

@@ -6,10 +6,10 @@ import { test, expect, type Page } from '@playwright/test';
  */
 
 /**
- * Largura a partir da qual a navbar mostra o menu completo (`$bp-xl` em
+ * Largura a partir da qual a navbar mostra o menu completo (`$bp-lg` em
  * `_mixins.scss`); abaixo dela existem o botão de menu e o drawer.
  */
-const FULL_MENU_MIN_WIDTH = 1280;
+const FULL_MENU_MIN_WIDTH = 1024;
 
 /** Verdadeiro quando o elemento focado é o alvo do seletor ou está dentro dele. */
 async function focusIsInside(page: Page, selector: string): Promise<boolean> {

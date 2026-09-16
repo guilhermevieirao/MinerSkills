@@ -23,26 +23,77 @@ function useRouteId(): string {
   return matches[matches.length - 1]?.id ?? '';
 }
 
+const SCROLL_PREFIX = 'ms-scroll:';
+
+function readScroll(key: string): number {
+  try {
+    return Number(sessionStorage.getItem(SCROLL_PREFIX + key) ?? 0) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeScroll(key: string, y: number) {
+  try {
+    sessionStorage.setItem(SCROLL_PREFIX + key, String(Math.round(y)));
+  } catch {
+    // armazenamento indisponível (modo privado): sem restauração, sem erro
+  }
+}
+
 /**
- * Rola ao topo a cada navegação (`location.key` muda em todo push/replace/pop),
- * exceto quando a própria página pediu `state.preserveScroll`. O opt-out só
- * vale para PUSH/REPLACE: no Voltar/Avançar o state gravado no histórico volta
- * junto e não deve contar — senão um Back para /equipe/:slug pararia num
- * scroll arbitrário em vez do topo.
+ * Rolagem entre páginas: PUSH/REPLACE vão ao topo (salvo `state.preserveScroll`,
+ * usado ao abrir um membro em /equipe); Voltar/Avançar (POP) RESTAURAM a posição
+ * em que a página estava — o comportamento nativo que uma SPA perde. A posição
+ * de cada entrada do histórico fica em sessionStorage pela `location.key`.
+ * A restauração é tentada mais de uma vez porque a página nova monta depois
+ * da transição de saída e o conteúdo (esqueletos → dados) cresce depois.
  */
-function ScrollToTop() {
+function ScrollManager() {
   const { key, state } = useLocation();
   const navType = useNavigationType();
   const prevKey = useRef(key);
+
+  // o navegador não deve competir com a restauração manual
+  useEffect(() => {
+    if ('scrollRestoration' in window.history)
+      window.history.scrollRestoration = 'manual';
+  }, []);
+
+  // grava a posição da entrada atual conforme o usuário rola
+  useEffect(() => {
+    let raf = 0;
+    const save = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => writeScroll(key, window.scrollY));
+    };
+    window.addEventListener('scroll', save, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', save);
+      cancelAnimationFrame(raf);
+    };
+  }, [key]);
+
   useEffect(() => {
     if (prevKey.current === key) return; // montagem inicial (e o efeito duplo do StrictMode)
     prevKey.current = key;
-    const preserve =
-      navType !== 'POP' && (state as LayoutNavState | null)?.preserveScroll === true;
-    if (!preserve) {
-      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+
+    const timers: number[] = [];
+    const goTo = (top: number) =>
+      window.scrollTo({ top, behavior: 'instant' as ScrollBehavior });
+
+    if (navType === 'POP') {
+      const y = readScroll(key);
+      goTo(y);
+      for (const delay of [200, 450])
+        timers.push(window.setTimeout(() => goTo(y), delay));
+    } else {
+      const preserve = (state as LayoutNavState | null)?.preserveScroll === true;
+      if (!preserve) goTo(0);
     }
+    return () => timers.forEach((t) => window.clearTimeout(t));
   }, [key, navType, state]);
+
   return null;
 }
 
@@ -59,7 +110,7 @@ export function PublicLayout() {
       <a href="#conteudo" className="ms-skip-link">
         Pular para o conteúdo
       </a>
-      <ScrollToTop />
+      <ScrollManager />
       <RouteAnnouncer />
       <NavigationProgress />
       <Navbar />

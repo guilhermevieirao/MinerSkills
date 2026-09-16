@@ -150,7 +150,6 @@ export function Dropdown({
         )}
         aria-expanded={open}
         aria-controls={menuId}
-        aria-haspopup="true"
         onClick={() => setOpen((o) => !o)}
       >
         {Icon && <Icon aria-hidden />}
@@ -191,12 +190,25 @@ export function DropdownItem({
   end?: boolean;
 }) {
   const close = useContext(DropdownContext);
+  // A descrição entra como aria-describedby, não no nome: o link continua
+  // sendo "Blog", e o leitor de tela ouve a linha extra em seguida.
+  const descId = useId();
   return (
-    <NavLink to={to} end={end} className="ms-dropdown__item" onClick={() => close()}>
+    <NavLink
+      to={to}
+      end={end}
+      className="ms-dropdown__item"
+      onClick={() => close()}
+      aria-describedby={description ? descId : undefined}
+    >
       {Icon && <Icon aria-hidden />}
       <span>
         <span className="ms-dropdown__item-label">{label}</span>
-        {description && <span className="ms-dropdown__item-desc">{description}</span>}
+        {description && (
+          <span id={descId} className="ms-dropdown__item-desc" aria-hidden="true">
+            {description}
+          </span>
+        )}
       </span>
     </NavLink>
   );
@@ -218,6 +230,7 @@ export function DropdownButton({
   danger?: boolean;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   const close = useContext(DropdownContext);
+  const descId = useId();
   return (
     <button
       type="button"
@@ -230,12 +243,17 @@ export function DropdownButton({
         onClick?.(e);
         close();
       }}
+      aria-describedby={description ? descId : undefined}
       {...rest}
     >
       {Icon && <Icon aria-hidden />}
       <span>
         <span className="ms-dropdown__item-label">{label}</span>
-        {description && <span className="ms-dropdown__item-desc">{description}</span>}
+        {description && (
+          <span id={descId} className="ms-dropdown__item-desc" aria-hidden="true">
+            {description}
+          </span>
+        )}
       </span>
     </button>
   );

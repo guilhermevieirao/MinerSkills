@@ -17,16 +17,14 @@
       background: var(--ms-surface-2);
     }
     &__value {
-      font-family: var(--ms-font-display);
-      font-weight: 700;
-      font-size: var(--ms-text-3xl);
-      line-height: 1;
-      color: var(--ms-green);
+      @include display-heading(1);
+      font-size: var(--ms-display-num);
+      color: var(--ms-text);
     }
     &__label {
-      @include kicker;
-      letter-spacing: 0.12em;
-      color: var(--ms-text-dim);
+      @include meta;
+      text-transform: uppercase;
+      letter-spacing: var(--ms-tracking-kicker);
       margin-top: var(--ms-space-2);
     }
 

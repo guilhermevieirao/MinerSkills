@@ -204,6 +204,10 @@
   }
 
   .ms-main {
+    // A navbar é fixa: o conteúdo começa abaixo dela. Só a Home volta para
+    // cima (margem negativa no hero) para ficar sob a barra transparente.
+    padding-top: var(--ms-header-h);
+
     // Recebe foco programático (skip link, troca de rota). O anel só aparece na
     // navegação por teclado, e discreto — a área é a página inteira.
     &:focus {

@@ -39,14 +39,20 @@ export function RouteAnnouncer() {
       // Se a página já colocou o foco em algo dela (um campo, um painel), respeita.
       const focused = document.activeElement;
       const alreadyInside =
-        focused instanceof HTMLElement && focused !== document.body && main?.contains(focused);
+        focused instanceof HTMLElement &&
+        focused !== document.body &&
+        main?.contains(focused);
       if (main && !alreadyInside) main.focus({ preventScroll: true });
     }, TITLE_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [pathname, state]);
 
   return (
-    <div className="ms-visually-hidden ms-route-announcer" aria-live="polite" aria-atomic="true">
+    <div
+      className="ms-visually-hidden ms-route-announcer"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {message}
     </div>
   );

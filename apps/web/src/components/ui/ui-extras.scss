@@ -147,7 +147,7 @@
 
     // Espelha o PageHero: mesma altura e largura de texto, sem salto quando o conteúdo chega
     &__hero {
-      padding-top: calc(var(--ms-header-h) + var(--ms-space-8));
+      padding-top: var(--ms-space-8);
       padding-bottom: var(--ms-space-6);
       border-bottom: 1px solid var(--ms-border);
       background: var(--ms-surface);

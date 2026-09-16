@@ -25,7 +25,13 @@ const MAP: Record<string, LucideIcon> = {
   other: Globe,
 };
 
-export function SocialIcon({ platform, className }: { platform: string; className?: string }) {
+export function SocialIcon({
+  platform,
+  className,
+}: {
+  platform: string;
+  className?: string;
+}) {
   const Icon = MAP[platform] ?? Globe;
   return <Icon className={className} aria-hidden />;
 }

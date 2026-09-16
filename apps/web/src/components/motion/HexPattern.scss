@@ -1,9 +1,11 @@
 @layer components {
+  // Textura hexagonal decorativa. Quem a usa calibra pela variável:
+  // hero da Home 0.1 (0.06 sobre foto), CTA 0.1 em preto sobre o verde.
   .ms-hex {
     position: absolute;
     inset: 0;
-    color: var(--ms-green-deep);
-    opacity: 0.08;
+    color: var(--ms-green);
+    opacity: var(--ms-hex-opacity, 0.07);
     pointer-events: none;
     z-index: 0;
 

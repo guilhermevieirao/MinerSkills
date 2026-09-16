@@ -860,6 +860,11 @@
       border-color: var(--ms-border-strong);
       box-shadow: var(--ms-elev-3);
 
+      // fechado: o atributo hidden precisa vencer o display: grid acima
+      &[hidden] {
+        display: none;
+      }
+
       &--right {
         left: auto;
         right: 0;
@@ -1159,8 +1164,7 @@
     justify-content: center;
     text-align: center;
     overflow: hidden;
-    padding: calc(var(--ms-header-h) + var(--ms-space-8)) var(--ms-space-5)
-      var(--ms-space-10);
+    padding: var(--ms-space-8) var(--ms-space-5) var(--ms-space-10);
 
     &__inner {
       position: relative;

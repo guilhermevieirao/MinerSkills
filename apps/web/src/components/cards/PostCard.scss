@@ -1,0 +1,93 @@
+@use '../../styles/mixins' as *;
+
+@layer components {
+  // grade de posts (Blog e Home): 3 → 2 → 1 colunas conforme a largura
+  .ms-postgrid {
+    @include card-grid(280px);
+  }
+
+  .ms-postcard {
+    @include card-surface;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: inherit;
+    transition:
+      transform var(--ms-dur) var(--ms-ease),
+      border-color var(--ms-dur) var(--ms-ease),
+      box-shadow var(--ms-dur) var(--ms-ease);
+
+    @include hover {
+      transform: translateY(var(--ms-lift));
+      border-color: var(--ms-green-deep);
+      box-shadow: var(--ms-elev-1);
+      .ms-postcard__cover img {
+        transform: scale(1.04);
+      }
+      .ms-postcard__more svg {
+        transform: translateX(4px);
+      }
+    }
+    &:focus-visible {
+      border-color: var(--ms-green);
+    }
+
+    &__cover {
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      background: var(--ms-surface-2);
+      border-bottom: 1px solid var(--ms-border-subtle);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform var(--ms-dur-slow) var(--ms-ease);
+      }
+    }
+    &__fallback {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--ms-green-deep);
+      svg {
+        width: var(--ms-icon-xl);
+        height: var(--ms-icon-xl);
+      }
+    }
+
+    &__body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-2);
+      padding: var(--ms-card-pad);
+    }
+    &__title {
+      font-size: var(--ms-title);
+      @include line-clamp(2);
+    }
+    &__excerpt {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      flex: 1;
+      @include line-clamp(3);
+    }
+    &__more {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ms-space-1);
+      margin-top: var(--ms-space-2);
+      color: var(--ms-green);
+      font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-semibold);
+      svg {
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        transition: transform var(--ms-dur) var(--ms-ease);
+      }
+    }
+  }
+}

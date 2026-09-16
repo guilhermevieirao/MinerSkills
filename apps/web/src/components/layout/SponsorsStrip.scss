@@ -1,31 +1,38 @@
 @use '../../styles/mixins' as *;
 
 @layer components {
-  // ── Faixa de patrocinadores (Home) ──
+  // ── Faixa de patrocinadores (Home) — sobre o fundo da página, entre duas superfícies ──
   .ms-sponsors {
-    background: var(--ms-surface);
-    border-block: 1px solid var(--ms-border);
+    &__skeleton {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--ms-space-4);
+    }
 
     &__group {
-      margin-top: var(--ms-space-8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--ms-space-4);
 
-      @include below($bp-md) {
-        margin-top: var(--ms-space-6);
+      & + & {
+        margin-top: var(--ms-space-8);
+        @include below($bp-md) {
+          margin-top: var(--ms-space-6);
+        }
       }
     }
 
+    // nível (principal / apoio / parceiro): legenda, não título
     &__tier {
-      @include kicker;
+      @include meta;
+      text-transform: uppercase;
+      letter-spacing: var(--ms-tracking-kicker);
       color: var(--ms-text-faint);
-      font-size: var(--ms-text-xs);
-      text-align: center;
-      margin-bottom: var(--ms-space-4);
     }
 
     &__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
@@ -38,14 +45,12 @@
 
     &__card {
       @include card-surface;
-      @include focus-ring;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 160px;
       min-height: 88px;
       padding: var(--ms-space-4) var(--ms-space-6);
-      background: var(--ms-surface-2);
       color: var(--ms-text);
       transition:
         transform var(--ms-dur) var(--ms-ease),
@@ -58,10 +63,13 @@
         padding: var(--ms-space-3) var(--ms-space-4);
       }
     }
-    a.ms-sponsors__card:hover {
-      transform: translateY(-3px);
-      border-color: var(--ms-green-deep);
-      box-shadow: var(--ms-shadow-glow);
+    // só o cartão que navega levanta
+    a.ms-sponsors__card {
+      @include hover {
+        transform: translateY(var(--ms-lift));
+        border-color: var(--ms-green-deep);
+        box-shadow: var(--ms-elev-1);
+      }
     }
 
     &__logo {
@@ -78,20 +86,21 @@
       }
     }
 
+    // sem logo: o nome faz o papel da marca
     &__name {
-      @include display-heading;
-      font-size: var(--ms-text-xl);
-      letter-spacing: 0.06em;
-      color: var(--ms-text);
-      white-space: nowrap;
+      font-size: var(--ms-title);
+      font-weight: var(--ms-fw-semibold);
+      letter-spacing: 0.02em;
+      text-align: center;
+      text-wrap: balance;
     }
 
-    // Patrocínio principal: cartões maiores e nome/logo em destaque
+    // Patrocínio principal: cartões maiores
     &__group--principal {
       .ms-sponsors__card {
         min-width: 240px;
         min-height: 120px;
-        border-color: var(--ms-green-deep);
+        border-color: var(--ms-border-strong);
 
         @include below($bp-sm) {
           min-width: 180px;
@@ -108,8 +117,7 @@
         }
       }
       .ms-sponsors__name {
-        font-size: var(--ms-text-3xl);
-        color: var(--ms-green);
+        font-size: var(--ms-title-lg);
       }
     }
 
@@ -125,7 +133,7 @@
         max-height: 40px;
       }
       .ms-sponsors__name {
-        font-size: var(--ms-text-lg);
+        font-size: var(--ms-text-base);
         color: var(--ms-text-dim);
       }
     }

@@ -1,17 +1,19 @@
-import { motion, useReducedMotion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Cpu, Cog, Rocket, GraduationCap, Trophy, Users } from 'lucide-react';
+import { ArrowRight, Cog, GraduationCap, Rocket } from 'lucide-react';
 import { usePageBlocks } from '../features/content/useContent';
 import { LinkButton, SectionHeading } from '../components/ui';
 import { ErrorState } from '../components/ui/ErrorState';
 import { MediaImage } from '../components/ui/MediaImage';
-import { Reveal, RevealGroup, RevealItem } from '../components/motion/Reveal';
+import { IconTile } from '../components/ui/tiles';
+import { Reveal } from '../components/motion/Reveal';
 import { MarqueeStrip } from '../components/motion/MarqueeStrip';
 import { HexPattern } from '../components/motion/HexPattern';
+import { StatsStrip } from '../components/layout/StatsStrip';
 import { NextCompetition } from '../components/layout/NextCompetition';
+import { LatestPosts } from '../components/layout/LatestPosts';
 import { SponsorsStrip } from '../components/layout/SponsorsStrip';
-import { StatCounter } from '../components/motion/StatCounter';
 import { LogoBadge } from '../components/brand/Logo';
+import { cx } from '../lib/format';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import './HomePage.scss';
 
@@ -21,12 +23,14 @@ const PILLARS = [
   { key: 'stem', icon: GraduationCap, fallbackTitle: 'Educação STEM' },
 ];
 
-const STAT_ICONS = [Cpu, Trophy, Users, GraduationCap];
-
+/**
+ * Home: hero → números → marquee → próxima competição → quem somos → pilares →
+ * últimas notícias → patrocinadores → chamada final. Um CTA primário por seção;
+ * a cor da marca vira superfície só na chamada final.
+ */
 export function HomePage() {
   const blocks = usePageBlocks('landing');
   const { byKey, data } = blocks;
-  const reduce = useReducedMotion();
 
   const hero = byKey('hero');
   const about = byKey('about');
@@ -42,71 +46,44 @@ export function HomePage() {
 
   return (
     <>
-      {/* ─── HERO ─────────────────────────────────────────── */}
-      <section className="ms-hero">
-        <HexPattern />
+      {/* ─── HERO (sob a navbar transparente) ─────────────── */}
+      <section className={cx('ms-hero', hero?.media && 'ms-hero--photo')}>
         {hero?.media && (
           <div className="ms-hero__bg" aria-hidden>
-            <MediaImage media={hero.media} alt="" priority />
-            <div className="ms-hero__bg-overlay" />
+            <MediaImage media={hero.media} alt="" priority sizes="100vw" />
           </div>
         )}
-        <div className="ms-hero__inner ms-container">
-          <motion.p
-            className="ms-hero__kicker"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+        <HexPattern />
+        <div className="ms-container ms-hero__inner">
+          <p className="ms-hero__kicker">
             {hero?.subtitle ?? '#10019 · FIRST Robotics Competition'}
-          </motion.p>
-          <motion.h1
-            className="ms-hero__title"
-            initial={{ opacity: 0, y: reduce ? 0 : 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-          >
+          </p>
+          <h1 className="ms-hero__title">
             <span className="ms-gradient-text">{hero?.title ?? 'MINERSKILLS'}</span>
-          </motion.h1>
-          <motion.p
-            className="ms-hero__lead"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-          >
+          </h1>
+          <p className="ms-hero__lead">
             {hero?.body ?? 'Robótica de porte industrial feita por estudantes mineiros.'}
-          </motion.p>
-          <motion.div
-            className="ms-hero__actions"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
+          </p>
+          <div className="ms-hero__actions">
             <LinkButton to="/como-entrar" size="lg">
-              Faça parte <ArrowRight />
+              Faça parte <ArrowRight aria-hidden />
             </LinkButton>
             <LinkButton to="/historia" size="lg" variant="outline">
               Nossa história
             </LinkButton>
-          </motion.div>
+          </div>
         </div>
-        <motion.div
-          className="ms-hero__badge"
-          initial={{ opacity: 0, scale: 0.8, rotate: -8 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <LogoBadge />
-        </motion.div>
       </section>
+
+      <StatsStrip stats={stats} loading={blocks.isPending} />
 
       <MarqueeStrip />
 
       {/* Próxima competição (contador regressivo); não renderiza sem evento futuro */}
       <NextCompetition />
 
-      {/* ─── SOBRE ────────────────────────────────────────── */}
-      <section className="ms-section ms-container" id="sobre">
+      {/* ─── QUEM SOMOS ───────────────────────────────────── */}
+      <section className="ms-section ms-container" aria-labelledby="ms-about-title">
         {/* Os textos têm fallback: um erro na API vira uma faixa discreta, não uma tela vazia */}
         {blocks.isError && (
           <div className="ms-home__notice">
@@ -119,77 +96,93 @@ export function HomePage() {
             />
           </div>
         )}
-        <div className="ms-about">
-          <Reveal className="ms-about__text">
+        <Reveal className="ms-about">
+          <div className="ms-about__text">
             <SectionHeading
-              kicker="Quem Somos"
+              id="ms-about-title"
+              kicker="Sobre a equipe"
               title={about?.title ?? 'Quem Somos'}
               subtitle={about?.subtitle ?? undefined}
+              dense
             />
-            <p className="ms-about__body">{about?.body}</p>
+            {about?.body && (
+              <div className="ms-prose">
+                <p>{about.body}</p>
+              </div>
+            )}
             <LinkButton to="/equipe" variant="outline">
-              Conheça a equipe <ArrowRight />
+              Conheça a equipe <ArrowRight aria-hidden />
             </LinkButton>
-          </Reveal>
-          <RevealGroup className="ms-stats">
-            {stats.map((s, i) => {
-              const Icon = STAT_ICONS[i % STAT_ICONS.length]!;
-              return (
-                <RevealItem key={s.key} className="ms-stat">
-                  <Icon className="ms-stat__icon" />
-                  <span className="ms-stat__value">
-                    <StatCounter value={s.title ?? ''} />
-                  </span>
-                  <span className="ms-stat__label">{s.subtitle}</span>
-                </RevealItem>
-              );
-            })}
-          </RevealGroup>
-        </div>
+          </div>
+          <div className="ms-about__media">
+            {about?.media ? (
+              <MediaImage
+                media={about.media}
+                alt={about.media.alt ?? ''}
+                sizes="(max-width: 1023px) 100vw, 40vw"
+              />
+            ) : (
+              <LogoBadge decorative className="ms-about__badge" />
+            )}
+          </div>
+        </Reveal>
       </section>
 
       {/* ─── PILARES: FRC / FIRST / STEM ──────────────────── */}
-      <section className="ms-section ms-pillars-wrap">
+      <section className="ms-section ms-pillars-wrap" aria-labelledby="ms-pillars-title">
         <div className="ms-container">
           <SectionHeading
+            id="ms-pillars-title"
             center
-            kicker="O Ecossistema"
+            kicker="O ecossistema"
             title="FRC · FIRST · STEM"
             subtitle="Onde a MinerSkills se conecta a um movimento global de ciência e tecnologia."
           />
-          <RevealGroup className="ms-pillars">
-            {PILLARS.map((p) => {
-              const block = byKey(p.key);
-              const Icon = p.icon;
-              return (
-                <RevealItem key={p.key} className="ms-pillar">
-                  <div className="ms-pillar__icon">
-                    <Icon />
-                  </div>
-                  <h3 className="ms-pillar__title">{block?.title ?? p.fallbackTitle}</h3>
-                  {block?.subtitle && <p className="ms-pillar__sub">{block.subtitle}</p>}
-                  <p className="ms-pillar__body">{block?.body}</p>
-                </RevealItem>
-              );
-            })}
-          </RevealGroup>
+          <Reveal>
+            <ul className="ms-pillars" role="list">
+              {PILLARS.map((p) => {
+                const block = byKey(p.key);
+                return (
+                  <li key={p.key} className="ms-pillar">
+                    <IconTile icon={p.icon} />
+                    <h3 className="ms-pillar__title">
+                      {block?.title ?? p.fallbackTitle}
+                    </h3>
+                    {block?.subtitle && (
+                      <p className="ms-pillar__sub">{block.subtitle}</p>
+                    )}
+                    {block?.body && <p className="ms-pillar__body">{block.body}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+          </Reveal>
         </div>
       </section>
+
+      {/* ─── ÚLTIMAS NOTÍCIAS ─────────────────────────────── */}
+      <LatestPosts />
 
       {/* ─── PATROCINADORES ───────────────────────────────── */}
       <SponsorsStrip />
 
-      {/* ─── CTA ──────────────────────────────────────────── */}
-      <section className="ms-section ms-container">
+      {/* ─── CHAMADA FINAL ────────────────────────────────── */}
+      <section className="ms-section ms-container" aria-labelledby="ms-cta-title">
         <Reveal>
           <div className="ms-cta">
             <HexPattern />
             <div className="ms-cta__content">
-              <h2 className="ms-cta__title">{cta?.title ?? 'Faça parte da mina'}</h2>
-              <p className="ms-cta__body">{cta?.body ?? cta?.subtitle}</p>
+              <SectionHeading
+                id="ms-cta-title"
+                center
+                dense
+                tone="on-green"
+                title={cta?.title ?? 'Faça parte da mina'}
+                subtitle={cta?.body ?? cta?.subtitle ?? undefined}
+              />
               <div className="ms-cta__actions">
-                <LinkButton to="/como-entrar" size="lg">
-                  Quero participar <ArrowRight />
+                <LinkButton to="/como-entrar" size="lg" className="ms-cta__btn">
+                  Quero participar <ArrowRight aria-hidden />
                 </LinkButton>
                 <Link to="/quiz" className="ms-cta__link">
                   Teste seus conhecimentos no Quiz

@@ -4,44 +4,120 @@
   .ms-pagehero {
     position: relative;
     overflow: hidden;
-    padding-top: calc(var(--ms-navbar-h) + var(--ms-space-10));
-    padding-bottom: var(--ms-space-8);
-    background: var(--ms-gradient-dark);
+    padding-block: var(--ms-space-8) var(--ms-space-6);
+    background: var(--ms-surface);
     border-bottom: 1px solid var(--ms-border);
+
+    @include below($bp-md) {
+      padding-block: var(--ms-space-6) var(--ms-space-5);
+    }
+
+    &--sm {
+      padding-block: var(--ms-space-6) var(--ms-space-5);
+    }
+    &--lg {
+      padding-block: var(--ms-space-10) var(--ms-space-8);
+      @include below($bp-md) {
+        padding-block: var(--ms-space-8) var(--ms-space-6);
+      }
+    }
 
     &__inner {
       position: relative;
       z-index: 1;
-      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-5);
+      animation: ms-fade-in var(--ms-dur-fast) var(--ms-ease) both;
+    }
+
+    &__crumb {
+      font-size: var(--ms-text-sm);
+    }
+
+    // título à esquerda, ações à direita (empilham quando falta espaço)
+    &__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--ms-space-4) var(--ms-space-6);
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+      max-width: var(--ms-measure);
+      min-width: 0;
     }
 
     &__kicker {
       @include kicker;
-      display: inline-flex;
-      align-items: center;
-      gap: var(--ms-space-2);
-      margin-bottom: var(--ms-space-4);
-      &::before {
-        content: '';
-        width: 24px;
-        height: 2px;
-        background: var(--ms-green);
-      }
+      @include kicker-bar;
     }
 
     &__title {
-      font-size: var(--ms-text-4xl);
-      line-height: 1.02;
-      margin-bottom: var(--ms-space-4);
-      @include below($bp-md) {
-        font-size: var(--ms-text-3xl);
-      }
+      font-size: var(--ms-display-lg);
+      overflow-wrap: anywhere;
+    }
+    &--sm &__title {
+      font-size: var(--ms-title-lg);
+    }
+    &--lg &__title {
+      font-size: var(--ms-display-xl);
     }
 
     &__subtitle {
       color: var(--ms-text-dim);
       font-size: var(--ms-text-lg);
       max-width: 60ch;
+    }
+
+    &__actions {
+      @include cluster(var(--ms-space-2));
+      flex-shrink: 0;
+    }
+
+    &__toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--ms-space-3);
+    }
+
+    // ── Com imagem de fundo (capa do post) ──
+    &__media {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      // scrim: a foto escurece de cima para baixo até a superfície do cabeçalho
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          var(--ms-overlay) 0%,
+          var(--ms-scrim) 70%,
+          var(--ms-surface) 100%
+        );
+      }
+    }
+    &--media {
+      padding-block: var(--ms-space-12) var(--ms-space-6);
+      @include below($bp-md) {
+        padding-block: var(--ms-space-10) var(--ms-space-5);
+      }
+      .ms-pagehero__subtitle {
+        color: var(--ms-text);
+      }
     }
   }
 }

@@ -2,151 +2,133 @@
 
 @layer pages {
   // ── HERO ──
+  // O <main> compensa a navbar fixa; o hero volta ao topo (margem negativa) para
+  // ficar sob a navbar transparente e repõe a altura dela no padding.
   .ms-hero {
     position: relative;
-    min-height: 100dvh;
+    overflow: hidden;
     display: flex;
     align-items: center;
-    overflow: hidden;
-    padding-top: var(--ms-navbar-h);
+    margin-top: calc(-1 * var(--ms-header-h));
+    min-height: min(88dvh, 820px);
+    padding-block: calc(var(--ms-header-h) + var(--ms-space-10)) var(--ms-space-10);
     background: var(--ms-gradient-dark);
+    --ms-hex-opacity: 0.1;
 
+    @include below($bp-md) {
+      padding-block: calc(var(--ms-header-h) + var(--ms-space-8)) var(--ms-space-8);
+      min-height: min(80dvh, 640px);
+    }
+
+    // com foto do CMS: a textura recua e a foto ganha um scrim
+    &--photo {
+      --ms-hex-opacity: 0.06;
+    }
     &__bg {
       position: absolute;
       inset: 0;
       z-index: 0;
+
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        opacity: 0.28;
-        filter: grayscale(0.3) contrast(1.05);
+      }
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, var(--ms-overlay) 0%, var(--ms-scrim) 100%);
       }
     }
-    &__bg-overlay {
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(circle at 30% 40%, rgba(41, 217, 140, 0.12), transparent 55%),
-        linear-gradient(180deg, rgba(10, 10, 10, 0.55) 0%, rgba(10, 10, 10, 0.9) 100%);
+    .ms-hex {
+      z-index: 1;
     }
 
     &__inner {
       position: relative;
       z-index: 2;
-      max-width: 820px;
-      padding-block: var(--ms-space-12);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ms-space-5);
+      animation: ms-fade-up var(--ms-dur-slow) var(--ms-ease) both;
     }
 
     &__kicker {
       @include kicker;
+      @include kicker-bar;
       font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-4);
     }
 
     &__title {
-      font-size: var(--ms-text-5xl);
+      font-size: var(--ms-display-xl);
       line-height: 0.95;
       letter-spacing: 0.01em;
-      margin-bottom: var(--ms-space-5);
+      overflow-wrap: anywhere;
     }
 
     &__lead {
       font-size: var(--ms-text-xl);
       color: var(--ms-text-dim);
-      max-width: 52ch;
-      margin-bottom: var(--ms-space-6);
+      max-width: var(--ms-measure);
+
       @include below($bp-md) {
         font-size: var(--ms-text-lg);
       }
     }
 
     &__actions {
-      display: flex;
-      gap: var(--ms-space-3);
-      flex-wrap: wrap;
-    }
-
-    &__badge {
-      position: absolute;
-      right: -60px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 460px;
-      height: 460px;
-      color: var(--ms-green);
-      opacity: 0.14;
-      z-index: 1;
-      pointer-events: none;
-
-      @include below($bp-lg) {
-        display: none;
-      }
+      @include cluster(var(--ms-space-3));
+      margin-top: var(--ms-space-2);
     }
   }
 
-  // ── SOBRE + STATS ──
+  // ── QUEM SOMOS ──
   .ms-about {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     gap: var(--ms-space-10);
-    align-items: center;
+    align-items: start;
 
     @include below($bp-lg) {
       grid-template-columns: 1fr;
       gap: var(--ms-space-8);
     }
 
-    &__body {
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-lg);
-      line-height: 1.75;
-      margin-bottom: var(--ms-space-5);
-    }
-  }
+    &__text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ms-space-5);
 
-  .ms-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--ms-space-4);
-  }
-
-  .ms-stat {
-    @include card-surface;
-    padding: var(--ms-space-5);
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-2);
-    position: relative;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--ms-gradient);
-      opacity: 0;
-      transition: opacity var(--ms-dur);
-    }
-    &:hover::before {
-      opacity: 0.05;
+      .ms-heading {
+        margin-bottom: 0;
+      }
     }
 
-    &__icon {
-      width: 26px;
-      height: 26px;
+    &__media {
+      @include card-surface;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      display: grid;
+      place-items: center;
+      background: var(--ms-surface-2);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      @include below($bp-lg) {
+        max-width: 560px;
+      }
+    }
+    &__badge {
+      width: 52%;
+      height: auto;
       color: var(--ms-green);
-    }
-    &__value {
-      font-family: var(--ms-font-display);
-      font-weight: 700;
-      font-size: var(--ms-text-3xl);
-      color: var(--ms-text);
-      line-height: 1;
-    }
-    &__label {
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
     }
   }
 
@@ -158,69 +140,54 @@
 
   .ms-pillars {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--ms-space-5);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ms-gap-grid);
 
     @include below($bp-lg) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    @include below($bp-md) {
       grid-template-columns: 1fr;
     }
   }
 
+  // informativo, não navega: sem hover
   .ms-pillar {
-    @include card-surface;
-    padding: var(--ms-space-6);
+    @include card;
     background: var(--ms-surface-2);
-    transition:
-      transform var(--ms-dur) var(--ms-ease),
-      border-color var(--ms-dur) var(--ms-ease);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ms-space-3);
 
-    &:hover {
-      transform: translateY(-4px);
-      border-color: var(--ms-green-deep);
-    }
-
-    &__icon {
-      width: 56px;
-      height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--ms-radius);
-      background: rgba(41, 217, 140, 0.1);
-      color: var(--ms-green);
-      margin-bottom: var(--ms-space-4);
-      svg {
-        width: 28px;
-        height: 28px;
-      }
-    }
     &__title {
-      font-size: var(--ms-text-xl);
-      margin-bottom: var(--ms-space-2);
+      font-size: var(--ms-title);
+      margin-top: var(--ms-space-1);
     }
     &__sub {
-      @include kicker;
-      margin-bottom: var(--ms-space-3);
+      @include meta;
+      margin-top: calc(-1 * var(--ms-space-2));
     }
     &__body {
       color: var(--ms-text-dim);
-      line-height: 1.7;
     }
   }
 
-  // ── CTA ──
+  // ── CHAMADA FINAL (única superfície em gradiente) ──
   .ms-cta {
     position: relative;
     overflow: hidden;
     border-radius: var(--ms-radius-xl);
-    padding: var(--ms-space-12) var(--ms-space-8);
+    padding: var(--ms-section-y-sm) var(--ms-section-x);
     background: var(--ms-gradient);
     color: var(--ms-on-green);
     text-align: center;
+    // anel de foco invertido: verde sobre verde sumiria
+    --ms-focus-color: var(--ms-on-green);
 
     .ms-hex {
-      color: #0a0a0a;
-      opacity: 0.1;
+      color: var(--ms-black);
+      --ms-hex-opacity: 0.1;
     }
 
     &__content {
@@ -228,40 +195,39 @@
       z-index: 1;
       max-width: 640px;
       margin-inline: auto;
-    }
-    &__title {
-      color: var(--ms-on-green);
-      font-size: var(--ms-text-4xl);
-      margin-bottom: var(--ms-space-3);
-      @include below($bp-md) {
-        font-size: var(--ms-text-2xl);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--ms-space-6);
+
+      .ms-heading {
+        margin-bottom: 0;
       }
     }
-    &__body {
-      font-size: var(--ms-text-lg);
-      margin-bottom: var(--ms-space-6);
-      opacity: 0.85;
-    }
+
     &__actions {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: var(--ms-space-4);
-
-      .ms-btn--primary {
+    }
+    // botão invertido sobre o verde
+    &__btn.ms-btn--primary {
+      --ms-btn-fg: var(--ms-green);
+      background: var(--ms-black);
+      @include hover {
         background: var(--ms-black);
-        color: var(--ms-green);
-        &:hover {
-          background: #000;
-        }
+        box-shadow: var(--ms-elev-2);
       }
     }
     &__link {
       color: var(--ms-on-green);
-      font-weight: 600;
+      font-weight: var(--ms-fw-semibold);
+      font-size: var(--ms-text-sm);
       text-decoration: underline;
       text-underline-offset: 4px;
-      font-size: var(--ms-text-sm);
+      padding: var(--ms-space-1) var(--ms-space-2);
+      border-radius: var(--ms-radius-sm);
     }
   }
 
