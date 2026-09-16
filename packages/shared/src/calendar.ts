@@ -68,12 +68,20 @@ export interface CalendarEventLike {
  * `location` só entra quando o evento tem local.
  */
 export function googleCalendarUrl(event: CalendarEventLike): string {
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: event.title,
-    dates: `${toIcsDate(event.startsAt)}/${toIcsDate(eventEnd(event.startsAt, event.endsAt))}`,
-    details: event.description,
-  });
-  if (event.location) params.set('location', event.location);
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  // Só ES puro (`encodeURIComponent`): este pacote compila sem a lib DOM nem os
+  // tipos do Node — roda nos dois —, então `URLSearchParams` não existe no build.
+  const params: Array<[string, string]> = [
+    ['action', 'TEMPLATE'],
+    ['text', event.title],
+    [
+      'dates',
+      `${toIcsDate(event.startsAt)}/${toIcsDate(eventEnd(event.startsAt, event.endsAt))}`,
+    ],
+    ['details', event.description],
+  ];
+  if (event.location) params.push(['location', event.location]);
+  const query = params
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join('&');
+  return `https://calendar.google.com/calendar/render?${query}`;
 }
