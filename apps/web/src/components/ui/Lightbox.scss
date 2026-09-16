@@ -1,72 +1,96 @@
-.ms-lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: var(--ms-z-modal);
-  background: rgba(6, 8, 7, 0.92);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ms-space-6);
+@use '../../styles/mixins' as *;
 
-  &__figure {
-    max-width: min(92vw, 1100px);
-    max-height: 86vh;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-3);
+@layer components {
+  .ms-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ms-z-modal);
+    background: var(--ms-overlay-strong);
+    backdrop-filter: blur(6px);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: max(var(--ms-space-4), env(safe-area-inset-top, 0px)) var(--ms-space-4)
+      max(var(--ms-space-4), env(safe-area-inset-bottom, 0px));
+    color: var(--ms-on-overlay);
 
-    img {
-      max-width: 100%;
-      max-height: 78vh;
-      object-fit: contain;
-      border-radius: var(--ms-radius);
-      margin-inline: auto;
+    &__bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--ms-space-3);
     }
-    figcaption {
-      text-align: center;
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
+    &__count {
+      color: var(--ms-on-overlay);
+      opacity: 0.8;
     }
-  }
 
-  &__close,
-  &__nav {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--ms-border-strong);
-    color: #fff;
-    border-radius: 50%;
-    width: 48px;
-    height: 48px;
-    transition: all var(--ms-dur) var(--ms-ease);
+    &__figure {
+      align-self: center;
+      justify-self: center;
+      max-width: min(100%, 1100px);
+      max-height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
 
-    &:hover {
-      background: var(--ms-green);
-      color: var(--ms-on-green);
-      border-color: var(--ms-green);
+      img {
+        max-width: 100%;
+        max-height: calc(100dvh - 180px);
+        object-fit: contain;
+        border-radius: var(--ms-radius);
+        margin-inline: auto;
+      }
+      figcaption {
+        text-align: center;
+        color: var(--ms-text-dim);
+        font-size: var(--ms-text-sm);
+      }
     }
-    svg {
-      width: 24px;
-      height: 24px;
-    }
-  }
 
-  &__close {
-    top: var(--ms-space-5);
-    right: var(--ms-space-5);
-  }
-  &__nav {
-    top: 50%;
-    transform: translateY(-50%);
-    &--prev {
-      left: var(--ms-space-4);
+    // Controles: barra inferior no toque (não sobre a foto); nas laterais com mouse
+    &__nav {
+      display: flex;
+      justify-content: center;
+      gap: var(--ms-space-3);
     }
-    &--next {
-      right: var(--ms-space-4);
+
+    &__close,
+    &__navbtn {
+      display: inline-grid;
+      place-items: center;
+      background: var(--ms-on-overlay-surface);
+      border: 1px solid var(--ms-border-strong);
+      color: var(--ms-on-overlay);
+      border-radius: 50%;
+      width: var(--ms-control-lg);
+      height: var(--ms-control-lg);
+      transition:
+        background-color var(--ms-dur) var(--ms-ease),
+        color var(--ms-dur) var(--ms-ease),
+        border-color var(--ms-dur) var(--ms-ease);
+      svg {
+        width: var(--ms-icon-lg);
+        height: var(--ms-icon-lg);
+      }
+      @include hover {
+        background: var(--ms-green);
+        color: var(--ms-on-green);
+        border-color: var(--ms-green);
+      }
+    }
+
+    @include from($bp-md) {
+      &__nav {
+        position: absolute;
+        inset: 50% var(--ms-space-4) auto;
+        transform: translateY(-50%);
+        justify-content: space-between;
+        pointer-events: none;
+      }
+      &__navbtn {
+        pointer-events: auto;
+      }
     }
   }
 }

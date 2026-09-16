@@ -23,7 +23,7 @@ export default tseslint.config(
     // Scripts de manutenção em Node puro (stamp-schema, generate-icons, prepare-db)
     files: ['**/*.mjs'],
     languageOptions: {
-      ecmaVersion: 2023,
+      ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
         process: 'readonly',

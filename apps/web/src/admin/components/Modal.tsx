@@ -2,15 +2,16 @@ import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '../../lib/useFocusTrap';
+import { useScrollLock } from '../../lib/useScrollLock';
 
 type ModalEntry = { onClose: () => void };
 
 /**
  * Pilha dos modais abertos, em nível de módulo. Modais se aninham (o formulário
  * de um post abre "Escolher da biblioteca"; os detalhes da mídia abrem um
- * ConfirmDialog): Esc fecha só o de cima e o scroll do fundo volta quando o
- * último sai — com um listener por modal, um Esc fecharia todos de uma vez e
- * descartaria o formulário pai.
+ * ConfirmDialog): Esc fecha só o de cima — com um listener por modal, um Esc
+ * fecharia todos de uma vez e descartaria o formulário pai. A rolagem do fundo
+ * fica com `useScrollLock`, compartilhado com drawer e lightbox.
  */
 const openModals: ModalEntry[] = [];
 
@@ -20,19 +21,13 @@ function onEscape(e: KeyboardEvent) {
 
 function pushModal(entry: ModalEntry) {
   openModals.push(entry);
-  if (openModals.length === 1) {
-    window.addEventListener('keydown', onEscape);
-    document.body.style.overflow = 'hidden';
-  }
+  if (openModals.length === 1) window.addEventListener('keydown', onEscape);
 }
 
 function popModal(entry: ModalEntry) {
   const i = openModals.lastIndexOf(entry);
   if (i >= 0) openModals.splice(i, 1);
-  if (openModals.length === 0) {
-    window.removeEventListener('keydown', onEscape);
-    document.body.style.overflow = '';
-  }
+  if (openModals.length === 0) window.removeEventListener('keydown', onEscape);
 }
 
 export function Modal({
@@ -60,6 +55,7 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useFocusTrap(panelRef, true, { initialFocus: 'container' });
+  useScrollLock(true);
 
   // O backdrop fecha só quando ELE é o alvo do clique — um clique dentro do painel
   // nunca chega aqui como alvo, então o dialog não precisa interceptar eventos.

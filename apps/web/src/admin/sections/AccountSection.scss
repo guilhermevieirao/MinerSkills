@@ -1,78 +1,80 @@
 @use '../../styles/mixins' as *;
 
-// ── Minha conta: perfil + troca de senha ──
-.ms-account {
-  display: grid;
-  grid-template-columns: minmax(0, 320px) minmax(0, 480px);
-  gap: var(--ms-space-5);
-  align-items: start;
+@layer pages {
+  // ── Minha conta: perfil + troca de senha ──
+  .ms-account {
+    display: grid;
+    grid-template-columns: minmax(0, 320px) minmax(0, 480px);
+    gap: var(--ms-space-5);
+    align-items: start;
 
-  @include below($bp-lg) {
-    grid-template-columns: minmax(0, 480px);
-  }
+    @include below($bp-lg) {
+      grid-template-columns: minmax(0, 480px);
+    }
 
-  &__card {
-    @include card-surface;
-    padding: var(--ms-space-5);
+    &__card {
+      @include card-surface;
+      padding: var(--ms-space-5);
 
-    h2 {
-      display: flex;
-      align-items: center;
-      gap: var(--ms-space-2);
-      font-size: var(--ms-text-lg);
-      margin-bottom: var(--ms-space-4);
+      h2 {
+        display: flex;
+        align-items: center;
+        gap: var(--ms-space-2);
+        font-size: var(--ms-text-lg);
+        margin-bottom: var(--ms-space-4);
 
-      svg {
-        width: 20px;
-        height: 20px;
-        color: var(--ms-green);
+        svg {
+          width: 20px;
+          height: 20px;
+          color: var(--ms-green);
+        }
       }
     }
-  }
 
-  &__profile {
-    display: flex;
-    align-items: center;
-    gap: var(--ms-space-4);
-    margin-bottom: var(--ms-space-4);
-  }
-
-  &__avatar {
-    flex-shrink: 0;
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--ms-surface-2);
-    color: var(--ms-green);
-
-    svg {
-      width: 28px;
-      height: 28px;
+    &__profile {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-4);
+      margin-bottom: var(--ms-space-4);
     }
-  }
 
-  &__name {
-    display: block;
-    font-weight: 600;
-  }
+    &__avatar {
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--ms-surface-2);
+      color: var(--ms-green);
 
-  &__email {
-    display: block;
-    color: var(--ms-text-dim);
-    font-size: var(--ms-text-sm);
-    word-break: break-all;
-  }
+      svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
 
-  &__hint {
-    color: var(--ms-text-dim);
-    font-size: var(--ms-text-sm);
-    margin-bottom: var(--ms-space-4);
-  }
+    &__name {
+      display: block;
+      font-weight: 600;
+    }
 
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
+    &__email {
+      display: block;
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      word-break: break-all;
+    }
+
+    &__hint {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      margin-bottom: var(--ms-space-4);
+    }
+
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
   }
 }

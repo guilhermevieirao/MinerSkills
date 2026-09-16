@@ -1,3 +1,4 @@
+import { PUBLIC_ROUTES } from '@minerskills/shared';
 import { Router, type Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { toMediaDTO } from '../../lib/serialize.js';
@@ -31,20 +32,8 @@ import {
 export const seoRouter = Router();
 
 /** Rotas públicas fixas do SPA (apps/web/src/router.tsx). */
-export const STATIC_PATHS = [
-  '/',
-  '/historia',
-  '/blog',
-  '/galeria',
-  '/equipe',
-  '/quiz',
-  '/forum',
-  '/premios',
-  '/temporadas',
-  '/agenda',
-  '/como-entrar',
-  '/contato',
-] as const;
+/** Rotas públicas fixas do SPA — a mesma lista que a navegação do site consome. */
+export const STATIC_PATHS = PUBLIC_ROUTES;
 
 const DEFAULT_OG_IMAGE = '/icons/og-cover.png';
 

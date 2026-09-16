@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Skeleton } from './index';
 import './ui-extras.scss';
 
 /**
  * Placeholders de carregamento montados com o <Skeleton> do kit. Cada um
- * espelha o layout que vai substituir (grid de cards, lista, artigo, hero)
- * para o conteúdo real chegar sem salto de layout. Todos ficam fora da
- * árvore de acessibilidade: a página anuncia o carregamento de outro jeito.
+ * espelha o layout que vai substituir — mesma grade, mesma largura do bloco de
+ * mídia — para o conteúdo real chegar sem salto. Todos ficam fora da árvore de
+ * acessibilidade: a página anuncia o carregamento de outro jeito.
  */
 
 function Range({
@@ -19,17 +19,28 @@ function Range({
   return <>{Array.from({ length: count }, (_, i) => children(i))}</>;
 }
 
-/** Grid de cards com mídia em cima (blog, galeria, equipe, prêmios). */
+/**
+ * Grid de cards com mídia em cima (blog, galeria, equipe, prêmios). `min` é a
+ * largura mínima de coluna da grade REAL (o mesmo valor passado ao mixin
+ * `card-grid`), para o esqueleto ter o mesmo número de colunas.
+ */
 export function CardGridSkeleton({
   count = 6,
   aspect = '16 / 10',
+  min = 260,
 }: {
   count?: number;
   /** Proporção da área de mídia, no formato CSS (`'1'`, `'3 / 4'`). */
   aspect?: string;
+  /** Largura mínima de coluna, em px. */
+  min?: number;
 }) {
   return (
-    <div className="ms-skel__grid" aria-hidden>
+    <div
+      className="ms-skel__grid"
+      aria-hidden
+      style={{ '--ms-skel-min': `${min}px` } as CSSProperties}
+    >
       <Range count={count}>
         {(i) => (
           <div key={i} className="ms-skel__card">
@@ -49,14 +60,21 @@ export function CardGridSkeleton({
   );
 }
 
-/** Linhas com um bloco quadrado à esquerda (agenda, timeline, temporadas). */
-export function ListSkeleton({ rows = 4 }: { rows?: number }) {
+/**
+ * Linhas com um bloco à esquerda (agenda, timeline, temporadas). `lead` é a
+ * largura desse bloco na lista real; `0` para listas só de texto (fórum).
+ */
+export function ListSkeleton({ rows = 4, lead = 72 }: { rows?: number; lead?: number }) {
   return (
     <div className="ms-skel__list" aria-hidden>
       <Range count={rows}>
         {(i) => (
-          <div key={i} className="ms-skel__row">
-            <Skeleton height={72} width={72} />
+          <div
+            key={i}
+            className="ms-skel__row"
+            style={{ '--ms-skel-lead': lead > 0 ? `${lead}px` : '0px' } as CSSProperties}
+          >
+            {lead > 0 && <Skeleton height={lead} width={lead} />}
             <div className="ms-skel__lines">
               <Skeleton height={12} width="25%" />
               <Skeleton height={20} width="60%" />
@@ -69,20 +87,22 @@ export function ListSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/** Cabeçalho de página (mesma altura do PageHero). */
+/** Cabeçalho de página (mesma altura e largura de texto do PageHero). */
 export function HeroSkeleton() {
   return (
     <div className="ms-skel__hero" aria-hidden>
-      <div className="ms-container ms-skel__hero-inner">
-        <Skeleton height={12} width={160} />
-        <Skeleton height={56} width="70%" />
-        <Skeleton height={18} width="55%" />
+      <div className="ms-container">
+        <div className="ms-skel__hero-inner">
+          <Skeleton height={12} width={160} />
+          <Skeleton height={48} width="70%" />
+          <Skeleton height={18} width="55%" />
+        </div>
       </div>
     </div>
   );
 }
 
-/** Post do blog: hero + parágrafos. */
+/** Post do blog: hero + parágrafos, na mesma coluna de leitura do artigo. */
 export function ArticleSkeleton() {
   return (
     <div aria-hidden>

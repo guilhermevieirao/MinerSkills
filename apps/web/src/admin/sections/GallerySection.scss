@@ -1,170 +1,172 @@
 @use '../../styles/mixins' as *;
 
-// ── Galeria (painel): upload, lista reordenável e edição de legenda ──
-.ms-galadm {
-  &__upload {
-    display: grid;
-    gap: var(--ms-space-4);
-    margin-bottom: var(--ms-space-6);
+@layer pages {
+  // ── Galeria (painel): upload, lista reordenável e edição de legenda ──
+  .ms-galadm {
+    &__upload {
+      display: grid;
+      gap: var(--ms-space-4);
+      margin-bottom: var(--ms-space-6);
 
-    .ms-input {
-      max-width: 400px;
-    }
-  }
-
-  &__toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--ms-space-3);
-    margin-bottom: var(--ms-space-4);
-  }
-  &__count {
-    color: var(--ms-text-dim);
-    font-size: var(--ms-text-sm);
-  }
-  &__dirty {
-    color: var(--ms-warning);
-  }
-  &__toolbar-actions {
-    display: flex;
-    gap: var(--ms-space-2);
-  }
-
-  &__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-2);
-  }
-
-  &__item {
-    @include card-surface;
-    position: relative;
-    display: grid;
-    grid-template-columns: auto auto 64px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--ms-space-3);
-    padding: var(--ms-space-2) var(--ms-space-3);
-    transition:
-      border-color var(--ms-dur) var(--ms-ease),
-      box-shadow var(--ms-dur) var(--ms-ease);
-
-    &:hover {
-      border-color: var(--ms-border-strong);
-    }
-    &--dragging {
-      border-color: var(--ms-green);
-      box-shadow: var(--ms-shadow);
-      z-index: 2;
+      .ms-input {
+        max-width: 400px;
+      }
     }
 
-    @include below($bp-sm) {
-      grid-template-columns: auto auto 56px minmax(0, 1fr);
+    &__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--ms-space-3);
+      margin-bottom: var(--ms-space-4);
     }
-  }
-
-  &__handle {
-    display: inline-flex;
-    padding: var(--ms-space-1);
-    border-radius: var(--ms-radius-sm);
-    color: var(--ms-text-faint);
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-
-    &:hover {
-      color: var(--ms-text);
-      background: var(--ms-surface-2);
+    &__count {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
     }
-    &:active {
-      cursor: grabbing;
+    &__dirty {
+      color: var(--ms-warning);
     }
-    svg {
-      width: 18px;
-      height: 18px;
+    &__toolbar-actions {
+      display: flex;
+      gap: var(--ms-space-2);
     }
-  }
 
-  &__pos {
-    min-width: 1.6em;
-    text-align: right;
-    font-family: var(--ms-font-mono);
-    font-size: var(--ms-text-xs);
-    color: var(--ms-text-faint);
-  }
-
-  &__thumb {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--ms-radius-sm);
-    border: 1px solid var(--ms-border);
-    background: var(--ms-surface-2);
-    object-fit: cover;
-
-    @include below($bp-sm) {
-      width: 56px;
-      height: 56px;
+    &__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-2);
     }
-  }
 
-  &__info {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  &__caption {
-    font-size: var(--ms-text-sm);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    &__item {
+      @include card-surface;
+      position: relative;
+      display: grid;
+      grid-template-columns: auto auto 64px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--ms-space-3);
+      padding: var(--ms-space-2) var(--ms-space-3);
+      transition:
+        border-color var(--ms-dur) var(--ms-ease),
+        box-shadow var(--ms-dur) var(--ms-ease);
 
-    &--empty {
+      &:hover {
+        border-color: var(--ms-border-strong);
+      }
+      &--dragging {
+        border-color: var(--ms-green);
+        box-shadow: var(--ms-shadow);
+        z-index: 2;
+      }
+
+      @include below($bp-sm) {
+        grid-template-columns: auto auto 56px minmax(0, 1fr);
+      }
+    }
+
+    &__handle {
+      display: inline-flex;
+      padding: var(--ms-space-1);
+      border-radius: var(--ms-radius-sm);
       color: var(--ms-text-faint);
-      font-style: italic;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+
+      &:hover {
+        color: var(--ms-text);
+        background: var(--ms-surface-2);
+      }
+      &:active {
+        cursor: grabbing;
+      }
+      svg {
+        width: 18px;
+        height: 18px;
+      }
     }
-  }
-  &__alt {
-    font-size: var(--ms-text-xs);
-    color: var(--ms-text-dim);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 
-  &__actions {
-    display: flex;
-    gap: var(--ms-space-1);
-    justify-content: flex-end;
-
-    @include below($bp-sm) {
-      grid-column: 1 / -1;
+    &__pos {
+      min-width: 1.6em;
+      text-align: right;
+      font-family: var(--ms-font-mono);
+      font-size: var(--ms-text-xs);
+      color: var(--ms-text-faint);
     }
-  }
 
-  // Preview da foto dentro do modal de legenda
-  &__preview {
-    display: flex;
-    align-items: center;
-    gap: var(--ms-space-4);
-    margin-bottom: var(--ms-space-4);
-
-    img {
-      width: 90px;
-      height: 90px;
-      border-radius: var(--ms-radius);
+    &__thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--ms-radius-sm);
       border: 1px solid var(--ms-border);
       background: var(--ms-surface-2);
       object-fit: cover;
-      flex-shrink: 0;
+
+      @include below($bp-sm) {
+        width: 56px;
+        height: 56px;
+      }
     }
-    p {
+
+    &__info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    &__caption {
       font-size: var(--ms-text-sm);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &--empty {
+        color: var(--ms-text-faint);
+        font-style: italic;
+      }
+    }
+    &__alt {
+      font-size: var(--ms-text-xs);
       color: var(--ms-text-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__actions {
+      display: flex;
+      gap: var(--ms-space-1);
+      justify-content: flex-end;
+
+      @include below($bp-sm) {
+        grid-column: 1 / -1;
+      }
+    }
+
+    // Preview da foto dentro do modal de legenda
+    &__preview {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-4);
+      margin-bottom: var(--ms-space-4);
+
+      img {
+        width: 90px;
+        height: 90px;
+        border-radius: var(--ms-radius);
+        border: 1px solid var(--ms-border);
+        background: var(--ms-surface-2);
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+      p {
+        font-size: var(--ms-text-sm);
+        color: var(--ms-text-dim);
+      }
     }
   }
 }

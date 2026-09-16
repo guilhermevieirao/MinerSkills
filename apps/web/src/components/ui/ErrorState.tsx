@@ -1,9 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from './index';
+import { StateBlock } from './StateBlock';
 import { ApiError } from '../../lib/api';
-import { cx } from '../../lib/format';
-import './ui-extras.scss';
 
 function subscribeOnline(onChange: () => void) {
   window.addEventListener('online', onChange);
@@ -25,7 +24,8 @@ export function useOnline(): boolean {
 function describeError(error: unknown): string | undefined {
   if (!(error instanceof ApiError)) return undefined;
   if (error.status === 404) return 'O conteúdo não foi encontrado.';
-  if (error.status === 429) return 'Muitas requisições em pouco tempo. Aguarde um instante.';
+  if (error.status === 429)
+    return 'Muitas requisições em pouco tempo. Aguarde um instante.';
   if (error.status >= 500) return 'O servidor não respondeu como esperado.';
   return undefined;
 }
@@ -39,6 +39,7 @@ export interface ErrorStateProps {
   compact?: boolean;
   /** Nova tentativa em andamento: o botão mostra o spinner e fica desabilitado. */
   retrying?: boolean;
+  size?: 'sm';
 }
 
 /**
@@ -52,22 +53,28 @@ export function ErrorState({
   description,
   compact,
   retrying,
+  size,
 }: ErrorStateProps) {
   const online = useOnline();
-  const Icon = online ? AlertTriangle : WifiOff;
   const heading = online ? (title ?? 'Não foi possível carregar') : 'Você está offline';
   const text = online
-    ? (description ?? describeError(error) ?? 'Algo deu errado ao buscar os dados. Tente novamente em instantes.')
+    ? (description ??
+      describeError(error) ??
+      'Algo deu errado ao buscar os dados. Tente novamente em instantes.')
     : 'Verifique a conexão e tente novamente.';
-  const TitleTag = compact ? 'p' : 'h3';
 
   return (
-    <div className={cx('ms-error', compact && 'ms-error--compact')} role="alert">
-      <Icon className="ms-error__icon" aria-hidden />
-      <TitleTag className="ms-error__title">{heading}</TitleTag>
-      <p className="ms-error__text">{text}</p>
-      {onRetry && (
-        <div className="ms-error__actions">
+    <StateBlock
+      className={compact ? 'ms-error ms-error--compact' : 'ms-error'}
+      tone="error"
+      role="alert"
+      compact={compact}
+      size={size}
+      icon={online ? <AlertTriangle /> : <WifiOff />}
+      title={heading}
+      text={text}
+      actions={
+        onRetry && (
           <Button
             variant="outline"
             size={compact ? 'sm' : 'md'}
@@ -76,8 +83,8 @@ export function ErrorState({
           >
             <RefreshCw aria-hidden /> Tentar novamente
           </Button>
-        </div>
-      )}
-    </div>
+        )
+      }
+    />
   );
 }

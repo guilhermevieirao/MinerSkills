@@ -1,38 +1,40 @@
 @use '../../styles/mixins' as *;
 
-// ── Configurações: formulário único gerado a partir de SETTING_DEFINITIONS ──
-.ms-settings {
-  @include card-surface;
-  max-width: 760px;
-  padding: var(--ms-space-6);
+@layer pages {
+  // ── Configurações: formulário único gerado a partir de SETTING_DEFINITIONS ──
+  .ms-settings {
+    @include card-surface;
+    max-width: 760px;
+    padding: var(--ms-space-6);
 
-  @include below($bp-md) {
-    padding: var(--ms-space-4);
-  }
-
-  // o espaçamento entre campos é o do .ms-field; o último encosta na barra de ações
-  .ms-field:last-of-type {
-    margin-bottom: 0;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: var(--ms-space-4);
-    margin-top: var(--ms-space-6);
-    padding-top: var(--ms-space-5);
-    border-top: 1px solid var(--ms-border);
-
-    @include below($bp-sm) {
-      flex-direction: column-reverse;
-      align-items: stretch;
-      text-align: center;
+    @include below($bp-md) {
+      padding: var(--ms-space-4);
     }
-  }
 
-  &__dirty {
-    font-size: var(--ms-text-sm);
-    color: var(--ms-warning);
+    // o espaçamento entre campos é o do .ms-field; o último encosta na barra de ações
+    .ms-field:last-of-type {
+      margin-bottom: 0;
+    }
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--ms-space-4);
+      margin-top: var(--ms-space-6);
+      padding-top: var(--ms-space-5);
+      border-top: 1px solid var(--ms-border);
+
+      @include below($bp-sm) {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        text-align: center;
+      }
+    }
+
+    &__dirty {
+      font-size: var(--ms-text-sm);
+      color: var(--ms-warning);
+    }
   }
 }

@@ -1,91 +1,214 @@
 // ────────────────────────────────────────────────────────────
-//  MinerSkills — Design Tokens
-//  Identidade: preto + verde menta, tipografia tech/uppercase.
-//  Emitidos como CSS custom properties (tematização em runtime).
+//  MinerSkills — Design Tokens (v2)
+//  Identidade: preto + verde menta. Emitidos como CSS custom properties
+//  (tematização em runtime). Regras que o teste `tokens.contrast.test.ts`
+//  garante: texto ≥ 4,5:1 e contorno de controle ≥ 3:1 sobre cada superfície
+//  em que aparecem. `--ms-space-N` é uma escala de PASSOS (a partir do 5 os
+//  valores não são múltiplos de 4px — não renomear: centenas de usos).
 // ────────────────────────────────────────────────────────────
+@use 'mixins' as *;
 
-:root {
-  // ── Cores base ──
-  --ms-black: #0a0a0a;
-  --ms-bg: #0a0a0a;
-  --ms-surface: #111413;
-  --ms-surface-2: #181d1b;
-  --ms-surface-3: #20261f;
-  --ms-border: #2a322d;
-  --ms-border-strong: #3b463f;
+@layer tokens {
+  :root {
+    // Controles nativos (select, date, autofill, barras de rolagem) no tema escuro
+    color-scheme: dark;
+    accent-color: #29d98c;
 
-  // ── Verde da marca (do badge #10019) ──
-  --ms-green: #29d98c;
-  --ms-green-strong: #2ecc71;
-  --ms-green-deep: #3b9c7a;
-  --ms-green-dim: #1c8f5c;
-  --ms-green-glow: rgba(41, 217, 140, 0.35);
-  --ms-cream: #f2eee3;
+    // ── Superfícies (rampa perceptível; campo sempre um degrau abaixo do card) ──
+    --ms-black: #0a0a0a;
+    --ms-bg: #0a0a0a;
+    --ms-surface: #151a18;
+    --ms-surface-2: #1c2320;
+    --ms-surface-3: #262e2a;
+    --ms-surface-1: var(--ms-surface);
+    --ms-field-bg: #0f1311;
+    --ms-surface-disabled: #12161400;
 
-  // ── Texto ──
-  --ms-text: #e8edea;
-  --ms-text-dim: #9ba8a1;
-  --ms-text-faint: #6b756f;
-  --ms-on-green: #06231a;
+    // ── Bordas ──
+    --ms-border-subtle: rgba(255, 255, 255, 0.06); // divisórias internas
+    --ms-border: #303934; // contorno de card (decorativo)
+    --ms-border-strong: #3f4a44; // separadores em destaque
+    --ms-border-control: #667470; // input, select, chip, botão outline: ≥ 3:1
+    --ms-border-disabled: #2a322d;
 
-  // ── Estados ──
-  --ms-danger: #ff5a5a;
-  --ms-warning: #f2b134;
-  --ms-success: var(--ms-green);
+    // ── Verde da marca (do selo #10019) e derivados ──
+    --ms-green: #29d98c;
+    --ms-green-hover: #24c47e; // mesma matiz, um pouco mais escuro
+    --ms-green-strong: #2ecc71;
+    --ms-green-deep: #3b9c7a; // acento sobre fundo escuro (ícones, bordas)
+    --ms-green-glow: rgba(41, 217, 140, 0.35);
+    --ms-green-soft: rgba(41, 217, 140, 0.1); // fundo de estado ativo/selecionado
+    --ms-green-soft-strong: rgba(41, 217, 140, 0.16);
+    --ms-green-line: rgba(41, 217, 140, 0.35);
 
-  // ── Gradientes ──
-  --ms-gradient: linear-gradient(135deg, #29d98c 0%, #3b9c7a 100%);
-  --ms-gradient-dark: linear-gradient(160deg, #131917 0%, #0a0a0a 100%);
-  --ms-gradient-text: linear-gradient(120deg, #2ecc71 0%, #29d98c 55%, #7af5c4 100%);
+    // ── Texto ──
+    --ms-text: #e8edea;
+    --ms-text-dim: #9ba8a1;
+    --ms-text-faint: #8f9993; // ≥ 5,3:1 em todas as superfícies (legendas de 12–13px)
+    --ms-text-primary: var(--ms-text);
+    --ms-text-secondary: var(--ms-text-dim);
+    --ms-text-tertiary: var(--ms-text-faint);
+    --ms-text-disabled: #6b756f;
+    --ms-on-green: #06231a; // texto sobre verde
+    --ms-on-green-soft: #15382d; // texto secundário sobre verde (≥ 5:1 no gradiente)
+    --ms-on-green-surface: rgba(
+      6,
+      35,
+      26,
+      0.14
+    ); // superfícies (pills, divisórias) sobre verde
+    --ms-on-overlay: #ffffff; // texto sobre scrim/foto
 
-  // ── Tipografia ──
-  --ms-font-display: 'Chakra Petch', system-ui, sans-serif;
-  --ms-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --ms-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    // ── Estados semânticos: cor · fundo suave · linha ──
+    --ms-success: var(--ms-green);
+    --ms-success-soft: var(--ms-green-soft);
+    --ms-success-line: var(--ms-green-line);
+    --ms-danger: #ff5a5a;
+    --ms-danger-soft: rgba(255, 90, 90, 0.12);
+    --ms-danger-line: rgba(255, 90, 90, 0.4);
+    --ms-warning: #f2b134;
+    --ms-warning-soft: rgba(242, 177, 52, 0.12);
+    --ms-warning-line: rgba(242, 177, 52, 0.35);
+    --ms-info: #5ab0ff;
+    --ms-info-soft: rgba(90, 176, 255, 0.12);
+    --ms-info-line: rgba(90, 176, 255, 0.35);
+    --ms-neutral-soft: var(--ms-surface-3);
 
-  --ms-text-xs: 0.75rem;
-  --ms-text-sm: 0.875rem;
-  --ms-text-base: 1rem;
-  --ms-text-lg: 1.125rem;
-  --ms-text-xl: 1.375rem;
-  --ms-text-2xl: 1.875rem;
-  --ms-text-3xl: 2.5rem;
-  --ms-text-4xl: 3.5rem;
-  --ms-text-5xl: clamp(2.75rem, 8vw, 6rem);
+    // ── Pódio do ranking ──
+    --ms-podium-1: #f2c14e;
+    --ms-podium-2: #c9d1cc;
+    --ms-podium-3: #e0955b;
 
-  // ── Espaçamento (escala 4px) ──
-  --ms-space-1: 0.25rem;
-  --ms-space-2: 0.5rem;
-  --ms-space-3: 0.75rem;
-  --ms-space-4: 1rem;
-  --ms-space-5: 1.5rem;
-  --ms-space-6: 2rem;
-  --ms-space-8: 3rem;
-  --ms-space-10: 4rem;
-  --ms-space-12: 6rem;
-  --ms-space-16: 8rem;
+    // ── Overlays e scrims ──
+    --ms-overlay: rgba(0, 0, 0, 0.6); // atrás de drawers e modais
+    --ms-overlay-strong: rgba(6, 8, 7, 0.92); // lightbox
+    --ms-scrim: rgba(10, 10, 10, 0.82); // navbar sólida
+    --ms-scrim-image: linear-gradient(180deg, transparent 40%, rgba(6, 8, 7, 0.85) 100%);
+    --ms-on-overlay-surface: rgba(255, 255, 255, 0.08); // botões sobre foto/scrim
 
-  // ── Raios ──
-  --ms-radius-sm: 6px;
-  --ms-radius: 12px;
-  --ms-radius-lg: 18px;
-  --ms-radius-xl: 28px;
-  --ms-radius-pill: 999px;
+    // ── Foco (anel único; sobre verde, troca a cor via --ms-focus-color) ──
+    --ms-focus-color: var(--ms-green);
 
-  // ── Sombras ──
-  --ms-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --ms-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  --ms-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
-  --ms-shadow-glow: 0 0 0 1px rgba(41, 217, 140, 0.25), 0 12px 40px rgba(41, 217, 140, 0.18);
+    // ── Gradientes ──
+    // ponta escura #22b877: --ms-on-green e --ms-on-green-soft ficam ≥ 5:1 em toda a faixa
+    --ms-gradient: linear-gradient(135deg, #29d98c 0%, #22b877 100%);
+    --ms-gradient-dark: linear-gradient(160deg, #131917 0%, #0a0a0a 100%);
+    --ms-gradient-text: linear-gradient(120deg, #2ecc71 0%, #29d98c 55%, #7af5c4 100%);
 
-  // ── Layout ──
-  --ms-container: 1200px;
-  --ms-container-wide: 1440px;
-  --ms-navbar-h: 72px;
+    // ── Tipografia ──
+    --ms-font-display: 'Chakra Petch', system-ui, sans-serif;
+    --ms-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    --ms-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  // ── z-index ──
-  --ms-z-nav: 100;
-  --ms-z-drawer: 200;
-  --ms-z-modal: 300;
-  --ms-z-toast: 400;
+    --ms-fw-regular: 400;
+    --ms-fw-medium: 500;
+    --ms-fw-semibold: 600;
+    --ms-fw-bold: 700;
+
+    --ms-lh-tight: 1.05; // display
+    --ms-lh-snug: 1.3; // títulos de card, labels
+    --ms-lh-body: 1.6;
+
+    --ms-tracking-display: 0.02em;
+    --ms-tracking-kicker: 0.14em;
+    --ms-tracking-caption: 0.04em;
+
+    // Papéis (fluidos): display para a marca, title para h2/h3, num para números grandes
+    --ms-display-xl: clamp(2.5rem, 7vw, 5.5rem);
+    --ms-display-lg: clamp(2rem, 4.5vw, 3.5rem);
+    --ms-display-num: clamp(2rem, 4vw, 3rem);
+    --ms-title-lg: clamp(1.625rem, 3vw, 2.25rem);
+    --ms-title: 1.25rem;
+    --ms-title-sm: 1.0625rem;
+
+    // Escala legada (mantida): degraus de título ficaram fluidos, com o mesmo teto
+    --ms-text-xs: 0.75rem;
+    --ms-text-caption: 0.8125rem; // legenda/meta: nunca abaixo de 12px
+    --ms-text-sm: 0.875rem;
+    --ms-text-base: 1rem;
+    --ms-text-lg: 1.125rem;
+    --ms-text-xl: 1.375rem;
+    --ms-text-2xl: clamp(1.5rem, 2.5vw, 1.875rem);
+    --ms-text-3xl: clamp(1.75rem, 3.5vw, 2.5rem);
+    --ms-text-4xl: clamp(2.125rem, 5vw, 3.5rem);
+    --ms-text-5xl: var(--ms-display-xl);
+
+    // ── Espaçamento (escala de passos) ──
+    --ms-space-1: 0.25rem;
+    --ms-space-2: 0.5rem;
+    --ms-space-3: 0.75rem;
+    --ms-space-4: 1rem;
+    --ms-space-5: 1.5rem;
+    --ms-space-6: 2rem;
+    --ms-space-7: 2.5rem;
+    --ms-space-8: 3rem;
+    --ms-space-9: 3.5rem;
+    --ms-space-10: 4rem;
+    --ms-space-12: 6rem;
+    --ms-space-14: 7rem;
+    --ms-space-16: 8rem;
+
+    // ── Ritmo e densidade ──
+    --ms-section-y: clamp(3.5rem, 7vw, 6rem);
+    --ms-section-y-sm: clamp(2.5rem, 5vw, 4rem);
+    --ms-section-x: clamp(1rem, 4vw, 3rem);
+    --ms-gap-list: var(--ms-space-3);
+    --ms-gap-grid: var(--ms-space-5);
+    --ms-card-pad: var(--ms-space-5);
+    --ms-card-pad-sm: var(--ms-space-4);
+
+    // ── Raios ──
+    --ms-radius-sm: 6px; // chips, tags, controles inline
+    --ms-radius-md: 10px; // inputs, botões compactos
+    --ms-radius: 12px; // cards
+    --ms-radius-lg: 18px;
+    --ms-radius-xl: 28px; // blocos de destaque
+    --ms-radius-pill: 999px; // botões
+
+    // ── Sombras / elevação ──
+    --ms-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --ms-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --ms-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+    --ms-shadow-glow:
+      0 0 0 1px rgba(41, 217, 140, 0.25), 0 12px 40px rgba(41, 217, 140, 0.18);
+    --ms-elev-1: var(--ms-shadow-sm);
+    --ms-elev-2: var(--ms-shadow);
+    --ms-elev-3: var(--ms-shadow-lg);
+    --ms-lift: -2px; // único "levantar" ao passar o mouse (só em elementos navegáveis)
+
+    // ── Layout ──
+    --ms-container: 1200px; // shell e conteúdo, sempre a mesma coluna
+    --ms-container-wide: 1440px; // só grades de imagem
+    --ms-container-narrow: 760px; // formulários, leitura
+    --ms-measure: 68ch; // largura máxima de prosa
+    --ms-navbar-h: 64px;
+    --ms-header-h: calc(var(--ms-navbar-h) + env(safe-area-inset-top, 0px));
+    --ms-admin-sidebar-w: 256px;
+    --ms-admin-topbar-h: 56px;
+
+    // ── Controles ──
+    --ms-control-sm: 36px;
+    --ms-control: 40px;
+    --ms-control-lg: 48px;
+    --ms-touch: 44px; // alvo mínimo em telas de toque
+    --ms-icon-xs: 14px;
+    --ms-icon-sm: 16px;
+    --ms-icon: 20px;
+    --ms-icon-lg: 24px;
+    --ms-icon-xl: 32px;
+
+    // ── z-index (camadas globais; empilhamento local usa 0–9) ──
+    --ms-z-nav: 100;
+    --ms-z-drawer: 200;
+    --ms-z-modal: 300;
+    --ms-z-toast: 400;
+    --ms-z-system: 500; // avisos do PWA (offline, nova versão)
+  }
+
+  // Cabeçalho mais baixo no celular: tudo que compensa a navbar lê este token
+  @include below($bp-md) {
+    :root {
+      --ms-navbar-h: 56px;
+    }
+  }
 }

@@ -7,7 +7,8 @@ const UPLOADS_URL = import.meta.env.VITE_UPLOADS_URL ?? '/uploads';
 export function mediaUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('data:')) return url;
-  if (url.startsWith('/uploads')) return UPLOADS_URL === '/uploads' ? url : url.replace('/uploads', UPLOADS_URL);
+  if (url.startsWith('/uploads'))
+    return UPLOADS_URL === '/uploads' ? url : url.replace('/uploads', UPLOADS_URL);
   return url;
 }
 
@@ -21,6 +22,11 @@ export function isWebUrl(url: string | null | undefined): url is string {
 
 export function formatDate(iso: string, pattern = "d 'de' MMMM 'de' yyyy"): string {
   return format(new Date(iso), pattern, { locale: ptBR });
+}
+
+/** Formato curto para cards e metadados: `12 mar 2026`. */
+export function formatDateShort(iso: string): string {
+  return format(new Date(iso), 'd MMM yyyy', { locale: ptBR });
 }
 
 export function formatDateTime(iso: string): string {

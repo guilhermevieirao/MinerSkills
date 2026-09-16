@@ -1,168 +1,241 @@
 @use 'mixins' as *;
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
 
-body {
-  font-family: var(--ms-font-body);
-  background: var(--ms-bg);
-  color: var(--ms-text);
-  font-size: var(--ms-text-base);
-  line-height: 1.6;
-  min-height: 100dvh;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  overflow-x: hidden;
-}
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
 
-#root {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
-
-h1,
-h2,
-h3,
-h4 {
-  @include display-heading;
-  color: var(--ms-text);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-  @include focus-ring;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-  @include focus-ring;
-}
-
-img,
-picture,
-video,
-canvas,
-svg {
-  display: block;
-  max-width: 100%;
-}
-
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-ul,
-ol {
-  list-style: none;
-}
-
-::selection {
-  background: var(--ms-green);
-  color: var(--ms-on-green);
-}
-
-// Scrollbar tema escuro
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--ms-surface);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--ms-border-strong);
-  border-radius: var(--ms-radius-pill);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--ms-green-deep);
-}
-
-.ms-visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-// Texto com gradiente da marca
-.ms-gradient-text {
-  background: var(--ms-gradient-text);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.ms-section {
-  padding-block: var(--ms-space-12);
-
-  @include below($bp-md) {
-    padding-block: var(--ms-space-8);
+  // Listas de navegação e de cards não têm marcador; texto corrido volta a tê-lo em
+  // .ms-prose. Listas semânticas fora da prosa levam role="list" (Safari/VoiceOver).
+  ul,
+  ol {
+    list-style: none;
   }
 }
 
-.ms-container {
-  @include container;
-}
-
-.ms-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-
-  // Recebe foco programático (skip link, troca de rota). O anel só aparece na
-  // navegação por teclado, e discreto — a área é a página inteira.
-  &:focus {
-    outline: none;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    // âncoras e o skip link param abaixo do cabeçalho fixo
+    scroll-padding-top: calc(var(--ms-header-h) + var(--ms-space-4));
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
   }
-  &:focus-visible {
-    outline: 2px solid var(--ms-border-strong);
-    outline-offset: -2px;
+
+  body {
+    font-family: var(--ms-font-body);
+    background: var(--ms-bg);
+    color: var(--ms-text);
+    font-size: var(--ms-text-base);
+    line-height: var(--ms-lh-body);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
-}
 
-// Link "Pular para o conteúdo": primeiro focável da página. Fica fora da tela
-// e só aparece (no topo, sobre a navbar) enquanto tem o foco do teclado.
-.ms-skip-link {
-  position: absolute;
-  top: -100%;
-  left: var(--ms-space-4);
-  z-index: calc(var(--ms-z-nav) + 1);
-  padding: var(--ms-space-2) var(--ms-space-4);
-  background: var(--ms-green);
-  color: var(--ms-on-green);
-  font-family: var(--ms-font-display);
-  font-weight: 600;
-  font-size: var(--ms-text-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 0 0 var(--ms-radius-sm) var(--ms-radius-sm);
-  box-shadow: var(--ms-shadow);
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
 
-  &:focus,
-  &:focus-visible {
-    top: 0;
+  // Voz da marca: só h1 e h2 (e números grandes) em Chakra Petch caixa alta.
+  h1,
+  h2 {
+    @include display-heading;
+    color: var(--ms-text);
+  }
+  h1 {
+    font-size: var(--ms-display-lg);
+  }
+  h2 {
+    font-size: var(--ms-title-lg);
+    line-height: 1.15;
+  }
+
+  // Títulos de interface (cards, linhas, modais): Inter, caixa normal.
+  h3,
+  h4,
+  h5,
+  h6 {
+    @include ui-heading;
+    color: var(--ms-text);
+  }
+  h3 {
+    font-size: var(--ms-title);
+  }
+  h4 {
+    font-size: var(--ms-title-sm);
+  }
+  h5,
+  h6 {
+    font-size: var(--ms-text-base);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    @include focus-ring;
+  }
+
+  button {
+    cursor: pointer;
+    @include focus-ring;
+  }
+
+  input,
+  select,
+  textarea {
+    @include focus-ring;
+  }
+
+  // Autofill do Chrome pinta o campo de branco/amarelo no tema escuro
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--ms-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--ms-field-bg) inset;
+    caret-color: var(--ms-text);
+    transition: background-color 9999s ease-out;
+  }
+
+  ::selection {
+    background: var(--ms-green);
+    color: var(--ms-on-green);
+  }
+
+  // Scrollbar tema escuro
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--ms-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--ms-border-strong);
+    border-radius: var(--ms-radius-pill);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ms-green-deep);
+  }
+
+  .ms-visually-hidden {
+    @include visually-hidden;
+  }
+
+  // Campo-armadilha anti-spam (fórum, contato). Nunca display:none — ver docs/features/forum.md.
+  .ms-hp {
+    @include honeypot;
+  }
+
+  // Texto com gradiente da marca
+  .ms-gradient-text {
+    background: var(--ms-gradient-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  // Alto contraste do Windows descarta o gradiente: sem isto sobrava color: transparent
+  @media (forced-colors: active) {
+    .ms-gradient-text {
+      background: none;
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+  }
+
+  // Título em voz de marca fora de h1/h2 (usar com parcimônia)
+  .ms-display {
+    @include display-heading;
+  }
+
+  // Coluna de leitura para texto longo (post, sobre do membro, editor)
+  .ms-prose {
+    @include prose;
+  }
+
+  .ms-section {
+    padding-block: var(--ms-section-y);
+  }
+  .ms-section--sm {
+    padding-block: var(--ms-section-y-sm);
+  }
+
+  .ms-container {
+    @include container;
+  }
+  .ms-container--wide {
+    max-width: var(--ms-container-wide);
+  }
+  .ms-container--narrow {
+    max-width: var(--ms-container-narrow);
+  }
+
+  // Página dentro do <main> (PageTransition): ocupa a altura restante para o
+  // rodapé ficar no fim mesmo em páginas curtas.
+  .ms-main,
+  .ms-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ms-main {
+    // Recebe foco programático (skip link, troca de rota). O anel só aparece na
+    // navegação por teclado, e discreto — a área é a página inteira.
+    &:focus {
+      outline: none;
+    }
+    &:focus-visible {
+      outline: 2px solid var(--ms-border-strong);
+      outline-offset: -2px;
+    }
+  }
+
+  // Link "Pular para o conteúdo": primeiro focável da página. Fica fora da tela
+  // e só aparece (no topo, sobre a navbar) enquanto tem o foco do teclado.
+  .ms-skip-link {
+    position: absolute;
+    top: -100%;
+    left: var(--ms-space-4);
+    z-index: calc(var(--ms-z-nav) + 1);
+    padding: var(--ms-space-2) var(--ms-space-4);
+    background: var(--ms-green);
+    color: var(--ms-on-green);
+    font-weight: var(--ms-fw-semibold);
+    font-size: var(--ms-text-sm);
+    border-radius: 0 0 var(--ms-radius-sm) var(--ms-radius-sm);
+    box-shadow: var(--ms-elev-2);
     // o anel verde padrão sumiria sobre o fundo verde
-    outline: 2px solid var(--ms-on-green);
-    outline-offset: -4px;
+    --ms-focus-color: var(--ms-on-green);
+
+    &:focus,
+    &:focus-visible {
+      top: 0;
+      outline-offset: -4px;
+    }
   }
 }

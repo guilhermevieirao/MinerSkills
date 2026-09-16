@@ -16,8 +16,9 @@ export interface QueryStateProps<T> {
 
 /**
  * Estados padrão de uma consulta TanStack Query, na ordem: sem dados e
- * carregando → `skeleton`; sem dados e com erro → `ErrorState` com
- * "Tentar novamente" (refetch); `isEmpty(data)` → `empty`; senão
+ * carregando → `skeleton`; sem dados e com erro (ou consulta PAUSADA por falta
+ * de rede — sem isto, offline na primeira visita seria um esqueleto eterno) →
+ * `ErrorState` com "Tentar novamente"; `isEmpty(data)` → `empty`; senão
  * `children(data)`. Dados já carregados continuam na tela mesmo que uma
  * atualização em segundo plano falhe — a página nunca "some" por um refetch.
  */
@@ -30,7 +31,7 @@ export function QueryState<T>({
   children,
 }: QueryStateProps<T>) {
   if (query.data === undefined) {
-    if (query.isError) {
+    if (query.isError || query.fetchStatus === 'paused') {
       return (
         <ErrorState
           error={query.error}

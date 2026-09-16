@@ -1,69 +1,71 @@
 @use '../../styles/mixins' as *;
 
-// ── Formulário de contato / inscrição (Contato e Como Entrar) ──
-.ms-contact {
-  @include card-surface;
-  position: relative; // contém o campo-armadilha posicionado fora da tela
-  padding: var(--ms-space-6);
-  background: var(--ms-surface-2);
-
-  @include below($bp-sm) {
-    padding: var(--ms-space-5);
-  }
-
-  &__title {
-    font-size: var(--ms-text-xl);
-    margin-bottom: var(--ms-space-4);
-  }
-
-  &__row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 var(--ms-space-4);
+@layer components {
+  // ── Formulário de contato / inscrição (Contato e Como Entrar) ──
+  .ms-contact {
+    @include card-surface;
+    position: relative; // contém o campo-armadilha posicionado fora da tela
+    padding: var(--ms-space-6);
+    background: var(--ms-surface-2);
 
     @include below($bp-sm) {
-      grid-template-columns: 1fr;
+      padding: var(--ms-space-5);
     }
-  }
 
-  // Honeypot: fora da tela, sem `display: none` (robôs pulam campos invisíveis
-  // no DOM, mas preenchem os que só o CSS esconde).
-  &__hp {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  &__error {
-    color: var(--ms-danger);
-    font-size: var(--ms-text-sm);
-    margin-bottom: var(--ms-space-4);
-  }
-
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  // ── Confirmação (substitui os campos após o envio) ──
-  &--done {
-    text-align: center;
-    padding: var(--ms-space-8) var(--ms-space-6);
-
-    svg {
-      width: 48px;
-      height: 48px;
-      color: var(--ms-green);
-      margin-bottom: var(--ms-space-3);
+    &__title {
+      font-size: var(--ms-text-xl);
+      margin-bottom: var(--ms-space-4);
     }
-    .ms-contact__title {
-      margin-bottom: var(--ms-space-2);
+
+    &__row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 var(--ms-space-4);
+
+      @include below($bp-sm) {
+        grid-template-columns: 1fr;
+      }
     }
-    p {
-      color: var(--ms-text-dim);
+
+    // Honeypot: fora da tela, sem `display: none` (robôs pulam campos invisíveis
+    // no DOM, mas preenchem os que só o CSS esconde).
+    &__hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    &__error {
+      color: var(--ms-danger);
+      font-size: var(--ms-text-sm);
+      margin-bottom: var(--ms-space-4);
+    }
+
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    // ── Confirmação (substitui os campos após o envio) ──
+    &--done {
+      text-align: center;
+      padding: var(--ms-space-8) var(--ms-space-6);
+
+      svg {
+        width: 48px;
+        height: 48px;
+        color: var(--ms-green);
+        margin-bottom: var(--ms-space-3);
+      }
+      .ms-contact__title {
+        margin-bottom: var(--ms-space-2);
+      }
+      p {
+        color: var(--ms-text-dim);
+      }
     }
   }
 }

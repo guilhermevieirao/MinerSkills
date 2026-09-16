@@ -122,7 +122,7 @@ test.describe('Equipe', () => {
     // entre esta leitura e a renderização dos chips: só as do seed contam aqui.
     const tags = (
       (await (await request.get('/api/member-tags')).json()) as MemberTag[]
-    ).filter((t) => !/(e2e|duplicada)/i.test(t.label));
+    ).filter((t) => !/\b(e2e|duplicada)\b/i.test(t.label));
     expect(tags.length).toBeGreaterThan(0);
 
     await page.goto('/equipe');

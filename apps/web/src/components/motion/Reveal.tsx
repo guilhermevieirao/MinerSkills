@@ -1,5 +1,6 @@
 import { motion, useReducedMotion, type Variants } from 'motion/react';
 import type { ReactNode } from 'react';
+import { DUR, EASE } from '../../lib/motion';
 
 interface RevealProps {
   children: ReactNode;
@@ -27,7 +28,7 @@ export function Reveal({
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1], delay },
+      transition: { duration: DUR.slow, ease: EASE, delay },
     },
   };
 
@@ -82,7 +83,7 @@ export function RevealItem({
       className={className}
       variants={{
         hidden: { opacity: 0, y: reduce ? 0 : y },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+        visible: { opacity: 1, y: 0, transition: { duration: DUR.slow, ease: EASE } },
       }}
     >
       {children}

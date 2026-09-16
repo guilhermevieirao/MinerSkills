@@ -45,8 +45,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         // 'prompt': o usuário decide quando recarregar (ReloadPrompt) — nada some no meio de um formulário
         registerType: 'prompt',
-        includeAssets: ['favicon.svg'],
+        includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
         manifest: {
+          id: '/',
           name: 'MinerSkills #10019',
           short_name: 'MinerSkills',
           description:

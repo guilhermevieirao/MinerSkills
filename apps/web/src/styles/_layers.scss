@@ -1,0 +1,10 @@
+// Ordem das camadas da cascata, declarada UMA vez antes de qualquer regra.
+// Cada arquivo .scss envolve suas regras em @layer (tokens/base aqui em styles/,
+// `components` para src/components, `pages` para src/pages e o painel): a
+// prioridade passa a depender desta lista, não da ordem em que os chunks de CSS
+// chegam — era isso que fazia `.ms-container` vencer o `max-width` do hero.
+// A MESMA linha abre o <style> inline de index.html (a primeira regra do
+// documento): a primeira folha a citar uma camada é quem fixa a ordem, e no dev
+// e nas rotas lazy os componentes podem chegar antes desta. O teste
+// scss-rules.test.ts confere que as duas cópias são iguais.
+@layer reset, tokens, base, components, pages, utilities;

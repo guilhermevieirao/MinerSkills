@@ -1,116 +1,118 @@
 @use '../styles/mixins' as *;
 
-.ms-forum {
-  &__new-btn {
-    margin-top: var(--ms-space-6);
-  }
-
-  &__form {
-    @include card-surface;
-    padding: var(--ms-space-5);
-    margin-bottom: var(--ms-space-6);
-    background: var(--ms-surface-2);
-
-    &-note {
-      color: var(--ms-green);
-      font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-4);
+@layer pages {
+  .ms-forum {
+    &__new-btn {
+      margin-top: var(--ms-space-6);
     }
-    &-row {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: var(--ms-space-4);
-      @include below($bp-sm) {
-        grid-template-columns: 1fr;
+
+    &__form {
+      @include card-surface;
+      padding: var(--ms-space-5);
+      margin-bottom: var(--ms-space-6);
+      background: var(--ms-surface-2);
+
+      &-note {
+        color: var(--ms-green);
+        font-size: var(--ms-text-sm);
+        margin-bottom: var(--ms-space-4);
+      }
+      &-row {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: var(--ms-space-4);
+        @include below($bp-sm) {
+          grid-template-columns: 1fr;
+        }
+      }
+      &-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--ms-space-3);
+      }
+
+      // Honeypot: fora da tela, sem display: none (robôs pulam campos invisíveis
+      // no DOM, mas preenchem os que só o CSS esconde).
+      .ms-hp {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
       }
     }
-    &-actions {
+
+    &__list {
       display: flex;
-      justify-content: flex-end;
+      flex-direction: column;
       gap: var(--ms-space-3);
     }
 
-    // Honeypot: fora da tela, sem display: none (robôs pulam campos invisíveis
-    // no DOM, mas preenchem os que só o CSS esconde).
-    .ms-hp {
-      position: absolute;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-  }
+    &__topic {
+      @include card-surface;
+      padding: var(--ms-space-5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ms-space-4);
+      transition:
+        transform var(--ms-dur) var(--ms-ease),
+        border-color var(--ms-dur) var(--ms-ease);
 
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-3);
-  }
-
-  &__topic {
-    @include card-surface;
-    padding: var(--ms-space-5);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ms-space-4);
-    transition:
-      transform var(--ms-dur) var(--ms-ease),
-      border-color var(--ms-dur) var(--ms-ease);
-
-    &:hover {
-      transform: translateX(4px);
-      border-color: var(--ms-green-deep);
-    }
-
-    &-main {
-      min-width: 0;
-      h3 {
-        font-size: var(--ms-text-lg);
-        margin-bottom: var(--ms-space-1);
+      &:hover {
+        transform: translateX(4px);
+        border-color: var(--ms-green-deep);
       }
-      p {
-        color: var(--ms-text-dim);
-        font-size: var(--ms-text-sm);
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        line-clamp: 1;
-        -webkit-box-orient: vertical;
-        margin-bottom: var(--ms-space-2);
+
+      &-main {
+        min-width: 0;
+        h3 {
+          font-size: var(--ms-text-lg);
+          margin-bottom: var(--ms-space-1);
+        }
+        p {
+          color: var(--ms-text-dim);
+          font-size: var(--ms-text-sm);
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          line-clamp: 1;
+          -webkit-box-orient: vertical;
+          margin-bottom: var(--ms-space-2);
+        }
+      }
+      &-meta {
+        font-size: var(--ms-text-xs);
+        color: var(--ms-text-faint);
+        strong {
+          color: var(--ms-green);
+        }
       }
     }
-    &-meta {
-      font-size: var(--ms-text-xs);
-      color: var(--ms-text-faint);
-      strong {
-        color: var(--ms-green);
+
+    &__replies {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ms-space-2);
+      color: var(--ms-text-dim);
+      font-family: var(--ms-font-mono);
+      flex-shrink: 0;
+      svg {
+        width: 18px;
+        height: 18px;
+        color: var(--ms-green-deep);
       }
     }
-  }
 
-  &__replies {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ms-space-2);
-    color: var(--ms-text-dim);
-    font-family: var(--ms-font-mono);
-    flex-shrink: 0;
-    svg {
-      width: 18px;
-      height: 18px;
-      color: var(--ms-green-deep);
+    &__pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--ms-space-4);
+      margin-top: var(--ms-space-6);
+      color: var(--ms-text-dim);
+      font-family: var(--ms-font-mono);
     }
-  }
-
-  &__pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--ms-space-4);
-    margin-top: var(--ms-space-6);
-    color: var(--ms-text-dim);
-    font-family: var(--ms-font-mono);
   }
 }

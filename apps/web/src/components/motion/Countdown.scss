@@ -1,49 +1,51 @@
 @use '../../styles/mixins' as *;
 
-.ms-countdown {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--ms-space-3);
-  font-variant-numeric: tabular-nums;
+@layer components {
+  .ms-countdown {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--ms-space-3);
+    font-variant-numeric: tabular-nums;
 
-  &__unit {
-    @include card-surface;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 72px;
-    padding: var(--ms-space-3) var(--ms-space-2);
-    background: var(--ms-surface-2);
-  }
-  &__value {
-    font-family: var(--ms-font-display);
-    font-weight: 700;
-    font-size: var(--ms-text-3xl);
-    line-height: 1;
-    color: var(--ms-green);
-  }
-  &__label {
-    @include kicker;
-    letter-spacing: 0.12em;
-    color: var(--ms-text-dim);
-    margin-top: var(--ms-space-2);
-  }
-
-  // Data já alcançada: substitui os blocos por uma frase em destaque
-  &--now {
-    @include display-heading;
-    font-size: var(--ms-text-2xl);
-    color: var(--ms-green);
-  }
-
-  @include below($bp-sm) {
-    gap: var(--ms-space-2);
     &__unit {
-      min-width: 60px;
-      padding: var(--ms-space-2);
+      @include card-surface;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 72px;
+      padding: var(--ms-space-3) var(--ms-space-2);
+      background: var(--ms-surface-2);
     }
     &__value {
+      font-family: var(--ms-font-display);
+      font-weight: 700;
+      font-size: var(--ms-text-3xl);
+      line-height: 1;
+      color: var(--ms-green);
+    }
+    &__label {
+      @include kicker;
+      letter-spacing: 0.12em;
+      color: var(--ms-text-dim);
+      margin-top: var(--ms-space-2);
+    }
+
+    // Data já alcançada: substitui os blocos por uma frase em destaque
+    &--now {
+      @include display-heading;
       font-size: var(--ms-text-2xl);
+      color: var(--ms-green);
+    }
+
+    @include below($bp-sm) {
+      gap: var(--ms-space-2);
+      &__unit {
+        min-width: 60px;
+        padding: var(--ms-space-2);
+      }
+      &__value {
+        font-size: var(--ms-text-2xl);
+      }
     }
   }
 }

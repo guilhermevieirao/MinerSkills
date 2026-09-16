@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
+import { DUR, EASE } from '../../lib/motion';
 
 /** Transição ao trocar de rota: entrada suave, saída rápida (só opacidade). */
 export function PageTransition({ children }: { children: ReactNode }) {
@@ -10,13 +11,13 @@ export function PageTransition({ children }: { children: ReactNode }) {
       animate={{
         opacity: 1,
         y: 0,
-        transition: { duration: reduce ? 0.2 : 0.35, ease: [0.22, 1, 0.36, 1] },
+        transition: { duration: reduce ? DUR.fast : DUR.base, ease: EASE },
       }}
       exit={{
         opacity: 0,
-        transition: { duration: reduce ? 0.1 : 0.15, ease: 'easeOut' },
+        transition: { duration: DUR.fast, ease: 'easeOut' },
       }}
-      style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+      className="ms-page"
     >
       {children}
     </motion.div>

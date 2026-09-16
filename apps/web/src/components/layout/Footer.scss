@@ -1,138 +1,140 @@
 @use '../../styles/mixins' as *;
 
-.ms-footer {
-  margin-top: auto;
-  background: var(--ms-surface);
-  border-top: 1px solid var(--ms-border);
-
-  &__inner {
-    @include container(var(--ms-container-wide));
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: var(--ms-space-8);
-    padding-block: var(--ms-space-10);
-
-    @include below($bp-lg) {
-      grid-template-columns: 1fr 1fr;
-    }
-    @include below($bp-sm) {
-      grid-template-columns: 1fr;
-      gap: var(--ms-space-6);
-    }
-  }
-
-  &__brand {
-    display: flex;
-    gap: var(--ms-space-4);
-    align-items: flex-start;
-  }
-  &__badge {
-    width: 64px;
-    height: 64px;
-    color: var(--ms-green);
-    flex-shrink: 0;
-  }
-  &__name {
-    @include display-heading;
-    font-size: var(--ms-text-xl);
-    color: var(--ms-text);
-  }
-  &__tag {
-    color: var(--ms-green);
-    font-size: var(--ms-text-sm);
-    margin-top: var(--ms-space-1);
-  }
-  &__meta {
-    color: var(--ms-text-faint);
-    font-size: var(--ms-text-xs);
-    margin-top: var(--ms-space-2);
-  }
-  &__mail {
-    color: var(--ms-text-dim);
-    overflow-wrap: anywhere;
-    transition: color var(--ms-dur) var(--ms-ease);
-    &:hover {
-      color: var(--ms-green);
-    }
-  }
-
-  &__nav,
-  &__social {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-2);
-  }
-  &__col-title {
-    @include kicker;
-    margin-bottom: var(--ms-space-2);
-  }
-  &__link {
-    color: var(--ms-text-dim);
-    font-size: var(--ms-text-sm);
-    transition: color var(--ms-dur) var(--ms-ease);
-    &:hover {
-      color: var(--ms-green);
-    }
-  }
-
-  &__icons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ms-space-2);
-  }
-  &__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: var(--ms-radius-sm);
-    border: 1px solid var(--ms-border);
-    color: var(--ms-text-dim);
-    transition: all var(--ms-dur) var(--ms-ease);
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-    &:hover {
-      color: var(--ms-on-green);
-      background: var(--ms-green);
-      border-color: var(--ms-green);
-      transform: translateY(-2px);
-    }
-  }
-  &__credit {
-    color: var(--ms-text-faint);
-    font-size: var(--ms-text-xs);
-    margin-top: var(--ms-space-3);
-    line-height: 1.6;
-    overflow-wrap: anywhere;
-  }
-
-  // Linha extra abaixo das colunas — só existe quando o PWA pode ser instalado
-  &__install {
-    grid-column: 1 / -1;
-  }
-
-  &__bottom {
+@layer components {
+  .ms-footer {
+    margin-top: auto;
+    background: var(--ms-surface);
     border-top: 1px solid var(--ms-border);
-    @include container(var(--ms-container-wide));
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-block: var(--ms-space-4);
-    color: var(--ms-text-faint);
-    font-size: var(--ms-text-xs);
 
-    @include below($bp-sm) {
+    &__inner {
+      @include container(var(--ms-container-wide));
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: var(--ms-space-8);
+      padding-block: var(--ms-space-10);
+
+      @include below($bp-lg) {
+        grid-template-columns: 1fr 1fr;
+      }
+      @include below($bp-sm) {
+        grid-template-columns: 1fr;
+        gap: var(--ms-space-6);
+      }
+    }
+
+    &__brand {
+      display: flex;
+      gap: var(--ms-space-4);
+      align-items: flex-start;
+    }
+    &__badge {
+      width: 64px;
+      height: 64px;
+      color: var(--ms-green);
+      flex-shrink: 0;
+    }
+    &__name {
+      @include display-heading;
+      font-size: var(--ms-text-xl);
+      color: var(--ms-text);
+    }
+    &__tag {
+      color: var(--ms-green);
+      font-size: var(--ms-text-sm);
+      margin-top: var(--ms-space-1);
+    }
+    &__meta {
+      color: var(--ms-text-faint);
+      font-size: var(--ms-text-xs);
+      margin-top: var(--ms-space-2);
+    }
+    &__mail {
+      color: var(--ms-text-dim);
+      overflow-wrap: anywhere;
+      transition: color var(--ms-dur) var(--ms-ease);
+      &:hover {
+        color: var(--ms-green);
+      }
+    }
+
+    &__nav,
+    &__social {
+      display: flex;
       flex-direction: column;
       gap: var(--ms-space-2);
-      text-align: center;
     }
-  }
-  &__mono {
-    font-family: var(--ms-font-mono);
-    letter-spacing: 0.1em;
+    &__col-title {
+      @include kicker;
+      margin-bottom: var(--ms-space-2);
+    }
+    &__link {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      transition: color var(--ms-dur) var(--ms-ease);
+      &:hover {
+        color: var(--ms-green);
+      }
+    }
+
+    &__icons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ms-space-2);
+    }
+    &__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: var(--ms-radius-sm);
+      border: 1px solid var(--ms-border);
+      color: var(--ms-text-dim);
+      transition: all var(--ms-dur) var(--ms-ease);
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+      &:hover {
+        color: var(--ms-on-green);
+        background: var(--ms-green);
+        border-color: var(--ms-green);
+        transform: translateY(-2px);
+      }
+    }
+    &__credit {
+      color: var(--ms-text-faint);
+      font-size: var(--ms-text-xs);
+      margin-top: var(--ms-space-3);
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    // Linha extra abaixo das colunas — só existe quando o PWA pode ser instalado
+    &__install {
+      grid-column: 1 / -1;
+    }
+
+    &__bottom {
+      border-top: 1px solid var(--ms-border);
+      @include container(var(--ms-container-wide));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-block: var(--ms-space-4);
+      color: var(--ms-text-faint);
+      font-size: var(--ms-text-xs);
+
+      @include below($bp-sm) {
+        flex-direction: column;
+        gap: var(--ms-space-2);
+        text-align: center;
+      }
+    }
+    &__mono {
+      font-family: var(--ms-font-mono);
+      letter-spacing: 0.1em;
+    }
   }
 }

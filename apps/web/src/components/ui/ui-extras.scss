@@ -1,141 +1,169 @@
 @use '../../styles/mixins' as *;
 
-// Estilos dos componentes de estado (ErrorState, skeletons) e de imagem
-// (MediaImage). Importado por eles; o kit principal fica em ui.scss.
+// Estilos dos componentes de estado (StateBlock: EmptyState/ErrorState), dos
+// skeletons e da imagem (MediaImage). Importado por eles; o kit principal fica
+// em ui.scss.
 
-// ── ErrorState ──
-.ms-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ms-space-3);
-  text-align: center;
-  padding: var(--ms-space-10) var(--ms-space-4);
-  color: var(--ms-text-dim);
-
-  &__icon {
-    width: 48px;
-    height: 48px;
-    color: var(--ms-warning);
-  }
-  &__title {
-    font-size: var(--ms-text-xl);
-    color: var(--ms-text);
-  }
-  &__text {
-    max-width: 48ch;
-  }
-  &__actions {
-    margin-top: var(--ms-space-2);
-  }
-
-  // Faixa discreta: para páginas que já têm conteúdo de fallback (ex.: Home)
-  &--compact {
-    flex-direction: row;
-    flex-wrap: wrap;
+@layer components {
+  // ── StateBlock (vazio e erro: mesma altura, sem salto de layout) ──
+  .ms-state {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    text-align: left;
-    gap: var(--ms-space-3) var(--ms-space-4);
-    padding: var(--ms-space-3) var(--ms-space-4);
-    @include card-surface;
-    border-left: 3px solid var(--ms-warning);
-    font-size: var(--ms-text-sm);
+    justify-content: center;
+    gap: var(--ms-space-3);
+    text-align: center;
+    padding: var(--ms-space-10) var(--ms-space-4);
+    min-height: clamp(240px, 36vh, 400px);
+    color: var(--ms-text-dim);
 
-    .ms-error__icon {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
+    &__icon {
+      width: var(--ms-icon-xl);
+      height: var(--ms-icon-xl);
+      color: var(--ms-green-deep);
     }
-    .ms-error__title {
-      font-family: var(--ms-font-body);
+    &__title {
+      font-size: var(--ms-title);
+      color: var(--ms-text);
+    }
+    &__text {
+      max-width: 48ch;
+    }
+    &__actions {
+      margin-top: var(--ms-space-2);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--ms-space-2);
+    }
+
+    &--error .ms-state__icon {
+      color: var(--ms-warning);
+    }
+    // dentro de cards e painéis
+    &--sm {
+      min-height: 0;
+      padding: var(--ms-space-6) var(--ms-space-4);
+      .ms-state__icon {
+        width: var(--ms-icon-lg);
+        height: var(--ms-icon-lg);
+      }
+      .ms-state__title {
+        font-size: var(--ms-text-base);
+      }
+      .ms-state__text {
+        font-size: var(--ms-text-sm);
+      }
+    }
+    // Faixa discreta: para páginas que já têm conteúdo de fallback (ex.: Home)
+    &--compact {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
+      min-height: 0;
+      gap: var(--ms-space-3) var(--ms-space-4);
+      padding: var(--ms-space-3) var(--ms-space-4);
+      @include card-surface;
+      border-left: 3px solid var(--ms-warning);
       font-size: var(--ms-text-sm);
-      font-weight: 600;
-      text-transform: none;
-      letter-spacing: normal;
-    }
-    .ms-error__text {
-      max-width: none;
-    }
-    .ms-error__actions {
-      margin: 0 0 0 auto;
 
-      @include below($bp-sm) {
-        margin-left: 0;
+      .ms-state__icon {
+        width: var(--ms-icon);
+        height: var(--ms-icon);
+        flex-shrink: 0;
+      }
+      .ms-state__title {
+        font-family: var(--ms-font-body);
+        font-size: var(--ms-text-sm);
+        font-weight: var(--ms-fw-semibold);
+        text-transform: none;
+        letter-spacing: normal;
+      }
+      .ms-state__text {
+        max-width: none;
+      }
+      .ms-state__actions {
+        margin: 0 0 0 auto;
+        @include below($bp-sm) {
+          margin-left: 0;
+        }
       }
     }
   }
-}
 
-// ── Skeletons ──
-.ms-skel {
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--ms-space-5);
-  }
-  &__card {
-    @include card-surface;
-    overflow: hidden;
-  }
-  &__card-body {
-    padding: var(--ms-space-5);
-  }
-  // área de mídia do card: a proporção vem inline (aspect-ratio) e o
-  // <Skeleton> interno ocupa toda a altura com o shimmer do kit
-  &__media {
-    width: 100%;
-    overflow: hidden;
+  // ── Skeletons (espelham a grade/lista real via variáveis) ──
+  .ms-skel {
+    &__grid {
+      @include card-grid(var(--ms-skel-min, 260px));
+    }
+    &__card {
+      @include card-surface;
+      overflow: hidden;
+    }
+    &__card-body {
+      padding: var(--ms-card-pad);
+    }
+    // área de mídia do card: a proporção vem inline (aspect-ratio) e o
+    // <Skeleton> interno ocupa toda a altura com o shimmer do kit
+    &__media {
+      width: 100%;
+      overflow: hidden;
+    }
+
+    &__list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-gap-list);
+    }
+    &__row {
+      @include card-surface;
+      display: grid;
+      grid-template-columns: var(--ms-skel-lead, 72px) 1fr;
+      gap: var(--ms-space-4);
+      align-items: center;
+      padding: var(--ms-space-4);
+      &[style*='--ms-skel-lead: 0px'] {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    &__lines {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-2);
+    }
+
+    // corpo do post: dois "parágrafos" abaixo do hero, na coluna de leitura
+    &__article {
+      max-width: var(--ms-measure);
+      margin-inline: auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-8);
+      padding-block: var(--ms-section-y);
+    }
+
+    // Espelha o PageHero: mesma altura e largura de texto, sem salto quando o conteúdo chega
+    &__hero {
+      padding-top: calc(var(--ms-header-h) + var(--ms-space-8));
+      padding-bottom: var(--ms-space-6);
+      border-bottom: 1px solid var(--ms-border);
+      background: var(--ms-surface);
+    }
+    &__hero-inner {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-4);
+      max-width: var(--ms-measure);
+    }
   }
 
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-4);
+  // ── MediaImage ──
+  // Os atributos width/height dão a proporção antes do download (sem salto de
+  // layout); o container decide o tamanho final (object-fit, aspect-ratio).
+  .ms-media-img {
+    height: auto;
   }
-  &__row {
-    @include card-surface;
-    display: grid;
-    grid-template-columns: 72px 1fr;
-    gap: var(--ms-space-4);
-    align-items: center;
-    padding: var(--ms-space-4);
-  }
-
-  &__lines {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-2);
-  }
-
-  // corpo do post: dois "parágrafos" abaixo do hero
-  &__article {
-    max-width: 820px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-8);
-    padding-top: var(--ms-space-10);
-    padding-bottom: var(--ms-space-10);
-  }
-
-  // Espelha o PageHero: mesma altura, sem salto quando o conteúdo chega
-  &__hero {
-    padding-top: calc(var(--ms-navbar-h) + var(--ms-space-10));
-    padding-bottom: var(--ms-space-8);
-    border-bottom: 1px solid var(--ms-border);
-    background: var(--ms-gradient-dark);
-  }
-  &__hero-inner {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-4);
-    max-width: 780px;
-  }
-}
-
-// ── MediaImage ──
-// Os atributos width/height dão a proporção antes do download (sem salto de
-// layout); o container decide o tamanho final (object-fit, aspect-ratio).
-.ms-media-img {
-  height: auto;
 }

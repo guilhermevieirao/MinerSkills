@@ -1,110 +1,112 @@
 @use '../../styles/mixins' as *;
 
-// ── Fórum no painel (/admin/forum) ──
-.ms-forum-adm {
-  &__tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ms-space-2);
-    margin-bottom: var(--ms-space-5);
+@layer pages {
+  // ── Fórum no painel (/admin/forum) ──
+  .ms-forum-adm {
+    &__tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ms-space-2);
+      margin-bottom: var(--ms-space-5);
+    }
+
+    // Contador de denúncias abertas dentro do botão da aba
+    &__badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: var(--ms-radius-pill);
+      background: var(--ms-danger);
+      color: #fff;
+      font-size: var(--ms-text-xs);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    &__filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ms-space-2);
+      margin-bottom: var(--ms-space-4);
+    }
+
+    &__list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+    }
   }
 
-  // Contador de denúncias abertas dentro do botão da aba
-  &__badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: var(--ms-radius-pill);
-    background: var(--ms-danger);
-    color: #fff;
-    font-size: var(--ms-text-xs);
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  &__filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ms-space-2);
-    margin-bottom: var(--ms-space-4);
-  }
-
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ms-space-3);
-  }
-}
-
-// ── Item da fila de denúncias ──
-.ms-report-item {
-  @include card-surface;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ms-space-3);
-  padding: var(--ms-space-4);
-
-  &--resolved {
-    opacity: 0.85;
-  }
-
-  &__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--ms-space-2);
-  }
-
-  &__date {
-    margin-left: auto;
-    font-size: var(--ms-text-xs);
-    color: var(--ms-text-faint);
-    white-space: nowrap;
-  }
-
-  &__details {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-
-  // Alvo (tópico ou resposta) resumido
-  &__target {
+  // ── Item da fila de denúncias ──
+  .ms-report-item {
     @include card-surface;
     display: flex;
     flex-direction: column;
-    gap: var(--ms-space-1);
-    min-width: 0;
-    padding: var(--ms-space-3) var(--ms-space-4);
-    background: var(--ms-surface-2);
-  }
+    gap: var(--ms-space-3);
+    padding: var(--ms-space-4);
 
-  &__kind {
-    @include kicker;
-  }
+    &--resolved {
+      opacity: 0.85;
+    }
 
-  &__topic {
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
+    &__head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--ms-space-2);
+    }
 
-  &__excerpt {
-    color: var(--ms-text-dim);
-    font-size: var(--ms-text-sm);
-    overflow-wrap: anywhere;
-  }
+    &__date {
+      margin-left: auto;
+      font-size: var(--ms-text-xs);
+      color: var(--ms-text-faint);
+      white-space: nowrap;
+    }
 
-  &__meta {
-    font-size: var(--ms-text-xs);
-    color: var(--ms-text-faint);
-  }
+    &__details {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
 
-  &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: var(--ms-space-2);
+    // Alvo (tópico ou resposta) resumido
+    &__target {
+      @include card-surface;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-1);
+      min-width: 0;
+      padding: var(--ms-space-3) var(--ms-space-4);
+      background: var(--ms-surface-2);
+    }
+
+    &__kind {
+      @include kicker;
+    }
+
+    &__topic {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    &__excerpt {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      overflow-wrap: anywhere;
+    }
+
+    &__meta {
+      font-size: var(--ms-text-xs);
+      color: var(--ms-text-faint);
+    }
+
+    &__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: var(--ms-space-2);
+    }
   }
 }
