@@ -57,13 +57,24 @@ const LINKS: Array<{
   { to: '/admin/social', label: 'Redes Sociais', icon: Share2 },
   { to: '/admin/patrocinadores', label: 'Patrocinadores', icon: Handshake },
   { to: '/admin/temporadas', label: 'Temporadas', icon: Layers },
-  { to: '/admin/mensagens', label: 'Mensagens', icon: Inbox, badge: (s) => s.contact.new },
+  {
+    to: '/admin/mensagens',
+    label: 'Mensagens',
+    icon: Inbox,
+    badge: (s) => s.contact.new,
+  },
   { to: '/admin/midia', label: 'Mídia', icon: Library },
   { to: '/admin/administradores', label: 'Administradores', icon: UserCog },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
-export function AdminLayout({ admin, children }: { admin: AdminMe; children: ReactNode }) {
+export function AdminLayout({
+  admin,
+  children,
+}: {
+  admin: AdminMe;
+  children: ReactNode;
+}) {
   const logout = useLogout();
   const [open, setOpen] = useState(false);
   // Contadores das badges (mensagens novas, moderação pendente): a mesma query
@@ -100,7 +111,10 @@ export function AdminLayout({ admin, children }: { admin: AdminMe; children: Rea
               <l.icon />
               {l.label}
               {stats && l.badge && l.badge(stats) > 0 && (
-                <span className="ms-admin__badge" aria-label={`${l.badge(stats)} pendentes`}>
+                <span
+                  className="ms-admin__badge"
+                  aria-label={`${l.badge(stats)} pendentes`}
+                >
                   {l.badge(stats)}
                 </span>
               )}
@@ -118,20 +132,38 @@ export function AdminLayout({ admin, children }: { admin: AdminMe; children: Rea
           >
             <CircleUserRound /> Minha conta
           </NavLink>
-          <a href="/" className="ms-admin__link" target="_blank" rel="noopener noreferrer">
+          <a
+            href="/"
+            className="ms-admin__link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <ExternalLink /> Ver site
           </a>
-          <button className="ms-admin__link ms-admin__logout" onClick={() => logout.mutate()}>
+          <button
+            className="ms-admin__link ms-admin__logout"
+            onClick={() => logout.mutate()}
+          >
             <LogOut /> Sair
           </button>
         </div>
       </aside>
 
-      {open && <div className="ms-admin__overlay" onClick={() => setOpen(false)} />}
+      {open && (
+        <div
+          className="ms-admin__overlay"
+          role="presentation"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
       <div className="ms-admin__content">
         <header className="ms-admin__topbar">
-          <button className="ms-admin__burger" onClick={() => setOpen((o) => !o)} aria-label="Menu">
+          <button
+            className="ms-admin__burger"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Menu"
+          >
             {open ? <X /> : <Menu />}
           </button>
           <span className="ms-admin__user">

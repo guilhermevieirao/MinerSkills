@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, ADMIN } from './helpers';
+import { login, row, rowAction, confirmAction, ADMIN } from './helpers';
 
 /** Subconjunto do `SponsorDTO` usado por estes testes. */
 interface Sponsor {
@@ -40,8 +40,10 @@ test.describe('Patrocinadores (painel)', () => {
   const NAME = `Patrocinador e2e ${RUN}`;
 
   test.afterAll(async ({ playwright }, workerInfo) => {
-    if (workerInfo.project.name === 'mobile') return;
-    const ctx = await playwright.request.newContext({ baseURL: workerInfo.project.use.baseURL });
+    if (workerInfo.project.use.isMobile) return;
+    const ctx = await playwright.request.newContext({
+      baseURL: workerInfo.project.use.baseURL,
+    });
     try {
       const auth = await ctx.post('/api/admin/auth/login', {
         data: { email: ADMIN.email, password: ADMIN.password },
@@ -69,9 +71,9 @@ test.describe('Patrocinadores (painel)', () => {
     await page.getByRole('button', { name: 'Salvar' }).click();
 
     await expect(page.getByText('Patrocinador salvo.')).toBeVisible();
-    const row = page.locator('.ms-adm__table tr', { hasText: NAME });
-    await expect(row).toBeVisible();
-    await expect(row).toContainText('Parceiro');
+    const linha = row(page, NAME);
+    await expect(linha).toBeVisible();
+    await expect(linha).toContainText('Parceiro');
   });
 
   test('o patrocinador novo aparece na Home e no rodapé', async ({ page, isMobile }) => {
@@ -81,7 +83,9 @@ test.describe('Patrocinadores (painel)', () => {
     const strip = page.locator('.ms-sponsors');
     await expect(strip).toContainText(NAME);
     // sem site cadastrado, entra como texto e não como link
-    await expect(strip.locator('span.ms-sponsors__card', { hasText: NAME })).toHaveCount(1);
+    await expect(strip.locator('span.ms-sponsors__card', { hasText: NAME })).toHaveCount(
+      1,
+    );
     await expect(strip.locator('a.ms-sponsors__card', { hasText: NAME })).toHaveCount(0);
     await expect(page.locator('.ms-footer__credit')).toContainText(NAME);
   });
@@ -92,9 +96,9 @@ test.describe('Patrocinadores (painel)', () => {
     await login(page);
     await page.goto('/admin/patrocinadores');
 
-    const row = page.locator('.ms-adm__table tr', { hasText: NAME });
-    await row.locator('.ms-btn--danger').click();
-    await page.getByRole('button', { name: 'Excluir' }).click();
+    const linha = row(page, NAME);
+    await rowAction(linha, 'Excluir').click();
+    await confirmAction(page).click();
 
     await expect(page.getByText('Patrocinador removido.')).toBeVisible();
     await expect(page.locator('.ms-adm__table').getByText(NAME)).toHaveCount(0);

@@ -33,7 +33,10 @@ function sameOrder(a: string[], b: string[]): boolean {
 }
 
 export function GallerySection() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-gallery'], queryFn: adminApi.gallery.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-gallery'],
+    queryFn: adminApi.gallery.list,
+  });
   const [deleting, setDeleting] = useState<GalleryPhotoDTO | null>(null);
   const [editing, setEditing] = useState<GalleryPhotoDTO | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -51,7 +54,10 @@ export function GallerySection() {
   // O rascunho é reconciliado com o servidor a cada render: fotos removidas
   // somem da lista e fotos novas (upload) entram no fim, sem perder o arraste.
   const ids = draft
-    ? [...draft.filter((id) => byId.has(id)), ...serverIds.filter((id) => !draft.includes(id))]
+    ? [
+        ...draft.filter((id) => byId.has(id)),
+        ...serverIds.filter((id) => !draft.includes(id)),
+      ]
     : serverIds;
   const ordered = ids.map((id) => byId.get(id)!);
   const dirty = draft !== null && !sameOrder(ids, serverIds);
@@ -61,7 +67,11 @@ export function GallerySection() {
     try {
       for (const file of Array.from(files)) {
         const media = await adminApi.media.upload(file);
-        await adminApi.gallery.create({ mediaId: media.id, caption: caption || null, order: 0 });
+        await adminApi.gallery.create({
+          mediaId: media.id,
+          caption: caption || null,
+          order: 0,
+        });
       }
       setCaption('');
       toast.success('Foto(s) adicionada(s).');
@@ -129,20 +139,28 @@ export function GallerySection() {
       </div>
 
       <div className="ms-galadm__upload">
-        <div className="ms-uploader__dropzone" onClick={() => inputRef.current?.click()}>
+        {/* botão (não div): alcançável pelo teclado; o input de arquivo fica fora, oculto */}
+        <button
+          type="button"
+          className="ms-uploader__dropzone"
+          onClick={() => inputRef.current?.click()}
+        >
           <UploadCloud />
-          <p>{uploading ? 'Enviando…' : 'Clique para enviar imagens (aceita múltiplas)'}</p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => {
-              if (e.target.files?.length) void upload(e.target.files);
-              e.target.value = '';
-            }}
-          />
-        </div>
+          <span>
+            {uploading ? 'Enviando…' : 'Clique para enviar imagens (aceita múltiplas)'}
+          </span>
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            if (e.target.files?.length) void upload(e.target.files);
+            e.target.value = '';
+          }}
+        />
         <Input
           placeholder="Legenda opcional para os próximos envios"
           aria-label="Legenda para os próximos envios"
@@ -155,14 +173,22 @@ export function GallerySection() {
       {isLoading ? (
         <Loader />
       ) : ordered.length === 0 ? (
-        <EmptyState title="Galeria vazia" description="Envie a primeira foto pela área acima." />
+        <EmptyState
+          title="Galeria vazia"
+          description="Envie a primeira foto pela área acima."
+        />
       ) : (
         <>
           <div className="ms-galadm__toolbar">
             <p className="ms-galadm__count">
-              {ordered.length} {ordered.length === 1 ? 'foto' : 'fotos'}. Arraste pela alça ou use
-              as setas para reordenar.
-              {dirty && <span className="ms-galadm__dirty"> Ordem alterada, ainda não salva.</span>}
+              {ordered.length} {ordered.length === 1 ? 'foto' : 'fotos'}. Arraste pela
+              alça ou use as setas para reordenar.
+              {dirty && (
+                <span className="ms-galadm__dirty">
+                  {' '}
+                  Ordem alterada, ainda não salva.
+                </span>
+              )}
             </p>
             <div className="ms-galadm__toolbar-actions">
               <Button
@@ -173,7 +199,12 @@ export function GallerySection() {
               >
                 <Undo2 /> Descartar
               </Button>
-              <Button size="sm" disabled={!dirty} loading={savingOrder} onClick={saveOrder}>
+              <Button
+                size="sm"
+                disabled={!dirty}
+                loading={savingOrder}
+                onClick={saveOrder}
+              >
                 <Save /> Salvar ordem
               </Button>
             </div>
@@ -276,7 +307,12 @@ function GalleryRow({
         alt={alt}
       />
       <div className="ms-galadm__info">
-        <p className={cx('ms-galadm__caption', !photo.caption && 'ms-galadm__caption--empty')}>
+        <p
+          className={cx(
+            'ms-galadm__caption',
+            !photo.caption && 'ms-galadm__caption--empty',
+          )}
+        >
           {photo.caption || 'Sem legenda'}
         </p>
         <p className="ms-galadm__alt">

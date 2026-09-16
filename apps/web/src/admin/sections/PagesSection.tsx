@@ -12,7 +12,15 @@ import {
   type EditablePage,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Textarea, Select, Field, Loader, EmptyState } from '../../components/ui';
+import {
+  Button,
+  Input,
+  Textarea,
+  Select,
+  Field,
+  Loader,
+  EmptyState,
+} from '../../components/ui';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
@@ -37,10 +45,18 @@ export function PagesSection() {
         </div>
       </div>
       <div className="ms-enc__filters" style={{ marginBottom: 'var(--ms-space-5)' }}>
-        <Button variant={tab === 'blocks' ? 'primary' : 'outline'} size="sm" onClick={() => setTab('blocks')}>
+        <Button
+          variant={tab === 'blocks' ? 'primary' : 'outline'}
+          size="sm"
+          onClick={() => setTab('blocks')}
+        >
           Blocos de conteúdo
         </Button>
-        <Button variant={tab === 'timeline' ? 'primary' : 'outline'} size="sm" onClick={() => setTab('timeline')}>
+        <Button
+          variant={tab === 'timeline' ? 'primary' : 'outline'}
+          size="sm"
+          onClick={() => setTab('timeline')}
+        >
           Timeline (História)
         </Button>
       </div>
@@ -51,7 +67,10 @@ export function PagesSection() {
 
 // ─── Blocos ─────────────────────────────────────────────────
 function BlocksTab() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-blocks'], queryFn: () => adminApi.contentBlocks.list() });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-blocks'],
+    queryFn: () => adminApi.contentBlocks.list(),
+  });
   const [editing, setEditing] = useState<ContentBlockDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<ContentBlockDTO | null>(null);
@@ -59,7 +78,8 @@ function BlocksTab() {
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin-blocks'] });
-    for (const p of EDITABLE_PAGES) void queryClient.invalidateQueries({ queryKey: ['pages', p] });
+    for (const p of EDITABLE_PAGES)
+      void queryClient.invalidateQueries({ queryKey: ['pages', p] });
   };
 
   const remove = async () => {
@@ -79,14 +99,22 @@ function BlocksTab() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--ms-space-4)' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: 'var(--ms-space-4)',
+        }}
+      >
         <Button onClick={() => setCreating(true)}>
           <Plus /> Novo bloco
         </Button>
       </div>
       {grouped.map((g) => (
         <div key={g.page} style={{ marginBottom: 'var(--ms-space-6)' }}>
-          <h2 style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}>
+          <h2
+            style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}
+          >
             {PAGE_LABELS[g.page]}
           </h2>
           {g.blocks.length === 0 ? (
@@ -104,16 +132,32 @@ function BlocksTab() {
                 </thead>
                 <tbody>
                   {g.blocks.map((b) => (
-                    <tr key={b.id}>
-                      <td><code>{b.key}</code></td>
-                      <td>{b.title ?? <em style={{ color: 'var(--ms-text-faint)' }}>(sem título)</em>}</td>
+                    <tr key={b.id} data-row={b.title ?? b.key}>
+                      <td>
+                        <code>{b.key}</code>
+                      </td>
+                      <td>
+                        {b.title ?? (
+                          <em style={{ color: 'var(--ms-text-faint)' }}>(sem título)</em>
+                        )}
+                      </td>
                       <td>{b.order}</td>
                       <td>
                         <div className="ms-adm__row-actions">
-                          <Button variant="ghost" size="sm" onClick={() => setEditing(b)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Editar ${b.title ?? b.key}`}
+                            onClick={() => setEditing(b)}
+                          >
                             <Pencil />
                           </Button>
-                          <Button variant="danger" size="sm" onClick={() => setDeleting(b)}>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            aria-label={`Excluir ${b.title ?? b.key}`}
+                            onClick={() => setDeleting(b)}
+                          >
                             <Trash2 />
                           </Button>
                         </div>
@@ -142,7 +186,11 @@ function BlocksTab() {
         />
       )}
       {deleting && (
-        <ConfirmDialog message={`Remover o bloco "${deleting.key}"?`} onConfirm={remove} onCancel={() => setDeleting(null)} />
+        <ConfirmDialog
+          message={`Remover o bloco "${deleting.key}"?`}
+          onConfirm={remove}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   );
@@ -193,7 +241,10 @@ function BlockForm({
   };
 
   return (
-    <Modal title={initial ? `Editar bloco "${initial.key}"` : 'Novo bloco'} onClose={onClose}>
+    <Modal
+      title={initial ? `Editar bloco "${initial.key}"` : 'Novo bloco'}
+      onClose={onClose}
+    >
       <form onSubmit={save}>
         <div className="ms-modal__row">
           <Field label="Página">
@@ -210,17 +261,30 @@ function BlockForm({
             </Select>
           </Field>
           <Field label="Key (identificador)" error={errors.key}>
-            <Input value={form.key} disabled={!!initial} onChange={(e) => setForm({ ...form, key: e.target.value })} />
+            <Input
+              value={form.key}
+              disabled={!!initial}
+              onChange={(e) => setForm({ ...form, key: e.target.value })}
+            />
           </Field>
         </div>
         <Field label="Título">
-          <Input value={form.title ?? ''} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <Input
+            value={form.title ?? ''}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </Field>
         <Field label="Subtítulo">
-          <Input value={form.subtitle ?? ''} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />
+          <Input
+            value={form.subtitle ?? ''}
+            onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+          />
         </Field>
         <Field label="Corpo (texto)">
-          <Textarea value={form.body ?? ''} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+          <Textarea
+            value={form.body ?? ''}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+          />
         </Field>
         <div className="ms-modal__row">
           <Field label="Ordem">
@@ -252,7 +316,10 @@ function BlockForm({
 
 // ─── Timeline ───────────────────────────────────────────────
 function TimelineTab() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-timeline'], queryFn: adminApi.timeline.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-timeline'],
+    queryFn: adminApi.timeline.list,
+  });
   const [editing, setEditing] = useState<TimelineItemDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<TimelineItemDTO | null>(null);
@@ -273,7 +340,13 @@ function TimelineTab() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--ms-space-4)' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: 'var(--ms-space-4)',
+        }}
+      >
         <Button onClick={() => setCreating(true)}>
           <Plus /> Novo marco
         </Button>
@@ -295,16 +368,26 @@ function TimelineTab() {
             </thead>
             <tbody>
               {data.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} data-row={t.title}>
                   <td>{t.year}</td>
                   <td>{t.title}</td>
                   <td>{t.order}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${t.title}`}
+                        onClick={() => setEditing(t)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(t)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${t.title}`}
+                        onClick={() => setDeleting(t)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -331,7 +414,11 @@ function TimelineTab() {
         />
       )}
       {deleting && (
-        <ConfirmDialog message={`Remover o marco "${deleting.title}"?`} onConfirm={remove} onCancel={() => setDeleting(null)} />
+        <ConfirmDialog
+          message={`Remover o marco "${deleting.title}"?`}
+          onConfirm={remove}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   );
@@ -399,10 +486,16 @@ function TimelineForm({
           </Field>
         </div>
         <Field label="Título" error={errors.title}>
-          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <Input
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </Field>
         <Field label="Descrição" error={errors.description}>
-          <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
         </Field>
         <MediaPicker
           value={form.mediaId ?? null}

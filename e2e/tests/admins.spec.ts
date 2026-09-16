@@ -1,19 +1,19 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login, openAdminSidebar, ADMIN } from './helpers';
+import { login, openAdminSidebar, row, rowAction, confirmAction, ADMIN } from './helpers';
 
 /**
  * Os passos compartilham o administrador criado no primeiro teste e rodam em
  * ordem (serial), num único worker; o último passo remove o que foi criado e o
- * afterAll garante a limpeza mesmo quando algum passo falha. Cada projeto
- * (desktop/mobile) tem seu próprio worker, por isso o e-mail leva o nome do
- * projeto — os dois nunca disputam o mesmo registro.
+ * afterAll garante a limpeza mesmo quando algum passo falha. Cada projeto do
+ * Playwright tem seu próprio worker, por isso o e-mail leva a inicial do projeto —
+ * eles nunca disputam o mesmo registro.
  */
 test.describe.configure({ mode: 'serial' });
 
 const RUN = Date.now().toString(36);
 
 function e2eAdmin(project: string) {
-  const stamp = `${RUN}${project === 'mobile' ? 'm' : 'd'}`;
+  const stamp = `${RUN}${project.slice(0, 1)}`;
   return {
     name: `Admin e2e ${stamp}`,
     email: `e2e-${stamp}@minerskills.test`,
@@ -41,13 +41,18 @@ test.describe('Administradores e minha conta', () => {
   test.afterAll(async ({ playwright }, workerInfo) => {
     // limpeza defensiva: se um passo falhou antes da exclusão, remove o admin e2e pela API
     const novo = e2eAdmin(workerInfo.project.name);
-    const ctx = await playwright.request.newContext({ baseURL: workerInfo.project.use.baseURL });
+    const ctx = await playwright.request.newContext({
+      baseURL: workerInfo.project.use.baseURL,
+    });
     try {
       const auth = await ctx.post('/api/admin/auth/login', {
         data: { email: ADMIN.email, password: ADMIN.password },
       });
       if (!auth.ok()) return;
-      const admins = (await (await ctx.get('/api/admin/admins')).json()) as { id: string; email: string }[];
+      const admins = (await (await ctx.get('/api/admin/admins')).json()) as {
+        id: string;
+        email: string;
+      }[];
       for (const a of admins.filter((x) => x.email === novo.email)) {
         await ctx.delete(`/api/admin/admins/${a.id}`);
       }
@@ -80,21 +85,26 @@ test.describe('Administradores e minha conta', () => {
     await page.goto('/admin/administradores');
 
     // a linha do admin logado é marcada e não tem botão de excluir
-    const own = page.locator('.ms-adm__table tr', { hasText: ADMIN.email });
+    const own = row(page, ADMIN.email);
     await expect(own.getByText('Você')).toBeVisible();
-    await expect(own.locator('.ms-btn--danger')).toHaveCount(0);
+    await expect(rowAction(own, 'Excluir')).toHaveCount(0);
 
     // o admin criado pelo teste tem
-    const other = page.locator('.ms-adm__table tr', { hasText: novo.email });
-    await expect(other.locator('.ms-btn--danger')).toHaveCount(1);
+    const other = row(page, novo.email);
+    await expect(rowAction(other, 'Excluir')).toHaveCount(1);
 
     // e a API recusa mesmo sem passar pela tela
-    const me = (await (await page.request.get('/api/admin/auth/me')).json()) as { id: string };
+    const me = (await (await page.request.get('/api/admin/auth/me')).json()) as {
+      id: string;
+    };
     const resp = await page.request.delete(`/api/admin/admins/${me.id}`);
     expect(resp.status()).toBe(409);
   });
 
-  test('o novo admin entra, troca a própria senha e volta com a nova', async ({ page, isMobile }) => {
+  test('o novo admin entra, troca a própria senha e volta com a nova', async ({
+    page,
+    isMobile,
+  }) => {
     const novo = e2eAdmin(test.info().project.name);
 
     await loginAs(page, novo.email, novo.password);
@@ -125,9 +135,9 @@ test.describe('Administradores e minha conta', () => {
     await login(page);
     await page.goto('/admin/administradores');
 
-    const row = page.locator('.ms-adm__table tr', { hasText: novo.email });
-    await row.locator('.ms-btn--danger').click();
-    await page.getByRole('button', { name: 'Excluir' }).click();
+    const linha = row(page, novo.email);
+    await rowAction(linha, 'Excluir').click();
+    await confirmAction(page).click();
 
     await expect(page.getByText('Administrador removido.')).toBeVisible();
     await expect(page.locator('.ms-adm__table').getByText(novo.email)).toHaveCount(0);

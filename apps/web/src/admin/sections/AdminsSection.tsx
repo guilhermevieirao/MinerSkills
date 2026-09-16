@@ -82,7 +82,7 @@ export function AdminsSection() {
               {data.map((a) => {
                 const isMe = a.id === me?.id;
                 return (
-                  <tr key={a.id}>
+                  <tr key={a.id} data-row={a.name}>
                     <td>
                       {a.name}
                       {isMe && (
@@ -109,7 +109,7 @@ export function AdminsSection() {
                           <Button
                             variant="danger"
                             size="sm"
-                            aria-label={`Remover ${a.name}`}
+                            aria-label={`Excluir ${a.name}`}
                             onClick={() => setDeleting(a)}
                           >
                             <Trash2 />
@@ -187,7 +187,9 @@ function AdminForm({
       // `undefined` o zod responderia "Required")
       password: initial && form.password === '' ? undefined : form.password,
     };
-    const parsed = (initial ? adminUserSchema : adminUserCreateSchema).safeParse(candidate);
+    const parsed = (initial ? adminUserSchema : adminUserCreateSchema).safeParse(
+      candidate,
+    );
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
@@ -219,7 +221,10 @@ function AdminForm({
   };
 
   return (
-    <Modal title={initial ? 'Editar administrador' : 'Novo administrador'} onClose={onClose}>
+    <Modal
+      title={initial ? 'Editar administrador' : 'Novo administrador'}
+      onClose={onClose}
+    >
       <form onSubmit={save}>
         <Field label="Nome" error={errors.name}>
           <Input
@@ -249,7 +254,11 @@ function AdminForm({
           <Field
             label="Senha"
             error={errors.password}
-            hint={initial ? 'Deixe em branco para manter a senha atual.' : 'Mínimo de 10 caracteres.'}
+            hint={
+              initial
+                ? 'Deixe em branco para manter a senha atual.'
+                : 'Mínimo de 10 caracteres.'
+            }
           >
             <Input
               type="password"

@@ -1,5 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { login } from './helpers';
+import { login, row, rowAction, confirmAction } from './helpers';
 
 /** Subconjunto do `AgendaEventDTO` usado por estes testes. */
 interface AgendaEvent {
@@ -13,7 +13,11 @@ interface AgendaEvent {
 
 /** Mesmo escape de texto do iCalendar (RFC 5545) que a API aplica. */
 const escapeIcs = (s: string) =>
-  s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
+  s
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n');
 
 /** Desfaz a dobra de linhas em 75 octetos para comparar o conteúdo lógico. */
 const unfold = (ics: string) => ics.replace(/\r\n[ \t]/g, '');
@@ -46,7 +50,9 @@ test.describe('Agenda', () => {
     expect(unfold(body)).toContain(`SUMMARY:${escapeIcs(sample.title)}`);
   });
 
-  test('exporta um evento individual e responde 404 para id desconhecido', async ({ request }) => {
+  test('exporta um evento individual e responde 404 para id desconhecido', async ({
+    request,
+  }) => {
     const events = await publishedEvents(request);
     const sample = events[0];
     if (!sample) throw new Error('o seed precisa cadastrar ao menos um evento publicado');
@@ -72,7 +78,10 @@ test.describe('Agenda', () => {
 
     const google = card.getByRole('link', { name: /Google Calendar/ });
     await expect(google).toBeVisible();
-    await expect(google).toHaveAttribute('href', /calendar\.google\.com\/calendar\/render\?action=TEMPLATE/);
+    await expect(google).toHaveAttribute(
+      'href',
+      /calendar\.google\.com\/calendar\/render\?action=TEMPLATE/,
+    );
     await expect(google).toHaveAttribute('target', '_blank');
     await expect(google).toHaveAttribute('rel', /noopener/);
 
@@ -141,28 +150,29 @@ test.describe('Agenda', () => {
     await expect(signup).toHaveAttribute('rel', /noopener/);
 
     // e o .ics do evento leva o mesmo link
-    const created = ((await (await page.request.get('/api/admin/agenda')).json()) as AgendaEvent[]).find(
-      (e) => e.title === title,
-    );
-    if (!created) throw new Error('o evento recém-criado não apareceu na listagem do painel');
+    const created = (
+      (await (await page.request.get('/api/admin/agenda')).json()) as AgendaEvent[]
+    ).find((e) => e.title === title);
+    if (!created)
+      throw new Error('o evento recém-criado não apareceu na listagem do painel');
     const ics = await page.request.get(`/api/agenda/${created.id}/ics`);
     expect(ics.status()).toBe(200);
     expect(unfold(await ics.text())).toContain(`URL:${url}`);
 
     // despublicar: o evento deixa de ser exportado
     await page.goto('/admin/agenda');
-    const row = page.locator('tr', { hasText: title });
-    await row.locator('.ms-btn--ghost').click();
+    const linha = row(page, title);
+    await rowAction(linha, 'Editar').click();
     await page.getByLabel('Publicado').uncheck();
     await page.getByRole('button', { name: 'Salvar' }).click();
     await expect(page.getByText('Salvo.')).toBeVisible();
-    await expect(row).toContainText('Não');
+    await expect(linha).toContainText('Não');
     expect((await page.request.get(`/api/agenda/${created.id}/ics`)).status()).toBe(404);
 
     // limpa: remove o evento
-    await row.locator('.ms-btn--danger').click();
-    await page.getByRole('button', { name: 'Excluir' }).click();
+    await rowAction(linha, 'Excluir').click();
+    await confirmAction(page).click();
     await expect(page.getByText('Evento removido.')).toBeVisible();
-    await expect(row).toHaveCount(0);
+    await expect(linha).toHaveCount(0);
   });
 });

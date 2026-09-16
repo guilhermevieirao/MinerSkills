@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { login, openAdminSidebar, ADMIN } from './helpers';
+import { login, openAdminSidebar, row, rowAction, confirmAction, ADMIN } from './helpers';
 
 test.describe('Área administrativa', () => {
-  test('a rota /admin não é linkada em nenhum lugar do site público', async ({ page }) => {
+  test('a rota /admin não é linkada em nenhum lugar do site público', async ({
+    page,
+  }) => {
     for (const path of ['/', '/blog', '/galeria', '/forum', '/como-entrar']) {
       await page.goto(path);
       const adminLinks = page.locator('a[href*="/admin"]');
@@ -56,9 +58,9 @@ test.describe('Área administrativa', () => {
 
     // limpa: remove o post
     await page.goto('/admin/blog');
-    const row = page.locator('tr', { hasText: title });
-    await row.locator('.ms-btn--danger').click();
-    await page.getByRole('button', { name: 'Excluir' }).click();
+    const linha = row(page, title);
+    await rowAction(linha, 'Excluir').click();
+    await confirmAction(page).click();
     await expect(page.getByText(/Post removido/i)).toBeVisible();
   });
 
@@ -113,9 +115,9 @@ test.describe('Área administrativa', () => {
 
     // limpa: remove a tag
     await page.goto('/admin/equipe/tags');
-    const row = page.locator('tr', { hasText: label });
-    await row.locator('.ms-btn--danger').click();
-    await page.getByRole('button', { name: 'Excluir' }).click();
+    const linha = row(page, label);
+    await rowAction(linha, 'Excluir').click();
+    await confirmAction(page).click();
     await expect(page.getByText('Tag removida.')).toBeVisible();
     await expect(page.locator('.ms-adm__table').getByText(label)).toHaveCount(0);
   });
@@ -135,15 +137,17 @@ test.describe('Área administrativa', () => {
     await page.getByRole('button', { name: /Nova tag/i }).click();
     await page.getByLabel('Nome da tag').fill(`  ${label.toUpperCase()}  `);
     await page.getByRole('button', { name: 'Salvar' }).click();
-    await expect(page.locator('.ms-toast--error, .ms-field__error').first()).toBeVisible();
+    await expect(
+      page.locator('.ms-toast--error, .ms-field__error').first(),
+    ).toBeVisible();
     await page.keyboard.press('Escape');
     // continua existindo uma linha só (hasText ignora caixa)
-    await expect(page.locator('.ms-adm__table tr', { hasText: label })).toHaveCount(1);
+    await expect(row(page, label)).toHaveCount(1);
 
     // limpa
-    const row = page.locator('tr', { hasText: label });
-    await row.locator('.ms-btn--danger').click();
-    await page.getByRole('button', { name: 'Excluir' }).click();
+    const linha = row(page, label);
+    await rowAction(linha, 'Excluir').click();
+    await confirmAction(page).click();
     await expect(page.getByText('Tag removida.')).toBeVisible();
   });
 
@@ -176,7 +180,9 @@ test.describe('Área administrativa', () => {
     // em mobile a sidebar é um drawer: precisa abrir antes
     await openAdminSidebar(page, isMobile);
     await page.getByRole('button', { name: 'Sair' }).click();
-    await expect(page.getByRole('heading', { name: /Painel MinerSkills/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Painel MinerSkills/i }),
+    ).toBeVisible();
 
     // a sessão realmente acabou: a API rejeita
     const resp = await page.request.get('/api/admin/dashboard');

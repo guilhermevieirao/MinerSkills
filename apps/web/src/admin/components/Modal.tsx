@@ -61,8 +61,16 @@ export function Modal({
   const titleId = useId();
   useFocusTrap(panelRef, true, { initialFocus: 'container' });
 
+  // O backdrop fecha só quando ELE é o alvo do clique — um clique dentro do painel
+  // nunca chega aqui como alvo, então o dialog não precisa interceptar eventos.
   return createPortal(
-    <div className="ms-modal" onClick={onClose}>
+    <div
+      className="ms-modal"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         ref={panelRef}
         className="ms-modal__panel"
@@ -70,7 +78,6 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="ms-modal__head">
           <h2 id={titleId}>{title}</h2>

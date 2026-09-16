@@ -97,8 +97,9 @@ function SeasonCard({
         expanded && 'ms-season--open',
       )}
     >
-      {/* O cabeçalho inteiro abre o card; o botão dá o acesso por teclado. */}
-      <div className="ms-season__head" onClick={onToggle}>
+      {/* O cabeçalho inteiro abre o card ao clique (presentational); o botão dá o acesso
+          por teclado e o estado ARIA. */}
+      <div className="ms-season__head" role="presentation" onClick={onToggle}>
         <div className="ms-season__badge">
           {season.badge ? <MediaImage media={season.badge} alt="" thumb /> : <Layers />}
         </div>

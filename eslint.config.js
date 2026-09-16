@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default tseslint.config(
   {
@@ -48,7 +49,7 @@ export default tseslint.config(
         'error',
         {
           selector:
-            "MemberExpression[property.name=/^(\\$queryRaw|\\$executeRaw|\\$queryRawUnsafe|\\$executeRawUnsafe)$/]",
+            'MemberExpression[property.name=/^(\\$queryRaw|\\$executeRaw|\\$queryRawUnsafe|\\$executeRawUnsafe)$/]',
           message:
             'SQL cru quebra a portabilidade SQLite<->Postgres. Use a API do Prisma Client.',
         },
@@ -57,9 +58,16 @@ export default tseslint.config(
   },
   {
     files: ['apps/web/**/*.{ts,tsx}'],
-    plugins: { 'react-hooks': reactHooks },
+    plugins: { 'react-hooks': reactHooks, 'jsx-a11y': jsxA11y },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Acessibilidade verificada no lint, não só nos 6 testes de a11y.spec.ts
+      ...jsxA11y.flatConfigs.recommended.rules,
+      // Foco no primeiro campo de um diálogo recém-aberto é o comportamento esperado
+      // (WAI-ARIA dialog); a regra proíbe qualquer autoFocus.
+      'jsx-a11y/no-autofocus': 'off',
+      // Vídeos enviados pela equipe não têm faixa de legenda para oferecer.
+      'jsx-a11y/media-has-caption': 'off',
     },
   },
 );

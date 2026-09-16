@@ -50,7 +50,10 @@ function reasonLabel(reason: string): string {
  * um id sem correspondência (admin excluído) vira "—".
  */
 function useAdminName(): (id: string | null | undefined) => string {
-  const { data } = useQuery({ queryKey: ['admin-admins'], queryFn: adminApi.admins.list });
+  const { data } = useQuery({
+    queryKey: ['admin-admins'],
+    queryFn: adminApi.admins.list,
+  });
   return (id) => {
     if (!id) return '—';
     return data?.find((a) => a.id === id)?.name ?? '—';
@@ -75,10 +78,18 @@ export function ForumSection() {
         </div>
       </div>
       <div className="ms-forum-adm__tabs">
-        <Button variant={tab === 'queue' ? 'primary' : 'outline'} size="sm" onClick={() => setTab('queue')}>
+        <Button
+          variant={tab === 'queue' ? 'primary' : 'outline'}
+          size="sm"
+          onClick={() => setTab('queue')}
+        >
           <ShieldCheck /> Fila de moderação
         </Button>
-        <Button variant={tab === 'all' ? 'primary' : 'outline'} size="sm" onClick={() => setTab('all')}>
+        <Button
+          variant={tab === 'all' ? 'primary' : 'outline'}
+          size="sm"
+          onClick={() => setTab('all')}
+        >
           <MessageSquare /> Todos os tópicos
         </Button>
         <Button
@@ -118,7 +129,10 @@ function refreshForum() {
 }
 
 function ModerationQueueTab() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-moderation'], queryFn: adminApi.forum.moderation });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-moderation'],
+    queryFn: adminApi.forum.moderation,
+  });
   const toast = useToast();
 
   const moderateTopic = async (id: string, status: 'approved' | 'rejected') => {
@@ -135,17 +149,27 @@ function ModerationQueueTab() {
   if (isLoading) return <Loader />;
   const empty = !data || (data.topics.length === 0 && data.replies.length === 0);
   if (empty) {
-    return <EmptyState icon={<ShieldCheck />} title="Fila vazia" description="Nada aguardando moderação." />;
+    return (
+      <EmptyState
+        icon={<ShieldCheck />}
+        title="Fila vazia"
+        description="Nada aguardando moderação."
+      />
+    );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-8)' }}>
       {data.topics.length > 0 && (
         <div>
-          <h2 style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}>
+          <h2
+            style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}
+          >
             Tópicos pendentes ({data.topics.length})
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-3)' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-3)' }}
+          >
             {data.topics.map((t) => (
               <div key={t.id} className="ms-mod-item">
                 <div className="ms-mod-item__body">
@@ -159,7 +183,11 @@ function ModerationQueueTab() {
                   <Button size="sm" onClick={() => moderateTopic(t.id, 'approved')}>
                     <Check /> Aprovar
                   </Button>
-                  <Button size="sm" variant="danger" onClick={() => moderateTopic(t.id, 'rejected')}>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => moderateTopic(t.id, 'rejected')}
+                  >
                     <X /> Rejeitar
                   </Button>
                 </div>
@@ -171,10 +199,14 @@ function ModerationQueueTab() {
 
       {data.replies.length > 0 && (
         <div>
-          <h2 style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}>
+          <h2
+            style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}
+          >
             Respostas pendentes ({data.replies.length})
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-3)' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-3)' }}
+          >
             {data.replies.map((r) => (
               <div key={r.id} className="ms-mod-item">
                 <div className="ms-mod-item__body">
@@ -188,7 +220,11 @@ function ModerationQueueTab() {
                   <Button size="sm" onClick={() => moderateReply(r.id, 'approved')}>
                     <Check /> Aprovar
                   </Button>
-                  <Button size="sm" variant="danger" onClick={() => moderateReply(r.id, 'rejected')}>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => moderateReply(r.id, 'rejected')}
+                  >
                     <X /> Rejeitar
                   </Button>
                 </div>
@@ -202,7 +238,10 @@ function ModerationQueueTab() {
 }
 
 function AllTopicsTab() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-forum-topics'], queryFn: adminApi.forum.allTopics });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-forum-topics'],
+    queryFn: adminApi.forum.allTopics,
+  });
   const adminName = useAdminName();
   const [deleting, setDeleting] = useState<ForumTopicDTO | null>(null);
   const toast = useToast();
@@ -239,7 +278,7 @@ function AllTopicsTab() {
         </thead>
         <tbody>
           {data.map((t) => (
-            <tr key={t.id}>
+            <tr key={t.id} data-row={t.title}>
               <td>{t.title}</td>
               <td>{t.nickname}</td>
               <td>
@@ -252,16 +291,33 @@ function AllTopicsTab() {
               <td>
                 <div className="ms-adm__row-actions">
                   {t.status !== 'approved' && (
-                    <Button size="sm" variant="ghost" onClick={() => setStatus(t.id, 'approved')} title="Aprovar">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Aprovar ${t.title}`}
+                      title="Aprovar"
+                      onClick={() => setStatus(t.id, 'approved')}
+                    >
                       <Check />
                     </Button>
                   )}
                   {t.status !== 'rejected' && (
-                    <Button size="sm" variant="ghost" onClick={() => setStatus(t.id, 'rejected')} title="Rejeitar">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Rejeitar ${t.title}`}
+                      title="Rejeitar"
+                      onClick={() => setStatus(t.id, 'rejected')}
+                    >
                       <X />
                     </Button>
                   )}
-                  <Button size="sm" variant="danger" onClick={() => setDeleting(t)}>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    aria-label={`Excluir ${t.title}`}
+                    onClick={() => setDeleting(t)}
+                  >
                     <Trash2 />
                   </Button>
                 </div>
@@ -296,32 +352,48 @@ function ReportsTab() {
   const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
 
-  const run = async (report: ForumReportDTO, action: () => Promise<unknown>, done: string) => {
+  const run = async (
+    report: ForumReportDTO,
+    action: () => Promise<unknown>,
+    done: string,
+  ) => {
     setBusy(report.id);
     try {
       await action();
       toast.success(done);
       refreshForum();
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Erro ao atualizar a denúncia.');
+      toast.error(
+        err instanceof ApiError ? err.message : 'Erro ao atualizar a denúncia.',
+      );
     } finally {
       setBusy(null);
     }
   };
 
   const resolve = (r: ForumReportDTO) =>
-    run(r, () => adminApi.forum.setReport(r.id, { status: 'resolved' }), 'Denúncia resolvida.');
+    run(
+      r,
+      () => adminApi.forum.setReport(r.id, { status: 'resolved' }),
+      'Denúncia resolvida.',
+    );
 
   const reopen = (r: ForumReportDTO) =>
-    run(r, () => adminApi.forum.setReport(r.id, { status: 'open' }), 'Denúncia reaberta.');
+    run(
+      r,
+      () => adminApi.forum.setReport(r.id, { status: 'open' }),
+      'Denúncia reaberta.',
+    );
 
   const rejectContent = (r: ForumReportDTO) =>
     run(
       r,
       async () => {
-        if (r.target.type === 'topic') await adminApi.forum.setTopic(r.target.id, 'rejected');
+        if (r.target.type === 'topic')
+          await adminApi.forum.setTopic(r.target.id, 'rejected');
         else await adminApi.forum.setReply(r.target.id, 'rejected');
-        if (r.status === 'open') await adminApi.forum.setReport(r.id, { status: 'resolved' });
+        if (r.status === 'open')
+          await adminApi.forum.setReport(r.id, { status: 'resolved' });
       },
       'Conteúdo rejeitado.',
     );
@@ -330,7 +402,11 @@ function ReportsTab() {
     <div>
       <div className="ms-forum-adm__filters" role="group" aria-label="Status da denúncia">
         {REPORT_FILTERS.map((f) => (
-          <FilterChip key={f.value} active={filter === f.value} onClick={() => setFilter(f.value)}>
+          <FilterChip
+            key={f.value}
+            active={filter === f.value}
+            onClick={() => setFilter(f.value)}
+          >
             {f.label}
           </FilterChip>
         ))}
@@ -341,7 +417,9 @@ function ReportsTab() {
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={<Flag />}
-          title={filter === 'open' ? 'Nenhuma denúncia aberta' : 'Nenhuma denúncia resolvida'}
+          title={
+            filter === 'open' ? 'Nenhuma denúncia aberta' : 'Nenhuma denúncia resolvida'
+          }
           description={
             filter === 'open'
               ? 'As denúncias enviadas pelos visitantes aparecem aqui.'
@@ -353,14 +431,19 @@ function ReportsTab() {
           {data.map((r) => (
             <article
               key={r.id}
-              className={cx('ms-report-item', r.status === 'resolved' && 'ms-report-item--resolved')}
+              className={cx(
+                'ms-report-item',
+                r.status === 'resolved' && 'ms-report-item--resolved',
+              )}
             >
               <div className="ms-report-item__head">
                 <Tag>{reasonLabel(r.reason)}</Tag>
                 <span className={`ms-adm__status ms-adm__status--${r.target.status}`}>
                   {STATUS_LABEL[r.target.status] ?? r.target.status}
                 </span>
-                <span className="ms-report-item__date">{formatDateTime(r.createdAt)}</span>
+                <span className="ms-report-item__date">
+                  {formatDateTime(r.createdAt)}
+                </span>
               </div>
 
               {r.details && <p className="ms-report-item__details">{r.details}</p>}
@@ -400,7 +483,11 @@ function ReportsTab() {
                   </Button>
                 )}
                 {r.status === 'open' ? (
-                  <Button size="sm" disabled={busy === r.id} onClick={() => void resolve(r)}>
+                  <Button
+                    size="sm"
+                    disabled={busy === r.id}
+                    onClick={() => void resolve(r)}
+                  >
                     <Check /> Resolver
                   </Button>
                 ) : (

@@ -54,6 +54,23 @@ export default defineConfig({
       name: 'mobile',
       use: { ...devices['Pixel 7'] },
     },
+    {
+      // Tablet retrato (834×1112): a faixa 768–1279 em que o menu já virou drawer mas o
+      // layout ainda é largo — nunca era renderizada. Emula toque (`isMobile`, como o
+      // Pixel 7, para os `test.skip` decidirem igual) e `prefers-reduced-motion`, que a
+      // suíte inteira nunca exercitava. Roda só os specs de leitura e o smoke do painel;
+      // os fluxos que mudam estado global (temporadas, patrocinadores, administradores)
+      // continuam restritos aos dois projetos originais.
+      name: 'tablet',
+      testMatch: /(public-pages|a11y|errors|equipe|admin)\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 834, height: 1112 },
+        isMobile: true,
+        hasTouch: true,
+        reducedMotion: 'reduce',
+      },
+    },
   ],
 
   webServer: [

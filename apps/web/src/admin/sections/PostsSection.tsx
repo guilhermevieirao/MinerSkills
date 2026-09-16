@@ -29,7 +29,10 @@ function parseYoutubeId(input: string): string | null {
 }
 
 export function PostsSection() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-posts'], queryFn: adminApi.posts.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-posts'],
+    queryFn: adminApi.posts.list,
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<PostListItemDTO | null>(null);
@@ -78,25 +81,41 @@ export function PostsSection() {
             </thead>
             <tbody>
               {data.map((p) => (
-                <tr key={p.id}>
+                <tr key={p.id} data-row={p.title}>
                   <td>
                     {p.cover && (
-                      <img className="ms-adm__thumb" src={mediaUrl(p.cover.thumbUrl ?? p.cover.url)} alt="" />
+                      <img
+                        className="ms-adm__thumb"
+                        src={mediaUrl(p.cover.thumbUrl ?? p.cover.url)}
+                        alt=""
+                      />
                     )}
                   </td>
                   <td>{p.title}</td>
                   <td>
-                    <span className={`ms-adm__status ms-adm__status--${p.published ? 'published' : 'draft'}`}>
+                    <span
+                      className={`ms-adm__status ms-adm__status--${p.published ? 'published' : 'draft'}`}
+                    >
                       {p.published ? 'Publicado' : 'Rascunho'}
                     </span>
                   </td>
                   <td>{p.publishedAt ? formatDate(p.publishedAt, 'dd/MM/yyyy') : '—'}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditingId(p.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${p.title}`}
+                        onClick={() => setEditingId(p.id)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(p)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${p.title}`}
+                        onClick={() => setDeleting(p)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -124,7 +143,11 @@ export function PostsSection() {
       )}
 
       {deleting && (
-        <ConfirmDialog message={`Remover o post "${deleting.title}"?`} onConfirm={remove} onCancel={() => setDeleting(null)} />
+        <ConfirmDialog
+          message={`Remover o post "${deleting.title}"?`}
+          onConfirm={remove}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   );
@@ -153,7 +176,9 @@ function PostForm({
     );
   }
 
-  return <PostFormInner existing={existing ?? null} onClose={onClose} onSaved={onSaved} />;
+  return (
+    <PostFormInner existing={existing ?? null} onClose={onClose} onSaved={onSaved} />
+  );
 }
 
 function PostFormInner({
@@ -172,10 +197,13 @@ function PostFormInner({
     published: existing?.published ?? false,
     coverId: existing?.cover?.id ?? null,
     mediaIds: existing?.media.map((m) => m.id) ?? [],
-    youtube: existing?.youtube.map((y) => ({ youtubeId: y.youtubeId, title: y.title })) ?? [],
+    youtube:
+      existing?.youtube.map((y) => ({ youtubeId: y.youtubeId, title: y.title })) ?? [],
     links: existing?.links.map((l) => ({ label: l.label, url: l.url })) ?? [],
   });
-  const [mediaPreview, setMediaPreview] = useState<MediaAssetDTO[]>(existing?.media ?? []);
+  const [mediaPreview, setMediaPreview] = useState<MediaAssetDTO[]>(
+    existing?.media ?? [],
+  );
   const [ytInput, setYtInput] = useState('');
   const [linkLabel, setLinkLabel] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -218,7 +246,10 @@ function PostFormInner({
 
   const addLink = () => {
     if (!linkLabel.trim() || !linkUrl.trim()) return;
-    setForm((f) => ({ ...f, links: [...f.links, { label: linkLabel.trim(), url: linkUrl.trim() }] }));
+    setForm((f) => ({
+      ...f,
+      links: [...f.links, { label: linkLabel.trim(), url: linkUrl.trim() }],
+    }));
     setLinkLabel('');
     setLinkUrl('');
   };
@@ -250,9 +281,16 @@ function PostFormInner({
     <Modal title={existing ? 'Editar post' : 'Novo post'} onClose={onClose}>
       <form onSubmit={save}>
         <Field label="Título" error={errors.title}>
-          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <Input
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </Field>
-        <Field label="Resumo" hint="Texto curto exibido na listagem." error={errors.excerpt}>
+        <Field
+          label="Resumo"
+          hint="Texto curto exibido na listagem."
+          error={errors.excerpt}
+        >
           <Textarea
             value={form.excerpt}
             style={{ minHeight: 70 }}
@@ -268,39 +306,61 @@ function PostFormInner({
         />
 
         <Field label="Conteúdo" error={errors.contentHtml}>
-          <RichTextEditor value={form.contentHtml} onChange={(html) => setForm({ ...form, contentHtml: html })} />
+          <RichTextEditor
+            value={form.contentHtml}
+            onChange={(html) => setForm({ ...form, contentHtml: html })}
+          />
         </Field>
 
         {/* Mídia extra (fotos e vídeos) */}
         <div className="ms-field">
           <span className="ms-field__label">Fotos e vídeos do post</span>
-          <div className="ms-uploader__dropzone" onClick={() => fileRef.current?.click()}>
+          <button
+            type="button"
+            className="ms-uploader__dropzone"
+            onClick={() => fileRef.current?.click()}
+          >
             {uploading ? <Film /> : <UploadCloud />}
-            <p>{uploading ? 'Enviando…' : 'Clique para enviar fotos ou vídeos (mp4/webm)'}</p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,video/mp4,video/webm"
-              multiple
-              onChange={(e) => {
-                if (e.target.files?.length) void uploadMedia(e.target.files);
-                e.target.value = '';
-              }}
-            />
-          </div>
+            <span>
+              {uploading ? 'Enviando…' : 'Clique para enviar fotos ou vídeos (mp4/webm)'}
+            </span>
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,video/mp4,video/webm"
+            multiple
+            hidden
+            onChange={(e) => {
+              if (e.target.files?.length) void uploadMedia(e.target.files);
+              e.target.value = '';
+            }}
+          />
           {mediaPreview.length > 0 && (
             <div className="ms-adm__grid" style={{ marginTop: 'var(--ms-space-3)' }}>
               {mediaPreview.map((m) => (
                 <div key={m.id} className="ms-gal-item">
                   {m.kind === 'video' ? (
-                    <div style={{ display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ms-surface-2)' }}>
+                    <div
+                      style={{
+                        display: 'grid',
+                        placeItems: 'center',
+                        height: '100%',
+                        background: 'var(--ms-surface-2)',
+                      }}
+                    >
                       <Film style={{ width: 32, height: 32, color: 'var(--ms-green)' }} />
                     </div>
                   ) : (
                     <img src={mediaUrl(m.thumbUrl ?? m.url)} alt="" />
                   )}
                   <div className="ms-gal-item__overlay">
-                    <Button variant="danger" size="sm" type="button" onClick={() => removeMedia(m.id)}>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      type="button"
+                      onClick={() => removeMedia(m.id)}
+                    >
                       <X />
                     </Button>
                   </div>
@@ -332,7 +392,12 @@ function PostFormInner({
                     type="button"
                     variant="danger"
                     size="sm"
-                    onClick={() => setForm((f) => ({ ...f, youtube: f.youtube.filter((_, k) => k !== i) }))}
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        youtube: f.youtube.filter((_, k) => k !== i),
+                      }))
+                    }
                   >
                     <X />
                   </Button>
@@ -346,8 +411,16 @@ function PostFormInner({
         <div className="ms-field">
           <span className="ms-field__label">Links relacionados</span>
           <div style={{ display: 'flex', gap: 'var(--ms-space-2)' }}>
-            <Input placeholder="Rótulo" value={linkLabel} onChange={(e) => setLinkLabel(e.target.value)} />
-            <Input placeholder="https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+            <Input
+              placeholder="Rótulo"
+              value={linkLabel}
+              onChange={(e) => setLinkLabel(e.target.value)}
+            />
+            <Input
+              placeholder="https://…"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+            />
             <Button type="button" variant="outline" onClick={addLink}>
               Adicionar
             </Button>
@@ -357,13 +430,16 @@ function PostFormInner({
               {form.links.map((l, i) => (
                 <div key={`${l.url}-${i}`} className="ms-repeater__item">
                   <span style={{ flex: 1 }}>
-                    <strong>{l.label}</strong> — <span style={{ color: 'var(--ms-text-dim)' }}>{l.url}</span>
+                    <strong>{l.label}</strong> —{' '}
+                    <span style={{ color: 'var(--ms-text-dim)' }}>{l.url}</span>
                   </span>
                   <Button
                     type="button"
                     variant="danger"
                     size="sm"
-                    onClick={() => setForm((f) => ({ ...f, links: f.links.filter((_, k) => k !== i) }))}
+                    onClick={() =>
+                      setForm((f) => ({ ...f, links: f.links.filter((_, k) => k !== i) }))
+                    }
                   >
                     <X />
                   </Button>

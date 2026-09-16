@@ -36,7 +36,10 @@ import { MEMBER_TAGS_QUERY_KEY } from '../../features/encyclopedia/useMemberTags
 import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
 
 export function TeamSection() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-encyclopedia'], queryFn: adminApi.encyclopedia.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-encyclopedia'],
+    queryFn: adminApi.encyclopedia.list,
+  });
   const [editing, setEditing] = useState<EncyclopediaEntryDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<EncyclopediaEntryDTO | null>(null);
@@ -99,25 +102,45 @@ export function TeamSection() {
             </thead>
             <tbody>
               {data.map((e) => (
-                <tr key={e.id}>
+                <tr key={e.id} data-row={e.name}>
                   <td>
-                    {e.photo && <img className="ms-adm__thumb" src={mediaUrl(e.photo.thumbUrl ?? e.photo.url)} alt="" />}
+                    {e.photo && (
+                      <img
+                        className="ms-adm__thumb"
+                        src={mediaUrl(e.photo.thumbUrl ?? e.photo.url)}
+                        alt=""
+                      />
+                    )}
                   </td>
                   <td>{e.name}</td>
                   <td>{e.kind === 'robot' ? 'Robô' : 'Membro'}</td>
                   <td>{e.role ?? '—'}</td>
-                  <td>{e.generation ? GENERATION_LABELS[e.generation as Generation] : '—'}</td>
                   <td>
-                    <span className={`ms-adm__status ms-adm__status--${e.isFormer ? 'pending' : 'approved'}`}>
+                    {e.generation ? GENERATION_LABELS[e.generation as Generation] : '—'}
+                  </td>
+                  <td>
+                    <span
+                      className={`ms-adm__status ms-adm__status--${e.isFormer ? 'pending' : 'approved'}`}
+                    >
                       {e.isFormer ? 'Antigo' : 'Atual'}
                     </span>
                   </td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(e)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${e.name}`}
+                        onClick={() => setEditing(e)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(e)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${e.name}`}
+                        onClick={() => setDeleting(e)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -145,7 +168,11 @@ export function TeamSection() {
       )}
 
       {deleting && (
-        <ConfirmDialog message={`Remover "${deleting.name}"?`} onConfirm={remove} onCancel={() => setDeleting(null)} />
+        <ConfirmDialog
+          message={`Remover "${deleting.name}"?`}
+          onConfirm={remove}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   );
@@ -242,7 +269,10 @@ function EntryForm({
       <form onSubmit={save}>
         <div className="ms-modal__row">
           <Field label="Tipo">
-            <Select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as EntryKind })}>
+            <Select
+              value={form.kind}
+              onChange={(e) => setForm({ ...form, kind: e.target.value as EntryKind })}
+            >
               {ENTRY_KINDS.map((k) => (
                 <option key={k} value={k}>
                   {k === 'robot' ? 'Robô' : 'Membro'}
@@ -251,16 +281,26 @@ function EntryForm({
             </Select>
           </Field>
           <Field label="Nome" error={errors.name}>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
           </Field>
         </div>
 
         <div className="ms-modal__row">
           <Field label="Função (rótulo do card)">
-            <Input value={form.role ?? ''} onChange={(e) => setForm({ ...form, role: e.target.value })} />
+            <Input
+              value={form.role ?? ''}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            />
           </Field>
           {isRobot ? (
-            <Field label="Temporada" hint="Vincula o robô à página Temporadas." error={errors.seasonId}>
+            <Field
+              label="Temporada"
+              hint="Vincula o robô à página Temporadas."
+              error={errors.seasonId}
+            >
               <Select
                 value={form.seasonId ?? ''}
                 onChange={(e) => setForm({ ...form, seasonId: e.target.value || null })}
@@ -278,15 +318,26 @@ function EntryForm({
               <Input
                 type="number"
                 value={form.age ?? ''}
-                onChange={(e) => setForm({ ...form, age: e.target.value ? Number(e.target.value) : null })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    age: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
               />
             </Field>
           )}
         </div>
 
         {isRobot && (
-          <Field label="Rótulo da temporada" hint="Texto livre exibido no painel do robô (ex.: Temporada 2025).">
-            <Input value={form.season ?? ''} onChange={(e) => setForm({ ...form, season: e.target.value })} />
+          <Field
+            label="Rótulo da temporada"
+            hint="Texto livre exibido no painel do robô (ex.: Temporada 2025)."
+          >
+            <Input
+              value={form.season ?? ''}
+              onChange={(e) => setForm({ ...form, season: e.target.value })}
+            />
           </Field>
         )}
 
@@ -296,7 +347,10 @@ function EntryForm({
               <Select
                 value={form.generation ?? ''}
                 onChange={(e) =>
-                  setForm({ ...form, generation: (e.target.value || null) as Generation | null })
+                  setForm({
+                    ...form,
+                    generation: (e.target.value || null) as Generation | null,
+                  })
                 }
               >
                 <option value="">—</option>
@@ -315,7 +369,9 @@ function EntryForm({
               {tagsLoading ? (
                 <Loader label="Carregando tags…" />
               ) : tagsError ? (
-                <span className="ms-field__error">Não foi possível carregar as tags.</span>
+                <span className="ms-field__error">
+                  Não foi possível carregar as tags.
+                </span>
               ) : memberTags && memberTags.length === 0 && unknownTags.length === 0 ? (
                 <span className="ms-field__hint">
                   Nenhuma tag cadastrada. <Link to="/admin/equipe/tags">Criar tags</Link>
@@ -323,7 +379,11 @@ function EntryForm({
               ) : (
                 <div className="ms-tagpick" role="group" aria-labelledby={tagsLabelId}>
                   {(memberTags ?? []).map((t) => (
-                    <FilterChip key={t.key} active={form.tags.includes(t.key)} onClick={() => toggleTag(t.key)}>
+                    <FilterChip
+                      key={t.key}
+                      active={form.tags.includes(t.key)}
+                      onClick={() => toggleTag(t.key)}
+                    >
                       <TagIcon icon={t.icon} />
                       {t.label}
                     </FilterChip>
@@ -338,7 +398,8 @@ function EntryForm({
               )}
               {unknownTags.length > 0 && (
                 <span className="ms-field__hint">
-                  Tags não cadastradas (serão removidas ao salvar): {unknownTags.join(', ')}.{' '}
+                  Tags não cadastradas (serão removidas ao salvar):{' '}
+                  {unknownTags.join(', ')}.{' '}
                   <Link to="/admin/equipe/tags">Gerenciar tags</Link>
                 </span>
               )}
@@ -347,12 +408,22 @@ function EntryForm({
           </>
         )}
 
-        <Field label="Sobre" hint="Separe parágrafos com uma linha em branco." error={errors.about}>
-          <Textarea value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} />
+        <Field
+          label="Sobre"
+          hint="Separe parágrafos com uma linha em branco."
+          error={errors.about}
+        >
+          <Textarea
+            value={form.about}
+            onChange={(e) => setForm({ ...form, about: e.target.value })}
+          />
         </Field>
 
         <Field label="Citação (opcional)">
-          <Input value={form.quote ?? ''} onChange={(e) => setForm({ ...form, quote: e.target.value })} />
+          <Input
+            value={form.quote ?? ''}
+            onChange={(e) => setForm({ ...form, quote: e.target.value })}
+          />
         </Field>
 
         <MediaPicker

@@ -5,6 +5,12 @@ import { test, expect, type Page } from '@playwright/test';
  * lightbox), anúncio de rota, papéis ARIA corrigidos e ids únicos nos SVGs.
  */
 
+/**
+ * Largura a partir da qual a navbar mostra o menu completo (`$bp-xl` em
+ * `_mixins.scss`); abaixo dela existem o botão de menu e o drawer.
+ */
+const FULL_MENU_MIN_WIDTH = 1280;
+
 /** Verdadeiro quando o elemento focado é o alvo do seletor ou está dentro dele. */
 async function focusIsInside(page: Page, selector: string): Promise<boolean> {
   return page.evaluate((sel) => {
@@ -31,7 +37,7 @@ test.describe('Acessibilidade', () => {
     page,
     isMobile,
   }) => {
-    test.skip(!isMobile, 'o botão de menu só existe abaixo de 1280px');
+    test.skip(!isMobile, `o botão de menu só existe abaixo de ${FULL_MENU_MIN_WIDTH}px`);
     await page.goto('/');
     const burger = page.getByRole('button', { name: 'Abrir menu' });
     await burger.click();
@@ -53,7 +59,10 @@ test.describe('Acessibilidade', () => {
     await expect(burger).toBeFocused();
   });
 
-  test('lightbox prende o foco e devolve o foco à foto que o abriu', async ({ page, isMobile }) => {
+  test('lightbox prende o foco e devolve o foco à foto que o abriu', async ({
+    page,
+    isMobile,
+  }) => {
     test.skip(!!isMobile, 'o comportamento não depende do viewport; coberto no desktop');
     await page.goto('/galeria');
     const first = page.locator('.ms-gallery__item').first();
@@ -82,7 +91,9 @@ test.describe('Acessibilidade', () => {
     await expect(page.locator('[role="marquee"]')).toHaveCount(0);
 
     // A Home renderiza mais de um HexPattern: cada <pattern> precisa do próprio id.
-    const ids = await page.locator('svg pattern[id]').evaluateAll((els) => els.map((el) => el.id));
+    const ids = await page
+      .locator('svg pattern[id]')
+      .evaluateAll((els) => els.map((el) => el.id));
     expect(ids.length).toBeGreaterThan(1);
     expect(new Set(ids).size).toBe(ids.length);
 
@@ -91,8 +102,11 @@ test.describe('Acessibilidade', () => {
     await expect(page.locator('[role="tablist"]')).toHaveCount(0);
   });
 
-  test('aria-expanded do botão de menu acompanha o drawer', async ({ page, isMobile }) => {
-    test.skip(!isMobile, 'o botão de menu só existe abaixo de 1280px');
+  test('aria-expanded do botão de menu acompanha o drawer', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, `o botão de menu só existe abaixo de ${FULL_MENU_MIN_WIDTH}px`);
     await page.goto('/');
     const burger = page.getByRole('button', { name: 'Abrir menu' });
     await expect(burger).toHaveAttribute('aria-expanded', 'false');

@@ -32,7 +32,10 @@ test.describe('Equipe', () => {
     await page.goto('/equipe');
     // o painel abre com o primeiro registro já selecionado
     await expect(page.locator('.ms-enc__detail .ms-enc-detail__name')).toBeVisible();
-    await expect(page.locator('.ms-enc__detail').getByText('» Sobre')).toBeVisible();
+    // o marcador decorativo antes de "Sobre" não é contrato — só o rótulo da seção
+    await expect(
+      page.locator('.ms-enc__detail').getByText(/^[»\s]*Sobre$/),
+    ).toBeVisible();
   });
 
   test('clicar num card faz deep-link para o registro', async ({ page }) => {
@@ -49,7 +52,10 @@ test.describe('Equipe', () => {
     await expect(page.locator('.ms-enc-detail__name').first()).toHaveText(name);
   });
 
-  test('clicar num membro não recarrega nem remonta a página', async ({ page, request }) => {
+  test('clicar num membro não recarrega nem remonta a página', async ({
+    page,
+    request,
+  }) => {
     // Primeira tag do banco em uso — os chips seguem a mesma ordem, logo após "Todos".
     const tags = (await (await request.get('/api/member-tags')).json()) as MemberTag[];
     const tag = tags.find((t) => t.usageCount > 0);
@@ -90,7 +96,10 @@ test.describe('Equipe', () => {
     await expect(cards).toHaveCount(filtered.length);
   });
 
-  test('rota antiga /enciclopedia redireciona para /equipe', async ({ page, request }) => {
+  test('rota antiga /enciclopedia redireciona para /equipe', async ({
+    page,
+    request,
+  }) => {
     await page.goto('/enciclopedia');
     await expect(page).toHaveURL(/\/equipe$/);
     await expect(page.getByRole('heading', { name: /Membros & Robôs/i })).toBeVisible();
@@ -101,24 +110,35 @@ test.describe('Equipe', () => {
       name: string;
     }[];
     const first = entries[0];
-    if (!first) throw new Error('o seed precisa cadastrar ao menos um registro na equipe');
+    if (!first)
+      throw new Error('o seed precisa cadastrar ao menos um registro na equipe');
     await page.goto(`/enciclopedia/${first.slug}`);
     await expect(page).toHaveURL(new RegExp(`/equipe/${first.slug}$`));
     await expect(page.locator('.ms-enc-detail__name').first()).toHaveText(first.name);
   });
 
   test('os filtros refletem as tags cadastradas', async ({ page, request }) => {
-    const tags = (await (await request.get('/api/member-tags')).json()) as MemberTag[];
+    // Tags criadas pelos specs do painel (outro projeto, mesmo banco) podem ser apagadas
+    // entre esta leitura e a renderização dos chips: só as do seed contam aqui.
+    const tags = (
+      (await (await request.get('/api/member-tags')).json()) as MemberTag[]
+    ).filter((t) => !/(e2e|duplicada)/i.test(t.label));
     expect(tags.length).toBeGreaterThan(0);
 
     await page.goto('/equipe');
     const filters = page.locator('.ms-enc__filters');
-    await expect(filters.getByRole('button', { name: 'Todos', exact: true })).toBeVisible();
+    await expect(
+      filters.getByRole('button', { name: 'Todos', exact: true }),
+    ).toBeVisible();
     // uma chip por tag do banco, com o rótulo cadastrado pelo admin
     for (const tag of tags) {
-      await expect(filters.getByRole('button', { name: tag.label, exact: true })).toBeVisible();
+      await expect(
+        filters.getByRole('button', { name: tag.label, exact: true }),
+      ).toBeVisible();
     }
-    await expect(filters.getByRole('button', { name: 'Robôs', exact: true })).toBeVisible();
+    await expect(
+      filters.getByRole('button', { name: 'Robôs', exact: true }),
+    ).toBeVisible();
   });
 
   test('filtro por função reduz os resultados', async ({ page }) => {
@@ -136,10 +156,13 @@ test.describe('Equipe', () => {
     // a lista ESTABILIZAR em vez de ler uma contagem intermediária.
     await page.getByRole('button', { name: 'Robôs', exact: true }).click();
     await expect
-      .poll(async () => {
-        const c = await cards.count();
-        return c > 0 && c < total;
-      }, { timeout: 7_000 })
+      .poll(
+        async () => {
+          const c = await cards.count();
+          return c > 0 && c < total;
+        },
+        { timeout: 7_000 },
+      )
       .toBe(true);
 
     const robots = await cards.count();

@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { socialLinkSchema, SOCIAL_PLATFORMS, type SocialLinkDTO, type SocialLinkInput } from '@minerskills/shared';
+import {
+  socialLinkSchema,
+  SOCIAL_PLATFORMS,
+  type SocialLinkDTO,
+  type SocialLinkInput,
+} from '@minerskills/shared';
 import { adminApi } from '../adminApi';
 import { Button, Input, Select, Field, Loader, EmptyState } from '../../components/ui';
 import { Modal } from '../components/Modal';
@@ -11,7 +16,10 @@ import { queryClient } from '../../lib/queryClient';
 import { ApiError } from '../../lib/api';
 
 export function SocialSection() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-social'], queryFn: adminApi.social.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-social'],
+    queryFn: adminApi.social.list,
+  });
   const [editing, setEditing] = useState<SocialLinkDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<SocialLinkDTO | null>(null);
@@ -60,17 +68,35 @@ export function SocialSection() {
             </thead>
             <tbody>
               {data.map((l) => (
-                <tr key={l.id}>
+                <tr key={l.id} data-row={l.label}>
                   <td>{l.platform}</td>
                   <td>{l.label}</td>
-                  <td style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.url}</td>
+                  <td
+                    style={{
+                      maxWidth: 240,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {l.url}
+                  </td>
                   <td>{l.active ? 'Sim' : 'Não'}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(l)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${l.label}`}
+                        onClick={() => setEditing(l)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(l)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${l.label}`}
+                        onClick={() => setDeleting(l)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -157,7 +183,12 @@ function SocialForm({
           <Field label="Plataforma">
             <Select
               value={form.platform}
-              onChange={(e) => setForm({ ...form, platform: e.target.value as SocialLinkInput['platform'] })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  platform: e.target.value as SocialLinkInput['platform'],
+                })
+              }
             >
               {SOCIAL_PLATFORMS.map((p) => (
                 <option key={p} value={p}>
@@ -175,10 +206,16 @@ function SocialForm({
           </Field>
         </div>
         <Field label="Rótulo" error={errors.label}>
-          <Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+          <Input
+            value={form.label}
+            onChange={(e) => setForm({ ...form, label: e.target.value })}
+          />
         </Field>
         <Field label="URL" error={errors.url}>
-          <Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
+          <Input
+            value={form.url}
+            onChange={(e) => setForm({ ...form, url: e.target.value })}
+          />
         </Field>
         <label className="ms-checkbox">
           <input

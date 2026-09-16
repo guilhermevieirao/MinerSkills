@@ -10,7 +10,15 @@ import {
   type AgendaKind,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Select, Textarea, Field, Loader, EmptyState } from '../../components/ui';
+import {
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Field,
+  Loader,
+  EmptyState,
+} from '../../components/ui';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
@@ -25,7 +33,10 @@ const toLocalInput = (iso: string) => {
 };
 
 export function AgendaSection() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-agenda'], queryFn: adminApi.agenda.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-agenda'],
+    queryFn: adminApi.agenda.list,
+  });
   const [editing, setEditing] = useState<AgendaEventDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<AgendaEventDTO | null>(null);
@@ -74,17 +85,27 @@ export function AgendaSection() {
             </thead>
             <tbody>
               {data.map((e) => (
-                <tr key={e.id}>
+                <tr key={e.id} data-row={e.title}>
                   <td>{e.title}</td>
                   <td>{AGENDA_KIND_LABELS[e.kind as AgendaKind] ?? e.kind}</td>
                   <td>{formatDateTime(e.startsAt)}</td>
                   <td>{e.published ? 'Sim' : 'Não'}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(e)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${e.title}`}
+                        onClick={() => setEditing(e)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(e)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${e.title}`}
+                        onClick={() => setDeleting(e)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -181,7 +202,10 @@ function AgendaForm({
     <Modal title={initial ? 'Editar evento' : 'Novo evento'} onClose={onClose}>
       <form onSubmit={save} noValidate>
         <Field label="Título" error={errors.title}>
-          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <Input
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </Field>
         <Field label="Descrição" error={errors.description}>
           <Textarea
@@ -207,7 +231,10 @@ function AgendaForm({
         </div>
         <div className="ms-modal__row">
           <Field label="Tipo">
-            <Select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as AgendaKind })}>
+            <Select
+              value={form.kind}
+              onChange={(e) => setForm({ ...form, kind: e.target.value as AgendaKind })}
+            >
               {AGENDA_KINDS.map((k) => (
                 <option key={k} value={k}>
                   {AGENDA_KIND_LABELS[k]}
@@ -216,7 +243,10 @@ function AgendaForm({
             </Select>
           </Field>
           <Field label="Local">
-            <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+            <Input
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+            />
           </Field>
         </div>
         <Field

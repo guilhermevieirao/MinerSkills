@@ -132,7 +132,7 @@ export function MemberTagsSection() {
             </thead>
             <tbody>
               {data.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} data-row={t.label}>
                   <td>
                     <span className="ms-adm__icon-cell">
                       <TagIcon icon={t.icon} />
@@ -146,10 +146,20 @@ export function MemberTagsSection() {
                   <td>{t.order}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(t)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${t.label}`}
+                        onClick={() => setEditing(t)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(t)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${t.label}`}
+                        onClick={() => setDeleting(t)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -255,7 +265,10 @@ function TagForm({
               <button
                 key={icon}
                 type="button"
-                className={cx('ms-iconpick__item', form.icon === icon && 'ms-iconpick__item--active')}
+                className={cx(
+                  'ms-iconpick__item',
+                  form.icon === icon && 'ms-iconpick__item--active',
+                )}
                 aria-label={ICON_LABELS[icon]}
                 aria-pressed={form.icon === icon}
                 title={ICON_LABELS[icon]}
@@ -268,7 +281,11 @@ function TagForm({
           {errors.icon && <span className="ms-field__error">{errors.icon}</span>}
         </div>
 
-        <Field label="Ordem" hint="Define a posição do filtro na página Equipe." error={errors.order}>
+        <Field
+          label="Ordem"
+          hint="Define a posição do filtro na página Equipe."
+          error={errors.order}
+        >
           <Input
             type="number"
             min={0}

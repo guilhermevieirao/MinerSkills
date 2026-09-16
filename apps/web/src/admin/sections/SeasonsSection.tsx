@@ -110,7 +110,7 @@ export function SeasonsSection() {
             </thead>
             <tbody>
               {data.map((s) => (
-                <tr key={s.id}>
+                <tr key={s.id} data-row={s.name}>
                   <td>
                     {s.badge ? (
                       <img
@@ -137,7 +137,9 @@ export function SeasonsSection() {
                   </td>
                   <td>
                     {s.isCurrent ? (
-                      <span className="ms-adm__status ms-adm__status--approved">Atual</span>
+                      <span className="ms-adm__status ms-adm__status--approved">
+                        Atual
+                      </span>
                     ) : (
                       '—'
                     )}
@@ -146,10 +148,20 @@ export function SeasonsSection() {
                   <td>{s.awardsCount}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(s)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${s.name}`}
+                        onClick={() => setEditing(s)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(s)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${s.name}`}
+                        onClick={() => setDeleting(s)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -258,11 +270,18 @@ function SeasonForm({
               max={2100}
               value={Number.isInteger(form.year) ? form.year : ''}
               onChange={(e) =>
-                setForm({ ...form, year: e.target.value ? Number(e.target.value) : Number.NaN })
+                setForm({
+                  ...form,
+                  year: e.target.value ? Number(e.target.value) : Number.NaN,
+                })
               }
             />
           </Field>
-          <Field label="Ordem" hint="Menor primeiro; no empate, o ano mais recente." error={errors.order}>
+          <Field
+            label="Ordem"
+            hint="Menor primeiro; no empate, o ano mais recente."
+            error={errors.order}
+          >
             <Input
               type="number"
               min={0}
@@ -272,7 +291,11 @@ function SeasonForm({
           </Field>
         </div>
 
-        <Field label="Jogo" hint="Nome oficial do jogo (ex.: REEFSCAPE presented by Haas)." error={errors.game}>
+        <Field
+          label="Jogo"
+          hint="Nome oficial do jogo (ex.: REEFSCAPE presented by Haas)."
+          error={errors.game}
+        >
           <Input
             value={form.game ?? ''}
             onChange={(e) => setForm({ ...form, game: e.target.value })}

@@ -1,5 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { login } from './helpers';
+import { login, row, rowAction, confirmAction } from './helpers';
 
 /** Subconjunto do `SeasonDTO` usado por estes testes. */
 interface SeasonRow {
@@ -32,7 +32,9 @@ async function listSeasons(request: APIRequestContext): Promise<SeasonRow[]> {
 test.describe('Temporadas', () => {
   test('lista as temporadas do seed e marca a atual', async ({ page }) => {
     await page.goto('/temporadas');
-    await expect(page.getByRole('heading', { name: 'Temporadas', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Temporadas', level: 1 }),
+    ).toBeVisible();
 
     const cards = page.locator('.ms-season');
     const crescendo = cards.filter({ hasText: 'Crescendo' }).first();
@@ -48,7 +50,9 @@ test.describe('Temporadas', () => {
     await expect(current.getByText('Temporada atual')).toBeVisible();
   });
 
-  test('expandir uma temporada mostra robôs e prêmios e leva ao robô', async ({ page }) => {
+  test('expandir uma temporada mostra robôs e prêmios e leva ao robô', async ({
+    page,
+  }) => {
     await page.goto('/temporadas');
     const card = page.locator('.ms-season', { hasText: 'Crescendo' }).first();
     await card.getByRole('button', { name: 'Ver detalhes' }).click();
@@ -62,16 +66,23 @@ test.describe('Temporadas', () => {
 
     // o deep link (?t=) sobrevive a um reload
     await page.reload();
-    await expect(page.locator('.ms-season--open', { hasText: 'Crescendo' })).toBeVisible();
+    await expect(
+      page.locator('.ms-season--open', { hasText: 'Crescendo' }),
+    ).toBeVisible();
 
     // o robô leva ao seu registro na página Equipe
-    const name = (await robots.first().locator('.ms-season__robot-name').textContent())!.trim();
+    const name = (await robots
+      .first()
+      .locator('.ms-season__robot-name')
+      .textContent())!.trim();
     await robots.first().click();
     await expect(page).toHaveURL(/\/equipe\/.+/);
     await expect(page.locator('.ms-enc-detail__name').first()).toHaveText(name);
   });
 
-  test('GET /api/seasons/:slug devolve robôs, prêmios e eventos do ano', async ({ request }) => {
+  test('GET /api/seasons/:slug devolve robôs, prêmios e eventos do ano', async ({
+    request,
+  }) => {
     const seasons = await listSeasons(request);
     const crescendo = seasons.find((s) => s.slug === 'crescendo');
     if (!crescendo) throw new Error('o seed precisa cadastrar a temporada Crescendo');
@@ -137,7 +148,10 @@ test.describe('Temporadas (painel)', () => {
   // e roda só no desktop (os dois projetos executam em paralelo no mesmo banco).
   test.describe.configure({ mode: 'serial' });
 
-  test('cria, marca como atual, restaura a original e exclui', async ({ page, isMobile }) => {
+  test('cria, marca como atual, restaura a original e exclui', async ({
+    page,
+    isMobile,
+  }) => {
     test.skip(!!isMobile, 'altera a temporada atual (estado global); roda só no desktop');
     const stamp = Date.now().toString().slice(-6);
     const name = `Temporada e2e ${stamp}`;
@@ -155,36 +169,36 @@ test.describe('Temporadas (painel)', () => {
       await page.getByRole('button', { name: 'Salvar' }).click();
       await expect(page.getByText('Temporada salva.').first()).toBeVisible();
 
-      const row = page.locator('.ms-adm__table tr', { hasText: name });
-      const originalRow = page.locator('.ms-adm__table tr', { hasText: original.name });
-      await expect(row).toBeVisible();
-      await expect(row).toContainText('2031');
-      await expect(row.locator('.ms-adm__status')).toHaveCount(0);
-      await expect(originalRow.locator('.ms-adm__status')).toHaveCount(1);
+      const linha = row(page, name);
+      const originalRow = row(page, original.name);
+      await expect(linha).toBeVisible();
+      await expect(linha).toContainText('2031');
+      await expect(linha.getByText('Atual', { exact: true })).toHaveCount(0);
+      await expect(originalRow.getByText('Atual', { exact: true })).toHaveCount(1);
 
       // marcar a nova como atual desmarca a anterior
-      await row.locator('.ms-btn--ghost').click();
+      await rowAction(linha, 'Editar').click();
       await expect(page.getByRole('heading', { name: 'Editar temporada' })).toBeVisible();
       await page.getByLabel('Temporada atual').check();
       await page.getByRole('button', { name: 'Salvar' }).click();
       await expect(page.getByRole('heading', { name: 'Editar temporada' })).toBeHidden();
-      await expect(row.locator('.ms-adm__status')).toHaveCount(1);
-      await expect(originalRow.locator('.ms-adm__status')).toHaveCount(0);
+      await expect(linha.getByText('Atual', { exact: true })).toHaveCount(1);
+      await expect(originalRow.getByText('Atual', { exact: true })).toHaveCount(0);
 
       // restaura a original como atual
-      await originalRow.locator('.ms-btn--ghost').click();
+      await rowAction(originalRow, 'Editar').click();
       await expect(page.getByRole('heading', { name: 'Editar temporada' })).toBeVisible();
       await page.getByLabel('Temporada atual').check();
       await page.getByRole('button', { name: 'Salvar' }).click();
       await expect(page.getByRole('heading', { name: 'Editar temporada' })).toBeHidden();
-      await expect(originalRow.locator('.ms-adm__status')).toHaveCount(1);
-      await expect(row.locator('.ms-adm__status')).toHaveCount(0);
+      await expect(originalRow.getByText('Atual', { exact: true })).toHaveCount(1);
+      await expect(linha.getByText('Atual', { exact: true })).toHaveCount(0);
 
       // exclui a temporada e2e
-      await row.locator('.ms-btn--danger').click();
-      await page.getByRole('button', { name: 'Excluir' }).click();
+      await rowAction(linha, 'Excluir').click();
+      await confirmAction(page).click();
       await expect(page.getByText('Temporada removida.').first()).toBeVisible();
-      await expect(row).toHaveCount(0);
+      await expect(linha).toHaveCount(0);
     } finally {
       await restore(page.request, original, name);
     }

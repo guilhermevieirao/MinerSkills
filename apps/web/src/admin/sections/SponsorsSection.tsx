@@ -93,7 +93,11 @@ export function SponsorsSection() {
             </thead>
             <tbody>
               {data.map((s) => (
-                <tr key={s.id} className={s.active ? undefined : 'ms-sponadm__row--inactive'}>
+                <tr
+                  key={s.id}
+                  data-row={s.name}
+                  className={s.active ? undefined : 'ms-sponadm__row--inactive'}
+                >
                   <td>
                     {s.logo ? (
                       <img
@@ -111,7 +115,12 @@ export function SponsorsSection() {
                   <td>{tierLabel(s.tier)}</td>
                   <td className="ms-sponadm__link">
                     {isWebUrl(s.url) ? (
-                      <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.url}>
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={s.url}
+                      >
                         <ExternalLink /> {s.url.replace(/^https?:\/\//, '')}
                       </a>
                     ) : (
@@ -122,10 +131,20 @@ export function SponsorsSection() {
                   <td>{s.active ? 'Sim' : 'Não'}</td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(s)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${s.name}`}
+                        onClick={() => setEditing(s)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(s)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${s.name}`}
+                        onClick={() => setDeleting(s)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -224,7 +243,10 @@ function SponsorForm({
   };
 
   return (
-    <Modal title={initial ? 'Editar patrocinador' : 'Novo patrocinador'} onClose={onClose}>
+    <Modal
+      title={initial ? 'Editar patrocinador' : 'Novo patrocinador'}
+      onClose={onClose}
+    >
       <form onSubmit={save} noValidate>
         <Field label="Nome" error={errors.name}>
           <Input
@@ -234,7 +256,11 @@ function SponsorForm({
             autoFocus
           />
         </Field>
-        <Field label="Site" hint="Opcional. Endereço completo, com https://" error={errors.url}>
+        <Field
+          label="Site"
+          hint="Opcional. Endereço completo, com https://"
+          error={errors.url}
+        >
           <Input
             type="url"
             inputMode="url"

@@ -3,7 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Star } from 'lucide-react';
 import { awardSchema, type AwardDTO, type AwardInput } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Textarea, Select, Field, Loader, EmptyState } from '../../components/ui';
+import {
+  Button,
+  Input,
+  Textarea,
+  Select,
+  Field,
+  Loader,
+  EmptyState,
+} from '../../components/ui';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
@@ -13,7 +21,10 @@ import { ApiError } from '../../lib/api';
 import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
 
 export function AwardsSection() {
-  const { data, isLoading } = useQuery({ queryKey: ['admin-awards'], queryFn: adminApi.awards.list });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-awards'],
+    queryFn: adminApi.awards.list,
+  });
   const [editing, setEditing] = useState<AwardDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<AwardDTO | null>(null);
@@ -66,18 +77,34 @@ export function AwardsSection() {
             </thead>
             <tbody>
               {data.map((a) => (
-                <tr key={a.id}>
+                <tr key={a.id} data-row={a.title}>
                   <td>{a.title}</td>
                   <td>{a.event}</td>
                   <td>{a.year}</td>
                   <td>{a.seasonRef?.name ?? '—'}</td>
-                  <td>{a.highlight ? <Star style={{ width: 16, color: 'var(--ms-green)' }} /> : '—'}</td>
+                  <td>
+                    {a.highlight ? (
+                      <Star style={{ width: 16, color: 'var(--ms-green)' }} />
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td>
                     <div className="ms-adm__row-actions">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(a)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Editar ${a.title}`}
+                        onClick={() => setEditing(a)}
+                      >
                         <Pencil />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setDeleting(a)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        aria-label={`Excluir ${a.title}`}
+                        onClick={() => setDeleting(a)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -168,11 +195,17 @@ function AwardForm({
     <Modal title={initial ? 'Editar prêmio' : 'Novo prêmio'} onClose={onClose}>
       <form onSubmit={save}>
         <Field label="Título" error={errors.title}>
-          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <Input
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </Field>
         <div className="ms-modal__row">
           <Field label="Evento" error={errors.event}>
-            <Input value={form.event} onChange={(e) => setForm({ ...form, event: e.target.value })} />
+            <Input
+              value={form.event}
+              onChange={(e) => setForm({ ...form, event: e.target.value })}
+            />
           </Field>
           <Field label="Ano" error={errors.year}>
             <Input
@@ -188,7 +221,11 @@ function AwardForm({
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
         </Field>
-        <Field label="Temporada" hint="Opcional: agrupa o prêmio na página Temporadas." error={errors.seasonId}>
+        <Field
+          label="Temporada"
+          hint="Opcional: agrupa o prêmio na página Temporadas."
+          error={errors.seasonId}
+        >
           <Select
             value={form.seasonId ?? ''}
             onChange={(e) => setForm({ ...form, seasonId: e.target.value || null })}

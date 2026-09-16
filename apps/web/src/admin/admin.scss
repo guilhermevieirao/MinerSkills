@@ -414,7 +414,12 @@
     border: 1px solid var(--ms-border);
     background: var(--ms-surface-2);
   }
+  // É um <button>: zera o cromo nativo e ocupa a linha inteira, como um bloco
   &__dropzone {
+    display: block;
+    width: 100%;
+    background: transparent;
+    font: inherit;
     border: 1.5px dashed var(--ms-border-strong);
     border-radius: var(--ms-radius);
     padding: var(--ms-space-5);
@@ -424,9 +429,6 @@
     transition: border-color var(--ms-dur);
     &:hover {
       border-color: var(--ms-green);
-    }
-    input {
-      display: none;
     }
     svg {
       width: 28px;
