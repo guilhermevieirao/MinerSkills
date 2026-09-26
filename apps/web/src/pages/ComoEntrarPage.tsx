@@ -1,21 +1,21 @@
 import {
   ArrowRight,
+  CheckCircle2,
   ClipboardList,
-  Users,
   MessageCircle,
   Rocket,
-  CheckCircle2,
+  Users,
 } from 'lucide-react';
 import { PageHero } from '../components/layout/PageHero';
 import { usePageBlocks } from '../features/content/useContent';
-import { LinkButton } from '../components/ui';
+import { EmptyState, LinkButton, SectionHeading } from '../components/ui';
+import { IconTile } from '../components/ui/tiles';
+import { SocialPill } from '../components/ui/SocialPill';
 import { QueryState } from '../components/ui/QueryState';
 import { ListSkeleton } from '../components/ui/skeletons';
 import { Reveal } from '../components/motion/Reveal';
-import { MarqueeStrip } from '../components/motion/MarqueeStrip';
 import { useSocialLinks } from '../features/social/useSocial';
 import { useApplicationsOpen } from '../features/contact/useContact';
-import { SocialIcon } from '../components/layout/SocialIcon';
 import { ContactForm } from '../components/forms/ContactForm';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import './ComoEntrarPage.scss';
@@ -44,106 +44,141 @@ export function ComoEntrarPage() {
   return (
     <>
       <PageHero
-        kicker={hero?.subtitle ?? 'Processo Seletivo'}
+        kicker={hero?.subtitle ?? 'Processo seletivo'}
         title={hero?.title ?? 'Como Entrar na MinerSkills'}
         subtitle={hero?.body ?? undefined}
-      >
-        <LinkButton to="/agenda" className="ms-join__hero-cta">
-          Ver datas na agenda <ArrowRight />
-        </LinkButton>
-      </PageHero>
+        actions={
+          <>
+            {open && <LinkButton href="#inscricao">Inscreva-se agora</LinkButton>}
+            <LinkButton to="/agenda" variant="outline">
+              Ver datas na agenda
+            </LinkButton>
+          </>
+        }
+      />
 
-      <MarqueeStrip text="INSCRIÇÕES · PROCESSO SELETIVO · #10019 ·" />
+      <section className="ms-section ms-container ms-join">
+        {/* ─── Etapas ─── */}
+        <div className="ms-join__block">
+          <SectionHeading kicker="Etapas" title="Como funciona" dense />
+          <QueryState query={blocks} skeleton={<ListSkeleton rows={4} lead={56} />}>
+            {(data) => {
+              const steps = data
+                .filter((b) => b.key.startsWith('step_'))
+                .sort((a, b) => a.order - b.order);
+              if (steps.length === 0) {
+                return (
+                  <EmptyState
+                    size="sm"
+                    title="Etapas em definição"
+                    description="As etapas do processo seletivo serão publicadas em breve."
+                  />
+                );
+              }
+              return (
+                <Reveal>
+                  <ol className="ms-join__steps" role="list">
+                    {steps.map((step, i) => {
+                      const Icon = STEP_ICONS[i % STEP_ICONS.length]!;
+                      return (
+                        <li key={step.key} className="ms-join-step">
+                          <div className="ms-join-step__lead">
+                            <IconTile icon={Icon} />
+                            <span className="ms-join-step__num" aria-hidden>
+                              {String(i + 1).padStart(2, '0')}
+                            </span>
+                          </div>
+                          <div className="ms-join-step__content">
+                            {step.subtitle && (
+                              <span className="ms-join-step__label">{step.subtitle}</span>
+                            )}
+                            <h3 className="ms-join-step__title">{step.title}</h3>
+                            {step.body && (
+                              <p className="ms-join-step__body">{step.body}</p>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </Reveal>
+              );
+            }}
+          </QueryState>
+        </div>
 
-      <section className="ms-section ms-container">
-        {/* Etapas e requisitos vêm dos blocos; o formulário abaixo depende só das configurações */}
-        <QueryState query={blocks} skeleton={<ListSkeleton rows={4} />}>
-          {(data) => {
-            const steps = data
-              .filter((b) => b.key.startsWith('step_'))
-              .sort((a, b) => a.order - b.order);
-            return (
-              <div className="ms-join__steps">
-                {steps.map((step, i) => {
-                  const Icon = STEP_ICONS[i % STEP_ICONS.length]!;
-                  return (
-                    <Reveal key={step.key} delay={i * 0.06}>
-                      <div className="ms-join-step">
-                        <div className="ms-join-step__num">
-                          <Icon />
-                          <span>{String(i + 1).padStart(2, '0')}</span>
-                        </div>
-                        <div className="ms-join-step__content">
-                          <span className="ms-join-step__label">{step.subtitle}</span>
-                          <h3>{step.title}</h3>
-                          <p>{step.body}</p>
-                        </div>
-                      </div>
-                    </Reveal>
-                  );
-                })}
-              </div>
-            );
-          }}
-        </QueryState>
-
+        {/* ─── Requisitos ─── */}
         {requisitos && (
           <Reveal>
             <div className="ms-join__requisitos">
               <div className="ms-join__requisitos-head">
-                <CheckCircle2 />
+                <IconTile icon={CheckCircle2} />
                 <div>
-                  <span className="ms-join__requisitos-kicker">
-                    {requisitos.subtitle}
-                  </span>
-                  <h2>{requisitos.title}</h2>
+                  {requisitos.subtitle && (
+                    <span className="ms-join__kicker">{requisitos.subtitle}</span>
+                  )}
+                  <h2 className="ms-join__requisitos-title">{requisitos.title}</h2>
                 </div>
               </div>
-              <p>{requisitos.body}</p>
+              {requisitos.body && (
+                <div className="ms-prose ms-join__requisitos-body">
+                  {requisitos.body.split('\n\n').map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+                </div>
+              )}
             </div>
           </Reveal>
         )}
 
-        {/* Inscrição: formulário quando aberta, aviso quando fechada, nada enquanto carrega */}
+        {/* ─── Inscrição: esqueleto enquanto as configurações carregam, formulário ou aviso ─── */}
         <div className="ms-join__apply" id="inscricao">
+          {open === undefined && (
+            <div className="ms-join__apply-inner">
+              <ListSkeleton rows={3} lead={0} />
+            </div>
+          )}
           {open === true && (
-            <Reveal>
+            <div className="ms-join__apply-inner">
               <ContactForm kind="inscricao" title="Inscreva-se" />
-            </Reveal>
+            </div>
           )}
           {open === false && (
-            <Reveal>
+            <div className="ms-join__apply-inner">
               <div className="ms-join__closed">
-                <h2>Inscreva-se</h2>
+                <h2 className="ms-join__closed-title">Inscreva-se</h2>
                 <p>{info ?? CLOSED_FALLBACK}</p>
                 <LinkButton to="/agenda" variant="outline">
-                  Ver datas na agenda <ArrowRight />
+                  Ver datas na agenda <ArrowRight aria-hidden />
                 </LinkButton>
               </div>
-            </Reveal>
+            </div>
           )}
         </div>
 
+        {/* ─── Redes ─── */}
         {cta && (
           <Reveal>
             <div className="ms-join__cta">
-              <h2>{cta.title}</h2>
-              <p>{cta.body}</p>
-              <div className="ms-join__socials">
-                {(social ?? []).map((link) => (
-                  <a
-                    key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ms-join__social"
-                    aria-label={link.label}
-                  >
-                    <SocialIcon platform={link.platform} />
-                    <span>{link.label}</span>
-                  </a>
-                ))}
-              </div>
+              <SectionHeading
+                center
+                dense
+                title={cta.title ?? 'Fale com a equipe'}
+                subtitle={cta.body ?? undefined}
+              />
+              {social && social.length > 0 && (
+                <ul className="ms-join__socials" role="list" aria-label="Redes sociais">
+                  {social.map((link) => (
+                    <li key={link.id}>
+                      <SocialPill
+                        platform={link.platform}
+                        label={link.label}
+                        href={link.url}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </Reveal>
         )}

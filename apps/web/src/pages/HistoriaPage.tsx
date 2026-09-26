@@ -1,16 +1,19 @@
-import { History, Quote } from 'lucide-react';
+import { History } from 'lucide-react';
 import { PageHero } from '../components/layout/PageHero';
 import { usePageBlocks, useTimeline } from '../features/content/useContent';
 import { Reveal } from '../components/motion/Reveal';
-import { EmptyState } from '../components/ui';
+import { EmptyState, SectionHeading } from '../components/ui';
+import { ErrorState } from '../components/ui/ErrorState';
 import { QueryState } from '../components/ui/QueryState';
+import { Quote } from '../components/ui/Quote';
 import { ListSkeleton } from '../components/ui/skeletons';
 import { MediaImage } from '../components/ui/MediaImage';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import './HistoriaPage.scss';
 
 export function HistoriaPage() {
-  const { byKey } = usePageBlocks('historia');
+  const blocks = usePageBlocks('historia');
+  const { byKey } = blocks;
   const timeline = useTimeline();
 
   const intro = byKey('intro');
@@ -25,17 +28,35 @@ export function HistoriaPage() {
   return (
     <>
       <PageHero
-        kicker="Nossa Trajetória"
+        kicker="Nossa trajetória"
         title={intro?.title ?? 'Nossa História'}
         subtitle={intro?.subtitle ?? undefined}
       />
 
-      <section className="ms-section ms-container">
-        {intro?.body && <p className="ms-historia__intro">{intro.body}</p>}
+      <section className="ms-section ms-container ms-historia">
+        {/* Os textos são complemento da linha do tempo: um erro vira uma faixa discreta */}
+        {blocks.isError && (
+          <ErrorState
+            compact
+            error={blocks.error}
+            title="Não foi possível carregar os textos da página"
+            onRetry={() => void blocks.refetch()}
+            retrying={blocks.isFetching}
+          />
+        )}
+        {intro?.body && (
+          <div className="ms-prose ms-historia__intro">
+            {intro.body.split('\n\n').map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+        )}
+
+        <SectionHeading kicker="Marcos" title="Linha do tempo" dense />
 
         <QueryState
           query={timeline}
-          skeleton={<ListSkeleton rows={5} />}
+          skeleton={<ListSkeleton rows={5} lead={0} />}
           isEmpty={(items) => items.length === 0}
           empty={
             <EmptyState
@@ -46,42 +67,39 @@ export function HistoriaPage() {
           }
         >
           {(items) => (
-            <ol className="ms-timeline">
-              {items.map((item, i) => (
-                <Reveal
-                  as="li"
-                  key={item.id}
-                  className="ms-timeline__item"
-                  delay={i * 0.03}
-                >
-                  <div className="ms-timeline__marker">
-                    <span className="ms-timeline__dot" />
-                  </div>
-                  <div className="ms-timeline__content">
-                    <span className="ms-timeline__year">{item.year}</span>
-                    <h3 className="ms-timeline__title">{item.title}</h3>
-                    <p className="ms-timeline__desc">{item.description}</p>
-                    {item.media && (
-                      <MediaImage
-                        className="ms-timeline__img"
-                        media={item.media}
-                        alt={item.media.alt ?? item.title}
-                        thumb
-                      />
-                    )}
-                  </div>
-                </Reveal>
-              ))}
-            </ol>
+            <Reveal>
+              <ol className="ms-timeline" role="list">
+                {items.map((item) => (
+                  <li key={item.id} className="ms-timeline__item">
+                    <div className="ms-timeline__marker" aria-hidden>
+                      <span className="ms-timeline__dot" />
+                    </div>
+                    <div className="ms-timeline__content">
+                      <span className="ms-timeline__year">{item.year}</span>
+                      <h3 className="ms-timeline__title">{item.title}</h3>
+                      <p className="ms-timeline__desc">{item.description}</p>
+                      {item.media && (
+                        <MediaImage
+                          className="ms-timeline__img"
+                          media={item.media}
+                          alt={item.media.alt ?? ''}
+                          thumb
+                          sizes="(max-width: 767px) 100vw, 640px"
+                        />
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </Reveal>
           )}
         </QueryState>
 
         {quote?.body && (
           <Reveal>
-            <blockquote className="ms-historia__quote">
-              <Quote className="ms-historia__quote-icon" />
-              <p>{quote.body}</p>
-            </blockquote>
+            <Quote display className="ms-historia__quote">
+              {quote.body}
+            </Quote>
           </Reveal>
         )}
       </section>

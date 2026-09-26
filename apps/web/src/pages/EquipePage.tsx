@@ -1,7 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
-import { X, Quote, CalendarDays, Users } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { CalendarDays, Users, X } from 'lucide-react';
 import {
   GENERATIONS,
   GENERATION_LABELS,
@@ -15,18 +14,33 @@ import {
 } from '../features/encyclopedia/useEncyclopedia';
 import { useMemberTagMap, useMemberTags } from '../features/encyclopedia/useMemberTags';
 import { EntryIcon } from '../features/encyclopedia/roleIcons';
-import { FilterChip, EmptyState, Tag } from '../components/ui';
+import {
+  Button,
+  ChipRow,
+  EmptyState,
+  Field,
+  FilterChip,
+  SectionHeading,
+  Select,
+  Tag,
+} from '../components/ui';
+import { Avatar } from '../components/ui/Avatar';
+import { Quote } from '../components/ui/Quote';
 import { QueryState } from '../components/ui/QueryState';
 import { CardGridSkeleton } from '../components/ui/skeletons';
 import { MediaImage } from '../components/ui/MediaImage';
-import { mediaUrl } from '../lib/format';
+import { mq } from '../lib/breakpoints';
+import { cx, mediaUrl } from '../lib/format';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import { useFocusTrap } from '../lib/useFocusTrap';
 import { useMediaQuery } from '../lib/useMediaQuery';
+import { useScrollLock } from '../lib/useScrollLock';
 import './EquipePage.scss';
 
-/** Filtro ativo como string estável: 'all' | 'robot' | 'tag:<key>' | 'gen:<geração>'. */
+/** Filtro de função como string estável: 'all' | 'robot' | 'tag:<key>'. */
 type FilterId = string;
+/** Geração: 'all' ou uma das `GENERATIONS`. */
+const GEN_ALL = 'all';
 
 type TagMap = Map<string, MemberTagDTO>;
 
@@ -42,16 +56,14 @@ function summarize(text: string, max = 160): string {
 }
 
 /** Navegação interna da página: troca o membro na URL sem rolar ao topo (ver PublicLayout). */
-const KEEP_SCROLL = { state: { preserveScroll: true } };
+const KEEP_SCROLL = { preserveScroll: true };
 
-/** Mesmo limite de `below($bp-lg)` (EquipePage.scss): abaixo dele o detalhe é um painel fullscreen. */
-const MOBILE_QUERY = '(max-width: 1023px)';
-
-function toFilters(id: FilterId): EncyclopediaFilters {
-  if (id === 'robot') return { kind: 'robot' };
-  if (id.startsWith('tag:')) return { tag: id.slice(4) };
-  if (id.startsWith('gen:')) return { generation: id.slice(4) };
-  return {};
+function toFilters(id: FilterId, generation: string): EncyclopediaFilters {
+  const f: EncyclopediaFilters = {};
+  if (id === 'robot') f.kind = 'robot';
+  else if (id.startsWith('tag:')) f.tag = id.slice(4);
+  if (generation !== GEN_ALL) f.generation = generation;
+  return f;
 }
 
 /** Chips fixos + uma por tag do banco (na ordem da API); as tags entram quando carregam. */
@@ -59,7 +71,6 @@ function buildChips(tags: MemberTagDTO[]): { id: FilterId; label: string }[] {
   return [
     { id: 'all', label: 'Todos' },
     ...tags.map((t) => ({ id: `tag:${t.key}`, label: t.label })),
-    ...GENERATIONS.map((g) => ({ id: `gen:${g}`, label: GENERATION_LABELS[g] })),
     { id: 'robot', label: 'Robôs' },
   ];
 }
@@ -73,20 +84,25 @@ function primaryTag(
   return key ? tagMap.get(key) : undefined;
 }
 
+/**
+ * Equipe: filtros por função (chips) e geração (select) no cabeçalho, grade de
+ * cards-link e ficha do registro selecionado — painel lateral fixo no desktop,
+ * tela cheia (diálogo) abaixo de 1024px. A rota '/equipe/:slug?' não remonta ao
+ * trocar o slug, então filtros e rolagem sobrevivem aos cliques nos cards.
+ */
 export function EquipePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { data: tags } = useMemberTags();
   const tagMap = useMemberTagMap();
 
-  // Estado local: a rota '/equipe/:slug?' não remonta ao trocar o slug, então
-  // o filtro sobrevive aos cliques nos membros.
   const [chosenFilter, setChosenFilter] = useState<FilterId>('all');
+  const [generation, setGeneration] = useState<string>(GEN_ALL);
   const chips = useMemo(() => buildChips(tags ?? []), [tags]);
   // tag removida pelo admin enquanto estava selecionada → volta para "Todos"
   const active = chips.some((c) => c.id === chosenFilter) ? chosenFilter : 'all';
 
-  const filters = useMemo(() => toFilters(active), [active]);
+  const filters = useMemo(() => toFilters(active, generation), [active, generation]);
   const query = useEncyclopedia(filters);
   const data = query.data;
   const entries = useMemo(() => data ?? [], [data]);
@@ -114,24 +130,26 @@ export function EquipePage() {
   // slug que não existe no filtro atual: volta para a lista (sem rolar ao topo)
   useEffect(() => {
     if (slug && data && !data.some((e) => e.slug === slug)) {
-      navigate(TEAM_PATH, { replace: true, ...KEEP_SCROLL });
+      navigate(TEAM_PATH, { replace: true, state: KEEP_SCROLL });
     }
   }, [slug, data, navigate]);
 
-  const openEntry = (e: EncyclopediaEntryDTO) =>
-    navigate(`${TEAM_PATH}/${e.slug}`, KEEP_SCROLL);
-  const closeMobile = () => navigate(TEAM_PATH, KEEP_SCROLL);
+  const closeMobile = () => navigate(TEAM_PATH, { state: KEEP_SCROLL });
 
-  // Painel fullscreen do mobile é um diálogo modal: o foco entra nele (botão
-  // Fechar), Tab cicla dentro, Esc fecha e o foco volta ao card que o abriu
-  // (o RouteAnnouncer não mexe no foco quando há `preserveScroll`). O trap só
-  // vale no mobile: no desktop o mesmo nó fica montado com `display: none` e,
-  // ativo, capturaria o Tab da página inteira.
-  const isMobile = useMediaQuery(MOBILE_QUERY);
+  // Painel de tela cheia do celular é um diálogo modal: o foco entra nele, Tab
+  // cicla dentro, Esc fecha e o foco volta ao card que o abriu. O trap só vale
+  // abaixo de 1024px — no desktop a ficha é o painel lateral, sempre visível.
+  const isMobile = useMediaQuery(mq.below('lg'));
   const mobileRef = useRef<HTMLDivElement>(null);
   const mobileTitleId = useId();
   const mobileOpen = isMobile && !!slug && !!selected;
   useFocusTrap(mobileRef, mobileOpen, { onEscape: closeMobile });
+  useScrollLock(mobileOpen);
+
+  const clearFilters = () => {
+    setChosenFilter('all');
+    setGeneration(GEN_ALL);
+  };
 
   return (
     <>
@@ -139,89 +157,86 @@ export function EquipePage() {
         kicker="Equipe MinerSkills"
         title="Membros & Robôs"
         subtitle={DESCRIPTION}
+        toolbar={
+          <>
+            {/* group (não tablist): as chips são botões com aria-pressed, não abas */}
+            <ChipRow
+              label="Filtrar a equipe por função"
+              scroll
+              className="ms-enc__filters"
+            >
+              {chips.map((c) => (
+                <FilterChip
+                  key={c.id}
+                  active={active === c.id}
+                  onClick={() => setChosenFilter(c.id)}
+                >
+                  {c.label}
+                </FilterChip>
+              ))}
+            </ChipRow>
+            <Field label="Geração" visuallyHiddenLabel className="ms-enc__generation">
+              <Select value={generation} onChange={(e) => setGeneration(e.target.value)}>
+                <option value={GEN_ALL}>Todas as gerações</option>
+                {GENERATIONS.map((g) => (
+                  <option key={g} value={g}>
+                    {GENERATION_LABELS[g]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </>
+        }
       />
 
       <section className="ms-section ms-container">
-        {/* group (não tablist): as chips são botões com aria-pressed, não abas */}
-        <div
-          className="ms-enc__filters"
-          role="group"
-          aria-label="Filtrar a equipe por função"
-        >
-          {chips.map((c) => (
-            <FilterChip
-              key={c.id}
-              active={active === c.id}
-              onClick={() => setChosenFilter(c.id)}
-            >
-              {c.label}
-            </FilterChip>
-          ))}
-        </div>
-
-        <p className="ms-enc__count">
-          <Users /> {entries.length}{' '}
-          {entries.length === 1 ? 'registro encontrado' : 'registros encontrados'}
-        </p>
-
         <div className="ms-enc__layout">
-          <div className="ms-enc__grid-wrap">
+          <div className="ms-enc__main">
             <QueryState
               query={query}
-              skeleton={<CardGridSkeleton count={6} aspect="3 / 4" />}
+              skeleton={<CardGridSkeleton count={9} aspect="4 / 5" min={200} />}
               isEmpty={(list) => list.length === 0}
               empty={
-                <EmptyState title="Nenhum registro" description="Ajuste os filtros." />
+                <EmptyState
+                  icon={<Users />}
+                  title="Nenhum registro"
+                  description="Nenhum membro ou robô corresponde aos filtros escolhidos."
+                  action={
+                    <Button variant="outline" onClick={clearFilters}>
+                      Limpar filtros
+                    </Button>
+                  }
+                />
               }
             >
               {(list) => (
-                <motion.div className="ms-enc__grid" layout>
-                  <AnimatePresence mode="popLayout">
-                    {list.map((e) => {
-                      const primary = primaryTag(e, tagMap);
-                      return (
-                        <motion.button
-                          key={e.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ duration: 0.3 }}
-                          className={`ms-enc-card ${selected?.id === e.id ? 'ms-enc-card--active' : ''}`}
-                          onClick={() => openEntry(e)}
-                        >
-                          <div className="ms-enc-card__photo">
-                            {e.photo ? (
-                              <MediaImage media={e.photo} alt={e.name} thumb />
-                            ) : (
-                              <div className="ms-enc-card__photo-fallback">
-                                <EntryIcon kind={e.kind} icon={primary?.icon} />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ms-enc-card__info">
-                            <span className="ms-enc-card__name">{e.name}</span>
-                            <span className="ms-enc-card__role">
-                              <span className="ms-enc-card__dot" />
-                              {e.role ?? primary?.label ?? 'Membro'}
-                            </span>
-                          </div>
-                          <EntryIcon
-                            kind={e.kind}
-                            icon={primary?.icon}
-                            className="ms-enc-card__role-icon"
-                          />
-                        </motion.button>
-                      );
-                    })}
-                  </AnimatePresence>
-                </motion.div>
+                <>
+                  <p className="ms-enc__count" aria-live="polite">
+                    <Users aria-hidden /> {list.length}{' '}
+                    {list.length === 1 ? 'registro encontrado' : 'registros encontrados'}
+                  </p>
+                  <ul
+                    className="ms-enc__grid"
+                    role="list"
+                    aria-busy={query.isFetching || undefined}
+                  >
+                    {list.map((e) => (
+                      <li key={e.id}>
+                        <EntryCard
+                          entry={e}
+                          tagMap={tagMap}
+                          active={selected?.id === e.id}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </QueryState>
           </div>
 
-          {/* Painel de detalhe — lateral no desktop (a key remonta e anima a troca de membro) */}
-          <aside className="ms-enc__detail">
+          {/* Ficha — painel lateral fixo no desktop */}
+          <aside className="ms-enc__detail" aria-label="Detalhes do registro selecionado">
             {selected ? (
               <DetailPanel key={selected.id} entry={selected} tagMap={tagMap} />
             ) : (
@@ -233,37 +248,83 @@ export function EquipePage() {
         </div>
       </section>
 
-      {/* Painel de detalhe — fullscreen no mobile (diálogo modal; ver useFocusTrap acima) */}
-      <AnimatePresence>
-        {slug && selected && (
-          <motion.div
-            ref={mobileRef}
-            className="ms-enc__mobile-detail"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={mobileTitleId}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ duration: 0.3 }}
-          >
+      {/* Ficha — tela cheia abaixo de 1024px (diálogo modal; ver useFocusTrap acima) */}
+      {mobileOpen && selected && (
+        <div
+          ref={mobileRef}
+          className="ms-enc__mobile"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={mobileTitleId}
+        >
+          <div className="ms-enc__mobile-bar">
+            <span className="ms-enc__mobile-name">{selected.name}</span>
             <button
+              type="button"
               className="ms-enc__mobile-close"
               onClick={closeMobile}
               aria-label="Fechar"
             >
-              <X />
+              <X aria-hidden />
             </button>
+          </div>
+          <div className="ms-enc__mobile-body">
             <DetailPanel
               key={selected.id}
               entry={selected}
               tagMap={tagMap}
               titleId={mobileTitleId}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </>
+  );
+}
+
+/** Card da grade: o link inteiro navega para a ficha; foto 4/5 ou avatar de iniciais. */
+function EntryCard({
+  entry,
+  tagMap,
+  active,
+}: {
+  entry: EncyclopediaEntryDTO;
+  tagMap: TagMap;
+  active: boolean;
+}) {
+  const primary = primaryTag(entry, tagMap);
+  const role = entry.role ?? primary?.label ?? 'Membro';
+  return (
+    <Link
+      to={`${TEAM_PATH}/${entry.slug}`}
+      state={KEEP_SCROLL}
+      className={cx('ms-enc-card', active && 'ms-enc-card--active')}
+      aria-current={active ? 'true' : undefined}
+    >
+      <div className="ms-enc-card__photo">
+        {entry.photo ? (
+          <MediaImage
+            media={entry.photo}
+            alt=""
+            thumb
+            sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 20vw"
+          />
+        ) : (
+          <Avatar name={entry.name} size="xl" tone="brand" />
+        )}
+      </div>
+      <div className="ms-enc-card__info">
+        <span className="ms-enc-card__name">{entry.name}</span>
+        <span className="ms-enc-card__role">
+          <EntryIcon
+            kind={entry.kind}
+            icon={primary?.icon}
+            className="ms-enc-card__role-icon"
+          />
+          {role}
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -278,16 +339,18 @@ function DetailPanel({
   titleId?: string;
 }) {
   const primary = primaryTag(entry, tagMap);
+  const generation = entry.generation
+    ? GENERATION_LABELS[entry.generation as (typeof GENERATIONS)[number]]
+    : undefined;
   return (
-    <motion.div
-      className="ms-enc-detail"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="ms-enc-detail">
       <div className="ms-enc-detail__photo">
         {entry.photo ? (
-          <MediaImage media={entry.photo} alt={entry.name} />
+          <MediaImage
+            media={entry.photo}
+            alt={entry.name}
+            sizes="(max-width: 1023px) 100vw, 400px"
+          />
         ) : (
           <div className="ms-enc-detail__photo-fallback">
             <EntryIcon kind={entry.kind} icon={primary?.icon} />
@@ -299,21 +362,16 @@ function DetailPanel({
         <h2 className="ms-enc-detail__name" id={titleId}>
           {entry.name}
         </h2>
+
         <div className="ms-enc-detail__meta">
           {entry.age != null && (
-            <span>
-              <CalendarDays /> {entry.age} anos
+            <span className="ms-meta">
+              <CalendarDays aria-hidden /> {entry.age} anos
             </span>
           )}
-          {entry.season && (
-            <span>
-              <CalendarDays /> {entry.season}
-            </span>
-          )}
-          {entry.seasonRef && <Tag variant="muted">{entry.seasonRef.name}</Tag>}
-          {entry.generation && (
-            <Tag variant="muted">{GENERATION_LABELS[entry.generation as never]}</Tag>
-          )}
+          {entry.season && <span className="ms-meta">{entry.season}</span>}
+          {entry.seasonRef && <Tag tone="neutral">{entry.seasonRef.name}</Tag>}
+          {generation && <Tag tone="neutral">{generation}</Tag>}
         </div>
 
         {(entry.tags.length > 0 || entry.role) && (
@@ -327,19 +385,16 @@ function DetailPanel({
         )}
 
         <div className="ms-enc-detail__section">
-          <span className="ms-enc-detail__section-title">» Sobre</span>
-          {entry.about.split('\n\n').map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
+          <SectionHeading as="h3" size="sm" title="Sobre" dense />
+          <div className="ms-prose ms-enc-detail__about">
+            {entry.about.split('\n\n').map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
         </div>
 
-        {entry.quote && (
-          <blockquote className="ms-enc-detail__quote">
-            <Quote />
-            <p>{entry.quote}</p>
-          </blockquote>
-        )}
+        {entry.quote && <Quote>{entry.quote}</Quote>}
       </div>
-    </motion.div>
+    </div>
   );
 }

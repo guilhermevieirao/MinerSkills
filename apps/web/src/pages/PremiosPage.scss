@@ -2,144 +2,109 @@
 
 @layer pages {
   .ms-awards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-10);
+
+    &__section {
+      .ms-heading {
+        margin-bottom: var(--ms-space-5);
+      }
+    }
+
     &__highlights {
       display: flex;
       flex-direction: column;
       gap: var(--ms-space-5);
-      margin-bottom: var(--ms-space-8);
     }
 
     &__grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: var(--ms-space-5);
+      @include card-grid(260px);
     }
   }
 
+  // ── Destaque: a única superfície verde da página ──
   .ms-award-hero {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: var(--ms-space-6);
     align-items: center;
     padding: var(--ms-space-6);
     border-radius: var(--ms-radius-lg);
     background: var(--ms-gradient);
     color: var(--ms-on-green);
-    position: relative;
-    overflow: hidden;
+    --ms-focus-color: var(--ms-on-green);
 
     @include below($bp-sm) {
       grid-template-columns: 1fr;
+      justify-items: center;
       text-align: center;
+      padding: var(--ms-space-5);
     }
 
-    &__badge {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: rgba(6, 35, 26, 0.15);
-      border: 3px solid rgba(6, 35, 26, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      flex-shrink: 0;
-      @include below($bp-sm) {
-        margin-inline: auto;
-      }
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      svg {
-        width: 56px;
-        height: 56px;
-      }
+    // medalhão invertido sobre o verde
+    &__badge.ms-medallion {
+      background: var(--ms-on-green-surface);
+      border-color: var(--ms-on-green-soft);
+      color: var(--ms-on-green);
     }
+
     &__content {
-      h2 {
-        color: var(--ms-on-green);
-        font-size: var(--ms-text-2xl);
-        margin: var(--ms-space-1) 0;
-      }
-      p {
-        opacity: 0.85;
-        margin-top: var(--ms-space-2);
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-2);
+      min-width: 0;
+    }
+    &__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ms-space-2);
+      @include below($bp-sm) {
+        justify-content: center;
       }
     }
-    &__year {
-      font-family: var(--ms-font-mono);
-      font-weight: 600;
-      opacity: 0.7;
+    &__title {
+      color: var(--ms-on-green);
+      font-size: var(--ms-title-lg);
+      line-height: var(--ms-lh-snug);
     }
     &__event {
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-size: var(--ms-text-xs);
-      font-weight: 600;
+      color: var(--ms-on-green-soft);
+      font-weight: var(--ms-fw-semibold);
+      font-size: var(--ms-text-sm);
     }
-    &__season {
-      margin-top: var(--ms-space-2);
+    &__desc {
+      color: var(--ms-on-green-soft);
+      max-width: var(--ms-measure);
     }
   }
 
+  // ── Card comum (informativo: sem hover) ──
   .ms-award-card {
-    @include card-surface;
-    padding: var(--ms-space-5);
-    transition:
-      transform var(--ms-dur) var(--ms-ease),
-      border-color var(--ms-dur) var(--ms-ease);
-    height: 100%;
+    @include card;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ms-space-3);
 
-    &:hover {
-      transform: translateY(-4px);
-      border-color: var(--ms-green-deep);
-    }
-
-    &__icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: rgba(41, 217, 140, 0.1);
-      border: 2px solid var(--ms-green-deep);
-      color: var(--ms-green);
+    &__tags {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-bottom: var(--ms-space-4);
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      svg {
-        width: 30px;
-        height: 30px;
-      }
+      gap: var(--ms-space-2);
     }
-    &__year {
-      @include kicker;
-    }
-    h3 {
-      font-size: var(--ms-text-lg);
-      margin: var(--ms-space-2) 0 var(--ms-space-1);
+    &__title {
+      font-size: var(--ms-title);
     }
     &__event {
       color: var(--ms-text-dim);
-      font-size: var(--ms-text-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-medium);
+      margin-top: calc(-1 * var(--ms-space-2));
     }
-    &__season {
-      margin-top: var(--ms-space-2);
-    }
-    p {
+    &__desc {
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
-      margin-top: var(--ms-space-3);
-      line-height: 1.6;
     }
   }
 }

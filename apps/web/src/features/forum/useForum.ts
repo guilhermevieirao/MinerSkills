@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import type {
   Paginated,
   ForumTopicDTO,
@@ -9,10 +9,13 @@ import type {
 } from '@minerskills/shared';
 import { api } from '../../lib/api';
 
+/** Tópicos aprovados, paginados; a lista atual fica na tela enquanto a próxima página chega. */
 export function useForumTopics(page: number) {
   return useQuery({
     queryKey: ['forum-topics', page],
-    queryFn: () => api.get<Paginated<ForumTopicDTO>>('/forum/topics', { page, perPage: 10 }),
+    queryFn: () =>
+      api.get<Paginated<ForumTopicDTO>>('/forum/topics', { page, perPage: 10 }),
+    placeholderData: keepPreviousData,
   });
 }
 

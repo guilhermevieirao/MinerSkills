@@ -2,117 +2,117 @@
 
 @layer pages {
   .ms-forum {
-    &__new-btn {
-      margin-top: var(--ms-space-6);
-    }
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-6);
 
-    &__form {
-      @include card-surface;
-      padding: var(--ms-space-5);
-      margin-bottom: var(--ms-space-6);
+    // ── Tópico novo ──
+    &__new {
       background: var(--ms-surface-2);
+    }
+    &__new-title {
+      @include ui-heading;
+      font-size: var(--ms-title);
+    }
+    &__note {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--ms-space-2);
+      padding: var(--ms-space-2) var(--ms-space-3);
+      border-radius: var(--ms-radius-sm);
+      background: var(--ms-info-soft);
+      border: 1px solid var(--ms-info-line);
+      color: var(--ms-text);
+      font-size: var(--ms-text-sm);
 
-      &-note {
-        color: var(--ms-green);
-        font-size: var(--ms-text-sm);
-        margin-bottom: var(--ms-space-4);
-      }
-      &-row {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: var(--ms-space-4);
-        @include below($bp-sm) {
-          grid-template-columns: 1fr;
-        }
-      }
-      &-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--ms-space-3);
-      }
-
-      // Honeypot: fora da tela, sem display: none (robôs pulam campos invisíveis
-      // no DOM, mas preenchem os que só o CSS esconde).
-      .ms-hp {
-        position: absolute;
-        left: -9999px;
-        width: 1px;
-        height: 1px;
-        opacity: 0;
-        pointer-events: none;
+      svg {
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-info);
+        flex-shrink: 0;
+        margin-top: 2px;
       }
     }
 
+    // ── Lista ──
     &__list {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-3);
+      gap: var(--ms-gap-list);
+      transition: opacity var(--ms-dur) var(--ms-ease);
+      &[aria-busy='true'] {
+        opacity: 0.7;
+      }
     }
 
     &__topic {
-      @include card-surface;
-      padding: var(--ms-space-5);
+      @include card;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: var(--ms-space-4);
+      color: inherit;
       transition:
-        transform var(--ms-dur) var(--ms-ease),
-        border-color var(--ms-dur) var(--ms-ease);
+        border-color var(--ms-dur) var(--ms-ease),
+        background-color var(--ms-dur) var(--ms-ease);
 
-      &:hover {
-        transform: translateX(4px);
+      @include hover {
         border-color: var(--ms-green-deep);
+        background: var(--ms-surface-2);
       }
-
-      &-main {
-        min-width: 0;
-        h3 {
-          font-size: var(--ms-text-lg);
-          margin-bottom: var(--ms-space-1);
-        }
-        p {
-          color: var(--ms-text-dim);
-          font-size: var(--ms-text-sm);
-          overflow: hidden;
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          line-clamp: 1;
-          -webkit-box-orient: vertical;
-          margin-bottom: var(--ms-space-2);
-        }
+      &:focus-visible {
+        border-color: var(--ms-green);
       }
-      &-meta {
-        font-size: var(--ms-text-xs);
-        color: var(--ms-text-faint);
-        strong {
-          color: var(--ms-green);
-        }
+    }
+    &__topic-main {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-2);
+      min-width: 0;
+    }
+    &__topic-title {
+      font-size: var(--ms-title-sm);
+      @include line-clamp(2);
+    }
+    &__topic-preview {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      @include line-clamp(2);
+    }
+    &__topic-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-2);
+      color: var(--ms-text-faint);
+      font-size: var(--ms-text-caption);
+      .ms-avatar {
+        --ms-avatar-size: 24px;
       }
     }
 
     &__replies {
       display: inline-flex;
       align-items: center;
-      gap: var(--ms-space-2);
+      gap: var(--ms-space-1);
+      flex-shrink: 0;
+      padding: var(--ms-space-1) var(--ms-space-3);
+      border-radius: var(--ms-radius-pill);
+      background: var(--ms-surface-2);
+      border: 1px solid var(--ms-border);
       color: var(--ms-text-dim);
       font-family: var(--ms-font-mono);
-      flex-shrink: 0;
+      font-size: var(--ms-text-sm);
+      font-variant-numeric: tabular-nums;
+
       svg {
-        width: 18px;
-        height: 18px;
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
         color: var(--ms-green-deep);
       }
     }
 
-    &__pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--ms-space-4);
-      margin-top: var(--ms-space-6);
-      color: var(--ms-text-dim);
-      font-family: var(--ms-font-mono);
+    .ms-pagination {
+      margin-top: 0;
     }
   }
 }

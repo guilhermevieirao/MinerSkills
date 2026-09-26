@@ -492,7 +492,13 @@
       font-weight: var(--ms-fw-semibold);
       color: var(--ms-text);
     }
+    &__labelrow {
+      display: inline-flex;
+      align-items: baseline;
+      gap: var(--ms-space-1);
+    }
     &__optional {
+      font-size: var(--ms-text-sm);
       color: var(--ms-text-faint);
       font-weight: var(--ms-fw-regular);
     }

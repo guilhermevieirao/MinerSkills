@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Plus, MessagesSquare, Send } from 'lucide-react';
+import { Info, MessageSquare, MessagesSquare, Plus, Send } from 'lucide-react';
 import { forumTopicSchema, HONEYPOT_FIELD } from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
 import { useForumTopics, useCreateTopic } from '../features/forum/useForum';
-import { Button, Input, Textarea, Field, EmptyState } from '../components/ui';
+import { Button, Card, EmptyState, Field, Input, Textarea } from '../components/ui';
+import { Avatar } from '../components/ui/Avatar';
+import { DateText } from '../components/ui/DateText';
+import { Pagination } from '../components/ui/Pagination';
 import { QueryState } from '../components/ui/QueryState';
 import { ListSkeleton } from '../components/ui/skeletons';
 import { useToast } from '../components/ui/Toast';
 import { Reveal } from '../components/motion/Reveal';
 import { useDocumentHead } from '../lib/useDocumentHead';
-import { timeAgo } from '../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../lib/forms';
 import { ApiError } from '../lib/api';
 import './ForumPage.scss';
 
@@ -32,8 +35,8 @@ export function ForumPage() {
     canonicalPath: '/forum',
   });
 
-  // O formulário fica em outra região da página (abaixo do hero): ao fechar
-  // por Cancelar/Enviar, o foco volta ao botão que o abriu.
+  // O formulário fica em outra região da página (abaixo do cabeçalho): ao
+  // fechar por Cancelar/Enviar, o foco volta ao botão que o abriu.
   const closeForm = () => {
     setOpen(false);
     newTopicBtn.current?.focus();
@@ -41,80 +44,84 @@ export function ForumPage() {
 
   return (
     <>
-      <PageHero kicker="Comunidade" title="Fórum" subtitle={FORUM_DESCRIPTION}>
-        <Button
-          ref={newTopicBtn}
-          className="ms-forum__new-btn"
-          aria-expanded={open}
-          aria-controls={NEW_TOPIC_FORM_ID}
-          onClick={() => setOpen((o) => !o)}
-        >
-          <Plus /> Novo tópico
-        </Button>
-      </PageHero>
+      <PageHero
+        kicker="Comunidade"
+        title="Fórum"
+        subtitle={FORUM_DESCRIPTION}
+        actions={
+          <Button
+            ref={newTopicBtn}
+            aria-expanded={open}
+            aria-controls={NEW_TOPIC_FORM_ID}
+            onClick={() => setOpen((o) => !o)}
+          >
+            <Plus aria-hidden /> Novo tópico
+          </Button>
+        }
+      />
 
-      <section className="ms-section ms-container">
+      <section className="ms-section ms-container ms-forum">
         {open && <NewTopicForm onDone={closeForm} />}
 
         <QueryState
           query={topics}
-          skeleton={<ListSkeleton rows={5} />}
+          skeleton={<ListSkeleton rows={5} lead={0} />}
           isEmpty={(data) => data.items.length === 0}
           empty={
             <EmptyState
               icon={<MessagesSquare />}
               title="Nenhum tópico ainda"
               description="Seja o primeiro a iniciar uma conversa."
+              action={
+                !open && (
+                  <Button variant="outline" onClick={() => setOpen(true)}>
+                    Iniciar conversa
+                  </Button>
+                )
+              }
             />
           }
         >
           {(data) => (
-            <>
-              <div className="ms-forum__list">
-                {data.items.map((t, i) => (
-                  <Reveal key={t.id} delay={i * 0.03}>
+            <Reveal>
+              <ul
+                className="ms-forum__list"
+                role="list"
+                aria-busy={topics.isFetching || undefined}
+              >
+                {data.items.map((t) => (
+                  <li key={t.id}>
                     <Link to={`/forum/${t.id}`} className="ms-forum__topic">
                       <div className="ms-forum__topic-main">
-                        <h3>{t.title}</h3>
-                        <p>{t.body}</p>
-                        <span className="ms-forum__topic-meta">
-                          por <strong>{t.nickname}</strong> · {timeAgo(t.createdAt)}
-                        </span>
+                        <h3 className="ms-forum__topic-title">{t.title}</h3>
+                        <p className="ms-forum__topic-preview">{t.body}</p>
+                        <p className="ms-forum__topic-meta">
+                          <Avatar name={t.nickname} size="sm" />
+                          <span>{t.nickname}</span>
+                          <span aria-hidden>·</span>
+                          <DateText iso={t.createdAt} format="relative" meta={false} />
+                        </p>
                       </div>
-                      <span className="ms-forum__replies">
-                        <MessageSquare /> {t.replyCount}
+                      <span
+                        className="ms-forum__replies"
+                        aria-label={`${t.replyCount} ${t.replyCount === 1 ? 'resposta' : 'respostas'}`}
+                      >
+                        <MessageSquare aria-hidden /> {t.replyCount}
                       </span>
                     </Link>
-                  </Reveal>
+                  </li>
                 ))}
-              </div>
-
-              {data.totalPages > 1 && (
-                <div className="ms-forum__pagination">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    Anterior
-                  </Button>
-                  <span>
-                    {page} / {data.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= data.totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              )}
-            </>
+              </ul>
+            </Reveal>
           )}
         </QueryState>
+
+        <Pagination
+          page={page}
+          totalPages={topics.data?.totalPages ?? 1}
+          onChange={setPage}
+          loading={topics.isFetching}
+        />
       </section>
     </>
   );
@@ -131,11 +138,11 @@ function NewTopicForm({ onDone }: { onDone: () => void }) {
   const [body, setBody] = useState('');
   const [trap, setTrap] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
   const create = useCreateTopic();
   const toast = useToast();
 
-  // Aberto pelo botão do hero: o foco vai direto ao primeiro campo, sem
-  // tabular pela seção até achá-lo.
+  // Aberto pelo botão do cabeçalho: o foco vai direto ao primeiro campo.
   const firstField = useRef<HTMLInputElement>(null);
   useEffect(() => {
     firstField.current?.focus();
@@ -150,10 +157,8 @@ function NewTopicForm({ onDone }: { onDone: () => void }) {
       [HONEYPOT_FIELD]: trap,
     });
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const issue of parsed.error.issues)
-        errs[issue.path[0] as string] = issue.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setErrors({});
@@ -170,52 +175,66 @@ function NewTopicForm({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <form className="ms-forum__form" id={NEW_TOPIC_FORM_ID} onSubmit={submit}>
-      <p className="ms-forum__form-note">
-        As mensagens passam por moderação antes de serem publicadas.
-      </p>
-      <div className="ms-forum__form-row">
-        <Field label="Apelido" error={errors.nickname}>
-          <Input
-            ref={firstField}
-            value={nickname}
-            maxLength={20}
-            onChange={(e) => setNickname(e.target.value)}
+    <Card as="section" className="ms-forum__new" aria-labelledby="ms-forum-new-title">
+      <form
+        ref={formRef}
+        className="ms-form"
+        id={NEW_TOPIC_FORM_ID}
+        onSubmit={submit}
+        noValidate
+      >
+        <h2 id="ms-forum-new-title" className="ms-forum__new-title">
+          Novo tópico
+        </h2>
+        <p className="ms-forum__note">
+          <Info aria-hidden /> As mensagens passam por moderação antes de serem
+          publicadas.
+        </p>
+        <div className="ms-form__grid">
+          <Field label="Apelido" required error={errors.nickname}>
+            <Input
+              ref={firstField}
+              value={nickname}
+              maxLength={20}
+              autoComplete="nickname"
+              onChange={(e) => setNickname(e.target.value)}
+            />
+          </Field>
+          <Field label="Título" required error={errors.title}>
+            <Input
+              value={title}
+              maxLength={140}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </Field>
+        </div>
+        <Field label="Mensagem" required error={errors.body}>
+          <Textarea
+            value={body}
+            maxLength={4000}
+            rows={5}
+            onChange={(e) => setBody(e.target.value)}
           />
         </Field>
-        <Field label="Título" error={errors.title}>
-          <Input
-            value={title}
-            maxLength={140}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </Field>
-      </div>
-      <Field label="Mensagem" error={errors.body}>
-        <Textarea
-          value={body}
-          maxLength={4000}
-          onChange={(e) => setBody(e.target.value)}
+        {/* campo-armadilha: visitantes não veem nem alcançam pelo teclado */}
+        <input
+          name={HONEYPOT_FIELD}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="ms-hp"
+          value={trap}
+          onChange={(e) => setTrap(e.target.value)}
         />
-      </Field>
-      {/* campo-armadilha: visitantes não veem nem alcançam pelo teclado */}
-      <input
-        name={HONEYPOT_FIELD}
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="ms-hp"
-        value={trap}
-        onChange={(e) => setTrap(e.target.value)}
-      />
-      <div className="ms-forum__form-actions">
-        <Button type="button" variant="ghost" onClick={onDone}>
-          Cancelar
-        </Button>
-        <Button type="submit" loading={create.isPending}>
-          <Send /> Enviar
-        </Button>
-      </div>
-    </form>
+        <div className="ms-form__actions">
+          <Button type="button" variant="ghost" onClick={onDone}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={create.isPending}>
+            <Send aria-hidden /> Enviar
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }

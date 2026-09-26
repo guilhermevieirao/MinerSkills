@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, MessageSquare, Flag } from 'lucide-react';
+import { useId, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, Flag, MessageSquare, Send } from 'lucide-react';
 import {
   forumReplySchema,
   forumReportSchema,
@@ -17,20 +17,27 @@ import {
   useReportTopic,
   useReportReply,
 } from '../features/forum/useForum';
+import { PageHero } from '../components/layout/PageHero';
 import {
   Button,
-  Input,
-  Textarea,
-  Select,
-  Field,
+  Card,
   EmptyState,
+  Field,
+  Input,
   LinkButton,
+  Select,
+  Textarea,
 } from '../components/ui';
+import { Avatar } from '../components/ui/Avatar';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
+import { DateText } from '../components/ui/DateText';
+import { FullScreenMessage } from '../components/ui/FullScreenMessage';
 import { QueryState } from '../components/ui/QueryState';
-import { ListSkeleton } from '../components/ui/skeletons';
+import { HeroSkeleton, ListSkeleton } from '../components/ui/skeletons';
 import { useToast } from '../components/ui/Toast';
 import { useDocumentHead } from '../lib/useDocumentHead';
-import { timeAgo } from '../lib/format';
+import { cx } from '../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../lib/forms';
 import { ApiError } from '../lib/api';
 import './ForumTopicPage.scss';
 
@@ -63,67 +70,98 @@ export function ForumTopicPage() {
     noindex: query.isError,
   });
 
-  if (isNotFound(query.error))
+  if (isNotFound(query.error)) {
     return (
-      <div className="ms-section ms-container">
-        <EmptyState
-          title="Tópico não encontrado"
-          description="Ele pode ter sido removido ou ainda estar em moderação."
-          action={
-            <LinkButton to="/forum" variant="outline">
-              Voltar ao fórum
-            </LinkButton>
-          }
-        />
-      </div>
+      <FullScreenMessage
+        title="Tópico não encontrado"
+        text="Ele pode ter sido removido ou ainda estar em moderação."
+        actions={
+          <LinkButton to="/forum" variant="outline">
+            <ArrowLeft aria-hidden /> Voltar ao fórum
+          </LinkButton>
+        }
+      />
     );
+  }
 
-  // O link de volta fica fora do QueryState: aparece também durante o
-  // carregamento e no erro com "Tentar novamente".
   return (
-    <section className="ms-section ms-container ms-topic">
-      <Link to="/forum" className="ms-topic__back">
-        <ArrowLeft /> Fórum
-      </Link>
-
-      <QueryState query={query} skeleton={<ListSkeleton rows={3} />}>
-        {(data) => <TopicThread topic={data} />}
-      </QueryState>
-    </section>
+    <QueryState
+      query={query}
+      skeleton={
+        <>
+          <HeroSkeleton />
+          <div className="ms-section ms-container">
+            <ListSkeleton rows={3} lead={0} />
+          </div>
+        </>
+      }
+    >
+      {(data) => <TopicView topic={data} />}
+    </QueryState>
   );
 }
 
-function TopicThread({ topic }: { topic: ForumTopicDetailDTO }) {
+function TopicView({ topic }: { topic: ForumTopicDetailDTO }) {
+  const count = topic.replies.length;
   return (
     <>
-      <article className="ms-topic__op">
-        <h1>{topic.title}</h1>
-        <span className="ms-topic__meta">
-          por <strong>{topic.nickname}</strong> · {timeAgo(topic.createdAt)}
-        </span>
-        <p className="ms-topic__body">{topic.body}</p>
-        <TopicReport id={topic.id} />
-      </article>
+      <PageHero
+        size="sm"
+        breadcrumb={
+          <Breadcrumb
+            items={[{ label: 'Fórum', to: '/forum' }, { label: topic.title }]}
+          />
+        }
+        title={topic.title}
+        subtitle={
+          <span className="ms-topic__byline">
+            <Avatar name={topic.nickname} size="sm" />
+            <span>{topic.nickname}</span>
+            <span aria-hidden>·</span>
+            <DateText iso={topic.createdAt} format="relative" meta={false} />
+          </span>
+        }
+      />
 
-      <h2 className="ms-topic__replies-title">
-        <MessageSquare /> {topic.replies.length}{' '}
-        {topic.replies.length === 1 ? 'resposta' : 'respostas'}
-      </h2>
-
-      <div className="ms-topic__replies">
-        {topic.replies.map((r) => (
-          <div key={r.id} className="ms-topic__reply">
-            <div className="ms-topic__reply-head">
-              <strong>{r.nickname}</strong>
-              <span>{timeAgo(r.createdAt)}</span>
-            </div>
-            <p>{r.body}</p>
-            <ReplyReport id={r.id} />
+      <section className="ms-section ms-container ms-topic">
+        <article className="ms-topic__op">
+          <p className="ms-topic__body">{topic.body}</p>
+          <div className="ms-topic__foot">
+            <TopicReport id={topic.id} />
           </div>
-        ))}
-      </div>
+        </article>
 
-      <ReplyForm topicId={topic.id} />
+        <div className="ms-topic__thread">
+          <h2 className="ms-topic__replies-title">
+            <MessageSquare aria-hidden /> {count} {count === 1 ? 'resposta' : 'respostas'}
+          </h2>
+          {count === 0 ? (
+            <EmptyState
+              size="sm"
+              title="Nenhuma resposta ainda"
+              description="Seja o primeiro a responder."
+            />
+          ) : (
+            <ul className="ms-topic__replies" role="list">
+              {topic.replies.map((r) => (
+                <li key={r.id} className="ms-topic__reply">
+                  <div className="ms-topic__reply-head">
+                    <Avatar name={r.nickname} size="sm" />
+                    <strong>{r.nickname}</strong>
+                    <DateText iso={r.createdAt} format="relative" />
+                  </div>
+                  <p className="ms-topic__reply-body">{r.body}</p>
+                  <div className="ms-topic__foot">
+                    <ReplyReport id={r.id} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <ReplyForm topicId={topic.id} />
+      </section>
     </>
   );
 }
@@ -138,6 +176,8 @@ function ReplyForm({ topicId }: { topicId: string }) {
   const [body, setBody] = useState('');
   const [trap, setTrap] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  const titleId = useId();
   const create = useCreateReply(topicId);
   const toast = useToast();
 
@@ -145,10 +185,8 @@ function ReplyForm({ topicId }: { topicId: string }) {
     e.preventDefault();
     const parsed = forumReplySchema.safeParse({ nickname, body, [HONEYPOT_FIELD]: trap });
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const issue of parsed.error.issues)
-        errs[issue.path[0] as string] = issue.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setErrors({});
@@ -162,39 +200,45 @@ function ReplyForm({ topicId }: { topicId: string }) {
   };
 
   return (
-    <form className="ms-topic__form" onSubmit={submit}>
-      <h3>Deixe sua resposta</h3>
-      <p className="ms-topic__form-note">As respostas passam por moderação.</p>
-      <Field label="Apelido" error={errors.nickname}>
-        <Input
-          value={nickname}
-          maxLength={20}
-          onChange={(e) => setNickname(e.target.value)}
+    <Card as="section" className="ms-topic__form" aria-labelledby={titleId}>
+      <form ref={formRef} className="ms-form" onSubmit={submit} noValidate>
+        <h2 id={titleId} className="ms-topic__form-title">
+          Deixe sua resposta
+        </h2>
+        <p className="ms-topic__note">As respostas passam por moderação.</p>
+        <Field label="Apelido" required error={errors.nickname}>
+          <Input
+            value={nickname}
+            maxLength={20}
+            autoComplete="nickname"
+            onChange={(e) => setNickname(e.target.value)}
+          />
+        </Field>
+        <Field label="Mensagem" required error={errors.body}>
+          <Textarea
+            value={body}
+            maxLength={4000}
+            rows={5}
+            onChange={(e) => setBody(e.target.value)}
+          />
+        </Field>
+        {/* campo-armadilha: visitantes não veem nem alcançam pelo teclado */}
+        <input
+          name={HONEYPOT_FIELD}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="ms-hp"
+          value={trap}
+          onChange={(e) => setTrap(e.target.value)}
         />
-      </Field>
-      <Field label="Mensagem" error={errors.body}>
-        <Textarea
-          value={body}
-          maxLength={4000}
-          onChange={(e) => setBody(e.target.value)}
-        />
-      </Field>
-      {/* campo-armadilha: visitantes não veem nem alcançam pelo teclado */}
-      <input
-        name={HONEYPOT_FIELD}
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="ms-hp"
-        value={trap}
-        onChange={(e) => setTrap(e.target.value)}
-      />
-      <div className="ms-topic__form-actions">
-        <Button type="submit" loading={create.isPending}>
-          <Send /> Enviar resposta
-        </Button>
-      </div>
-    </form>
+        <div className="ms-form__actions">
+          <Button type="submit" loading={create.isPending}>
+            <Send aria-hidden /> Enviar resposta
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -223,9 +267,10 @@ function ReplyReport({ id }: { id: string }) {
 }
 
 /**
- * Botão "Denunciar" que abre um mini-formulário inline (motivo + detalhes).
- * A API responde 202 sempre — inclusive quando descarta por repetição ou
- * honeypot —, então o visitante vê o mesmo agradecimento em qualquer caso.
+ * Botão "Denunciar" (sempre montado, com `aria-expanded`) que abre um
+ * mini-formulário inline (motivo + detalhes). Ao fechar — por Cancelar ou
+ * envio — o foco volta ao botão. A API responde 202 sempre, inclusive quando
+ * descarta por repetição ou honeypot: o visitante vê o mesmo agradecimento.
  */
 function ReportPanel({
   label,
@@ -241,12 +286,15 @@ function ReportPanel({
   const [details, setDetails] = useState('');
   const [trap, setTrap] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   const close = () => {
     setOpen(false);
     setDetails('');
     setError(undefined);
+    requestAnimationFrame(() => toggleRef.current?.focus());
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -270,61 +318,75 @@ function ReportPanel({
     }
   };
 
-  if (!open) {
-    return (
-      <div className="ms-report">
-        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(true)}>
-          <Flag /> Denunciar
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <form className="ms-report ms-report--open" onSubmit={submit} aria-label={label}>
-      <p className="ms-report__note">
-        A denúncia vai para a moderação da equipe. Nenhum dado seu é publicado.
-      </p>
-      <div className="ms-report__fields">
-        <Field label="Motivo">
-          <Select
-            value={reason}
-            onChange={(e) => setReason(e.target.value as ReportReason)}
-          >
-            {REPORT_REASONS.map((r) => (
-              <option key={r} value={r}>
-                {REPORT_REASON_LABELS[r]}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Detalhes (opcional)" error={error}>
-          <Textarea
-            value={details}
-            rows={2}
-            maxLength={500}
-            onChange={(e) => setDetails(e.target.value)}
+    <div className={cx('ms-report', open && 'ms-report--open')}>
+      <Button
+        ref={toggleRef}
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="ms-report__toggle"
+        aria-expanded={open}
+        aria-controls={formId}
+        onClick={() => (open ? close() : setOpen(true))}
+      >
+        <Flag aria-hidden /> Denunciar
+      </Button>
+
+      {open && (
+        <form
+          id={formId}
+          className="ms-report__form ms-form"
+          onSubmit={submit}
+          aria-label={label}
+          noValidate
+        >
+          <p className="ms-report__note">
+            A denúncia vai para a moderação da equipe. Nenhum dado seu é publicado.
+          </p>
+          <div className="ms-form__grid">
+            <Field label="Motivo">
+              <Select
+                autoFocus
+                value={reason}
+                onChange={(e) => setReason(e.target.value as ReportReason)}
+              >
+                {REPORT_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {REPORT_REASON_LABELS[r]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Detalhes (opcional)" error={error}>
+              <Textarea
+                value={details}
+                rows={2}
+                maxLength={500}
+                onChange={(e) => setDetails(e.target.value)}
+              />
+            </Field>
+          </div>
+          {/* campo-armadilha: visitantes não veem nem alcançam pelo teclado */}
+          <input
+            name={HONEYPOT_FIELD}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="ms-hp"
+            value={trap}
+            onChange={(e) => setTrap(e.target.value)}
           />
-        </Field>
-      </div>
-      {/* campo-armadilha: visitantes não veem nem alcançam pelo teclado */}
-      <input
-        name={HONEYPOT_FIELD}
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="ms-hp"
-        value={trap}
-        onChange={(e) => setTrap(e.target.value)}
-      />
-      <div className="ms-report__actions">
-        <Button type="button" variant="ghost" size="sm" onClick={close}>
-          Cancelar
-        </Button>
-        <Button type="submit" size="sm" loading={pending}>
-          <Flag /> Enviar denúncia
-        </Button>
-      </div>
-    </form>
+          <div className="ms-form__actions">
+            <Button type="button" variant="ghost" size="sm" onClick={close}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" loading={pending}>
+              <Flag aria-hidden /> Enviar denúncia
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }

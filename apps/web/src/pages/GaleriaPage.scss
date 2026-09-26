@@ -2,61 +2,74 @@
 
 @layer pages {
   .ms-gallery {
-    columns: 4 240px;
-    column-gap: var(--ms-space-4);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+    gap: var(--ms-space-4);
 
     @include below($bp-md) {
-      columns: 2 160px;
-      column-gap: var(--ms-space-3);
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: var(--ms-space-3);
     }
 
     &__item {
+      position: relative;
       display: block;
       width: 100%;
-      break-inside: avoid;
-      margin-bottom: var(--ms-space-4);
+      aspect-ratio: 1;
       padding: 0;
+      overflow: hidden;
       border: 1px solid var(--ms-border);
       border-radius: var(--ms-radius);
-      overflow: hidden;
       background: var(--ms-surface-2);
-      position: relative;
-      cursor: pointer;
-
-      @include below($bp-md) {
-        margin-bottom: var(--ms-space-3);
-      }
+      cursor: zoom-in;
+      transition: border-color var(--ms-dur-fast) var(--ms-ease);
 
       img {
         width: 100%;
-        display: block;
+        height: 100%;
+        object-fit: cover;
         transition: transform var(--ms-dur-slow) var(--ms-ease);
       }
-      &:hover {
+
+      @include hover {
         border-color: var(--ms-green-deep);
         img {
-          transform: scale(1.05);
+          transform: scale(1.04);
         }
         .ms-gallery__caption {
           opacity: 1;
-          transform: translateY(0);
+          transform: none;
         }
+      }
+      &:focus-visible .ms-gallery__caption {
+        opacity: 1;
+        transform: none;
       }
     }
 
+    // legenda sobre a foto: ao pousar/focar no desktop, sempre no celular
     &__caption {
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: var(--ms-space-4) var(--ms-space-3) var(--ms-space-3);
-      font-size: var(--ms-text-xs);
-      color: #fff;
+      inset: auto 0 0 0;
+      padding: var(--ms-space-6) var(--ms-space-3) var(--ms-space-3);
+      font-size: var(--ms-text-caption);
+      line-height: var(--ms-lh-snug);
+      color: var(--ms-on-overlay);
       text-align: left;
-      background: linear-gradient(180deg, transparent, rgba(6, 8, 7, 0.85));
+      background: var(--ms-scrim-image);
+      @include line-clamp(2);
       opacity: 0;
-      transform: translateY(8px);
-      transition: all var(--ms-dur) var(--ms-ease);
+      transform: translateY(6px);
+      transition:
+        opacity var(--ms-dur) var(--ms-ease),
+        transform var(--ms-dur) var(--ms-ease);
+
+      @include below($bp-md) {
+        opacity: 1;
+        transform: none;
+        padding: var(--ms-space-5) var(--ms-space-2) var(--ms-space-2);
+        font-size: var(--ms-text-xs);
+      }
     }
   }
 }

@@ -2,149 +2,119 @@
 
 @layer pages {
   .ms-topic {
-    max-width: 820px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-8);
+    max-width: 860px;
 
-    &__back {
+    &__byline {
       display: inline-flex;
       align-items: center;
       gap: var(--ms-space-2);
-      color: var(--ms-green);
-      font-weight: 600;
       font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-5);
-      svg {
-        width: 18px;
-        height: 18px;
+      .ms-avatar {
+        --ms-avatar-size: 28px;
       }
     }
 
+    // ── Mensagem original ──
     &__op {
-      @include card-surface;
-      padding: var(--ms-space-6);
-      margin-bottom: var(--ms-space-6);
-      h1 {
-        font-size: var(--ms-text-2xl);
-        margin-bottom: var(--ms-space-2);
-      }
-    }
-    &__meta {
-      font-size: var(--ms-text-xs);
-      color: var(--ms-text-faint);
-      strong {
-        color: var(--ms-green);
-      }
+      @include card;
+      position: relative; // contém o honeypot do formulário de denúncia
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-4);
     }
     &__body {
-      color: var(--ms-text-dim);
-      line-height: 1.7;
-      margin-top: var(--ms-space-4);
+      color: var(--ms-text);
+      font-size: var(--ms-text-lg);
+      line-height: var(--ms-lh-body);
       white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    &__foot {
+      display: flex;
+      justify-content: flex-end;
     }
 
+    // ── Respostas ──
+    &__thread {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-4);
+    }
     &__replies-title {
+      @include ui-heading;
       display: flex;
       align-items: center;
       gap: var(--ms-space-2);
-      font-size: var(--ms-text-lg);
-      margin-bottom: var(--ms-space-4);
+      font-size: var(--ms-title);
       svg {
-        width: 20px;
-        height: 20px;
-        color: var(--ms-green);
+        width: var(--ms-icon);
+        height: var(--ms-icon);
+        color: var(--ms-green-deep);
       }
     }
-
     &__replies {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-3);
-      margin-bottom: var(--ms-space-8);
+      gap: var(--ms-gap-list);
     }
     &__reply {
-      @include card-surface;
-      padding: var(--ms-space-4);
+      @include card(var(--ms-card-pad-sm));
+      position: relative;
       background: var(--ms-surface-2);
-      &-head {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: var(--ms-space-2);
-        strong {
-          color: var(--ms-green);
-        }
-        span {
-          font-size: var(--ms-text-xs);
-          color: var(--ms-text-faint);
-        }
-      }
-      p {
-        color: var(--ms-text-dim);
-        white-space: pre-wrap;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+    }
+    &__reply-head {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--ms-space-2);
+      strong {
+        font-size: var(--ms-text-sm);
       }
     }
+    &__reply-body {
+      color: var(--ms-text);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
 
+    // ── Responder ──
     &__form {
-      @include card-surface;
-      padding: var(--ms-space-5);
-      h3 {
-        font-size: var(--ms-text-lg);
-      }
-      &-note {
-        color: var(--ms-green);
-        font-size: var(--ms-text-sm);
-        margin-bottom: var(--ms-space-4);
-      }
-      &-actions {
-        display: flex;
-        justify-content: flex-end;
-      }
+      position: relative;
+    }
+    &__form-title {
+      @include ui-heading;
+      font-size: var(--ms-title);
+    }
+    &__note {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      margin-top: calc(-1 * var(--ms-space-2));
     }
   }
 
   // ── Denúncia inline (tópico e cada resposta) ──
   .ms-report {
     display: flex;
-    justify-content: flex-end;
-    margin-top: var(--ms-space-3);
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--ms-space-3);
+    width: 100%;
 
-    &--open {
-      @include card-surface;
-      flex-direction: column;
-      gap: var(--ms-space-3);
-      padding: var(--ms-space-4);
-      background: var(--ms-surface-2);
+    &__form {
+      @include card(var(--ms-card-pad-sm));
+      width: 100%;
+      background: var(--ms-surface);
+      text-align: left;
     }
-
     &__note {
-      font-size: var(--ms-text-xs);
+      font-size: var(--ms-text-caption);
       color: var(--ms-text-faint);
     }
-
-    &__fields {
-      display: grid;
-      grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
-      gap: var(--ms-space-3);
-
-      @include below($bp-sm) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    &__actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: var(--ms-space-2);
-    }
-  }
-
-  // Honeypot dos formulários da página (resposta e denúncias): fora da tela,
-  // sem display: none (robôs pulam campos invisíveis no DOM, mas preenchem os
-  // que só o CSS esconde).
-  .ms-topic .ms-hp {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
   }
 }

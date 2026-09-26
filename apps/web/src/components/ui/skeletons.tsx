@@ -22,18 +22,22 @@ function Range({
 /**
  * Grid de cards com mídia em cima (blog, galeria, equipe, prêmios). `min` é a
  * largura mínima de coluna da grade REAL (o mesmo valor passado ao mixin
- * `card-grid`), para o esqueleto ter o mesmo número de colunas.
+ * `card-grid`), para o esqueleto ter o mesmo número de colunas. `body={false}`
+ * para grades só de imagem (galeria).
  */
 export function CardGridSkeleton({
   count = 6,
   aspect = '16 / 10',
   min = 260,
+  body = true,
 }: {
   count?: number;
   /** Proporção da área de mídia, no formato CSS (`'1'`, `'3 / 4'`). */
   aspect?: string;
   /** Largura mínima de coluna, em px. */
   min?: number;
+  /** Linhas de texto abaixo da mídia. */
+  body?: boolean;
 }) {
   return (
     <div
@@ -47,12 +51,14 @@ export function CardGridSkeleton({
             <div className="ms-skel__media" style={{ aspectRatio: aspect }}>
               <Skeleton height="100%" radius={0} />
             </div>
-            <div className="ms-skel__card-body ms-skel__lines">
-              <Skeleton height={12} width="35%" />
-              <Skeleton height={22} width="85%" />
-              <Skeleton height={14} />
-              <Skeleton height={14} width="70%" />
-            </div>
+            {body && (
+              <div className="ms-skel__card-body ms-skel__lines">
+                <Skeleton height={12} width="35%" />
+                <Skeleton height={22} width="85%" />
+                <Skeleton height={14} />
+                <Skeleton height={14} width="70%" />
+              </div>
+            )}
           </div>
         )}
       </Range>

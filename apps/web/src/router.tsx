@@ -94,7 +94,11 @@ export const router = createBrowserRouter([
     ],
   },
   // fora do layout público: redireciona sem passar pela transição de página
-  { path: '/enciclopedia/:slug?', element: <EnciclopediaRedirect /> },
+  {
+    path: '/enciclopedia/:slug?',
+    element: <EnciclopediaRedirect />,
+    errorElement: <RouteErrorPage />,
+  },
   {
     path: '/admin/*',
     element: (

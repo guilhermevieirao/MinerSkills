@@ -3,68 +3,42 @@
 @layer components {
   // ── Formulário de contato / inscrição (Contato e Como Entrar) ──
   .ms-contact {
-    @include card-surface;
+    @include card;
     position: relative; // contém o campo-armadilha posicionado fora da tela
-    padding: var(--ms-space-6);
     background: var(--ms-surface-2);
 
     @include below($bp-sm) {
-      padding: var(--ms-space-5);
+      padding: var(--ms-card-pad-sm);
     }
 
     &__title {
-      font-size: var(--ms-text-xl);
-      margin-bottom: var(--ms-space-4);
-    }
-
-    &__row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0 var(--ms-space-4);
-
-      @include below($bp-sm) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    // Honeypot: fora da tela, sem `display: none` (robôs pulam campos invisíveis
-    // no DOM, mas preenchem os que só o CSS esconde).
-    &__hp {
-      position: absolute;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
+      @include ui-heading;
+      font-size: var(--ms-title);
     }
 
     &__error {
       color: var(--ms-danger);
       font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-4);
-    }
-
-    &__actions {
-      display: flex;
-      justify-content: flex-end;
     }
 
     // ── Confirmação (substitui os campos após o envio) ──
     &--done {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--ms-space-2);
       text-align: center;
       padding: var(--ms-space-8) var(--ms-space-6);
 
       svg {
-        width: 48px;
-        height: 48px;
+        width: var(--ms-icon-xl);
+        height: var(--ms-icon-xl);
         color: var(--ms-green);
-        margin-bottom: var(--ms-space-3);
-      }
-      .ms-contact__title {
         margin-bottom: var(--ms-space-2);
       }
       p {
         color: var(--ms-text-dim);
+        max-width: 44ch;
       }
     }
   }

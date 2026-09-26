@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { Images } from 'lucide-react';
-import { motion } from 'motion/react';
 import { PageHero } from '../components/layout/PageHero';
 import { useGallery } from '../features/gallery/useGallery';
 import { EmptyState } from '../components/ui';
@@ -13,6 +12,11 @@ import './GaleriaPage.scss';
 
 const DESCRIPTION = 'Momentos da equipe: bancada, competições, bastidores e conquistas.';
 
+/**
+ * Galeria em grade de quadrados (4 → 3 → 2 colunas), na ORDEM definida no
+ * painel — colunas CSS liam em ziguezague. A legenda aparece ao pousar/focar
+ * no desktop e fica sempre visível no celular; cada foto abre o lightbox.
+ */
 export function GaleriaPage() {
   const gallery = useGallery();
   const [index, setIndex] = useState<number | null>(null);
@@ -40,7 +44,7 @@ export function GaleriaPage() {
       <section className="ms-section ms-container">
         <QueryState
           query={gallery}
-          skeleton={<CardGridSkeleton count={8} aspect="1" />}
+          skeleton={<CardGridSkeleton count={8} aspect="1" min={220} body={false} />}
           isEmpty={(photos) => photos.length === 0}
           empty={
             <EmptyState
@@ -51,29 +55,30 @@ export function GaleriaPage() {
           }
         >
           {(photos) => (
-            <div className="ms-gallery">
+            <ul className="ms-gallery" role="list">
               {photos.map((photo, i) => (
-                <motion.button
-                  key={photo.id}
-                  className="ms-gallery__item"
-                  onClick={() => setIndex(i)}
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ duration: 0.4, delay: (i % 6) * 0.03 }}
-                  aria-label={photo.caption ?? 'Ampliar foto'}
-                >
-                  <MediaImage
-                    media={photo.media}
-                    alt={photo.media.alt ?? photo.caption ?? ''}
-                    thumb
-                  />
-                  {photo.caption && (
-                    <span className="ms-gallery__caption">{photo.caption}</span>
-                  )}
-                </motion.button>
+                <li key={photo.id}>
+                  <button
+                    type="button"
+                    className="ms-gallery__item"
+                    onClick={() => setIndex(i)}
+                    aria-label={
+                      photo.caption ?? `Ampliar foto ${i + 1} de ${photos.length}`
+                    }
+                  >
+                    <MediaImage
+                      media={photo.media}
+                      alt={photo.media.alt ?? photo.caption ?? ''}
+                      thumb
+                      sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
+                    />
+                    {photo.caption && (
+                      <span className="ms-gallery__caption">{photo.caption}</span>
+                    )}
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </QueryState>
       </section>

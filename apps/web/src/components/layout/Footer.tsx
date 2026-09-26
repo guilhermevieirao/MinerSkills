@@ -63,10 +63,14 @@ export function Footer() {
                 <li key={link.id}>
                   <a
                     href={link.url}
-                    target="_blank"
+                    {...(/^https?:/i.test(link.url) ? { target: '_blank' } : {})}
                     rel="noopener noreferrer"
                     className="ms-footer__icon"
-                    aria-label={`${link.label} (abre em nova aba)`}
+                    aria-label={
+                      /^https?:/i.test(link.url)
+                        ? `${link.label} (abre em nova aba)`
+                        : link.label
+                    }
                     title={link.label}
                   >
                     <SocialIcon platform={link.platform} />

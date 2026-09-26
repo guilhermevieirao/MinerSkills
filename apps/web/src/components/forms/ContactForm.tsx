@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { CheckCircle2, Send } from 'lucide-react';
 import {
   contactMessageSchema,
@@ -9,6 +9,7 @@ import {
 import { Button, Field, Input, Textarea } from '../ui';
 import { useToast } from '../ui/Toast';
 import { useSendMessage } from '../../features/contact/useContact';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import './ContactForm.scss';
 
@@ -19,8 +20,9 @@ const SUCCESS: Record<ContactKind, string> = {
 
 /**
  * Formulário público de contato ou de inscrição no processo seletivo. Valida
- * com o mesmo schema da API (erro por campo) e, depois do envio, substitui os
- * campos pela confirmação. O campo-armadilha (`HONEYPOT_FIELD`) fica fora da
+ * com o mesmo schema da API (erro por campo, foco no primeiro inválido) e,
+ * depois do envio, substitui os campos pela confirmação. Só os campos
+ * opcionais são marcados. O campo-armadilha (`HONEYPOT_FIELD`) fica fora da
  * tela via CSS — nunca `type="hidden"`, senão os robôs o ignoram.
  */
 export function ContactForm({
@@ -42,6 +44,8 @@ export function ContactForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const titleId = useId();
   const send = useSendMessage();
   const toast = useToast();
 
@@ -61,10 +65,9 @@ export function ContactForm({
     };
     const parsed = contactMessageSchema.safeParse(input);
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const issue of parsed.error.issues)
-        errs[issue.path[0] as string] = issue.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      // o Field marca aria-invalid no próximo render; o foco vai depois dele
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setErrors({});
@@ -96,11 +99,21 @@ export function ContactForm({
   }
 
   return (
-    <form className="ms-contact" onSubmit={submit} noValidate>
-      {title && <h2 className="ms-contact__title">{title}</h2>}
+    <form
+      ref={formRef}
+      className="ms-contact ms-form"
+      onSubmit={submit}
+      noValidate
+      aria-labelledby={title ? titleId : undefined}
+    >
+      {title && (
+        <h2 id={titleId} className="ms-contact__title">
+          {title}
+        </h2>
+      )}
 
-      <div className="ms-contact__row">
-        <Field label="Nome" error={errors.name}>
+      <div className="ms-form__grid">
+        <Field label="Nome" required error={errors.name}>
           <Input
             value={name}
             maxLength={120}
@@ -108,7 +121,7 @@ export function ContactForm({
             onChange={(e) => setName(e.target.value)}
           />
         </Field>
-        <Field label="E-mail" error={errors.email}>
+        <Field label="E-mail" required error={errors.email}>
           <Input
             type="email"
             value={email}
@@ -119,8 +132,8 @@ export function ContactForm({
         </Field>
       </div>
 
-      <div className="ms-contact__row">
-        <Field label="Telefone (opcional)" error={errors.phone}>
+      <div className="ms-form__grid">
+        <Field label="Telefone" optional error={errors.phone}>
           <Input
             type="tel"
             value={phone}
@@ -130,10 +143,11 @@ export function ContactForm({
           />
         </Field>
         {isApplication && (
-          <Field label="Escola" error={errors.school}>
+          <Field label="Escola" optional error={errors.school}>
             <Input
               value={school}
               maxLength={160}
+              autoComplete="organization"
               onChange={(e) => setSchool(e.target.value)}
             />
           </Field>
@@ -141,7 +155,12 @@ export function ContactForm({
       </div>
 
       {isApplication && (
-        <Field label="Série/ano" hint="Ex.: 1º ano do ensino médio" error={errors.grade}>
+        <Field
+          label="Série/ano"
+          optional
+          hint="Ex.: 1º ano do ensino médio"
+          error={errors.grade}
+        >
           <Input
             value={grade}
             maxLength={40}
@@ -152,6 +171,7 @@ export function ContactForm({
 
       <Field
         label="Mensagem"
+        required
         hint={
           isApplication
             ? 'Conte por que quer entrar na equipe e o que gosta de fazer.'
@@ -173,7 +193,7 @@ export function ContactForm({
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
-        className="ms-contact__hp"
+        className="ms-hp"
         value={trap}
         onChange={(e) => setTrap(e.target.value)}
       />
@@ -184,9 +204,9 @@ export function ContactForm({
         </p>
       )}
 
-      <div className="ms-contact__actions">
+      <div className="ms-form__actions">
         <Button type="submit" loading={send.isPending}>
-          <Send /> Enviar
+          <Send aria-hidden /> Enviar
         </Button>
       </div>
     </form>

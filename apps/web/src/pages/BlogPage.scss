@@ -1,5 +1,3 @@
-@use '../styles/mixins' as *;
-
 @layer pages {
   .ms-blog {
     // busca no cabeçalho da página (campo do kit + botão)
@@ -12,18 +10,6 @@
       .ms-search {
         flex: 1;
       }
-    }
-
-    &__pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--ms-space-4);
-      margin-top: var(--ms-space-8);
-    }
-    &__page-info {
-      @include meta;
-      font-size: var(--ms-text-sm);
     }
   }
 }

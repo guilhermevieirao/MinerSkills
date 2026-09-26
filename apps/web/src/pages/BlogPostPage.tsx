@@ -1,22 +1,37 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, LinkIcon, Calendar } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, LinkIcon } from 'lucide-react';
 import type { PostDetailDTO } from '@minerskills/shared';
-import { usePost } from '../features/posts/usePosts';
-import { EmptyState, LinkButton } from '../components/ui';
+import { useLatestPosts, usePost } from '../features/posts/usePosts';
+import { PageHero } from '../components/layout/PageHero';
+import { LinkButton, SectionHeading } from '../components/ui';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
+import { DateText } from '../components/ui/DateText';
+import { FullScreenMessage } from '../components/ui/FullScreenMessage';
 import { QueryState } from '../components/ui/QueryState';
 import { ArticleSkeleton } from '../components/ui/skeletons';
 import { MediaImage } from '../components/ui/MediaImage';
 import { YouTubeEmbed } from '../components/ui/YouTubeEmbed';
 import { Lightbox } from '../components/ui/Lightbox';
+import { PostCard } from '../components/cards/PostCard';
 import { ApiError } from '../lib/api';
-import { formatDate, mediaUrl } from '../lib/format';
+import { mediaUrl } from '../lib/format';
 import { absoluteUrl, SITE_NAME, useDocumentHead } from '../lib/useDocumentHead';
 import './BlogPostPage.scss';
 
 /** Slug que não existe (ou post despublicado): tela própria, sem "tentar novamente". */
 function isNotFound(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
+}
+
+/** Minutos de leitura a ~200 palavras/min, a partir do HTML sanitizado. */
+function readingMinutes(html: string): number {
+  const words = html
+    .replace(/<[^>]+>/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
 }
 
 export function BlogPostPage() {
@@ -56,17 +71,15 @@ export function BlogPostPage() {
 
   if (isNotFound(query.error)) {
     return (
-      <div className="ms-section ms-container">
-        <EmptyState
-          title="Post não encontrado"
-          description="Este conteúdo pode ter sido removido."
-          action={
-            <LinkButton to="/blog" variant="outline">
-              Voltar ao blog
-            </LinkButton>
-          }
-        />
-      </div>
+      <FullScreenMessage
+        title="Post não encontrado"
+        text="Este conteúdo pode ter sido removido ou despublicado."
+        actions={
+          <LinkButton to="/blog" variant="outline">
+            <ArrowLeft aria-hidden /> Voltar ao blog
+          </LinkButton>
+        }
+      />
     );
   }
 
@@ -81,86 +94,126 @@ function PostArticle({ post }: { post: PostDetailDTO }) {
   const [lightbox, setLightbox] = useState<number | null>(null);
   const images = post.media.filter((m) => m.kind === 'image');
   const videos = post.media.filter((m) => m.kind === 'video');
+  const minutes = readingMinutes(post.contentHtml);
+
+  // "Leia também": os posts mais recentes, sem este
+  const latest = useLatestPosts(4);
+  const related = (latest.data?.items ?? []).filter((p) => p.id !== post.id).slice(0, 3);
 
   return (
     <article className="ms-post">
-      <header className="ms-post__header">
-        {post.cover && (
-          <div className="ms-post__hero">
-            <MediaImage media={post.cover} alt={post.cover.alt ?? post.title} priority />
-            <div className="ms-post__hero-overlay" />
-          </div>
-        )}
-        <div className="ms-container ms-post__head-content">
-          <Link to="/blog" className="ms-post__back">
-            <ArrowLeft /> Blog
-          </Link>
-          <h1 className="ms-post__title">{post.title}</h1>
-          {post.publishedAt && (
-            <p className="ms-post__meta">
-              <Calendar /> {formatDate(post.publishedAt)}
-            </p>
+      <PageHero
+        size="lg"
+        media={post.cover}
+        breadcrumb={
+          <Breadcrumb items={[{ label: 'Blog', to: '/blog' }, { label: post.title }]} />
+        }
+        title={<span className="ms-post__title">{post.title}</span>}
+        subtitle={
+          <span className="ms-post__meta">
+            {post.publishedAt && (
+              <DateText iso={post.publishedAt} format="long" meta={false} />
+            )}
+            <span aria-hidden> · </span>
+            <span>{minutes} min de leitura</span>
+          </span>
+        }
+      />
+
+      <div className="ms-container ms-post__wrap">
+        <div className="ms-post__body">
+          <div
+            className="ms-post__content ms-prose"
+            // conteúdo já sanitizado no servidor (sanitize-html allowlist estrita)
+            dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+          />
+
+          {videos.length > 0 && (
+            <section className="ms-post__videos" aria-label="Vídeos">
+              {videos.map((v) => (
+                <video key={v.id} controls preload="metadata" className="ms-post__video">
+                  <source src={mediaUrl(v.url)} type={v.mimeType} />
+                </video>
+              ))}
+            </section>
+          )}
+
+          {post.youtube.length > 0 && (
+            <section className="ms-post__videos" aria-label="Vídeos do YouTube">
+              {post.youtube.map((y) => (
+                <YouTubeEmbed key={y.id} id={y.youtubeId} title={y.title} />
+              ))}
+            </section>
+          )}
+
+          {images.length > 0 && (
+            <section className="ms-post__gallery" aria-label="Fotos do post">
+              <ul className="ms-post__thumbs" role="list">
+                {images.map((img, i) => (
+                  <li key={img.id}>
+                    <button
+                      type="button"
+                      className="ms-post__thumb"
+                      onClick={() => setLightbox(i)}
+                      aria-label={`Ampliar imagem ${i + 1} de ${images.length}`}
+                    >
+                      <MediaImage media={img} alt={img.alt ?? ''} thumb />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {post.links.length > 0 && (
+            <section className="ms-post__links" aria-labelledby="ms-post-links">
+              <h2 id="ms-post-links" className="ms-post__links-title">
+                Links relacionados
+              </h2>
+              <ul role="list">
+                {post.links.map((l) => (
+                  <li key={l.id}>
+                    <a
+                      href={l.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ms-post__link"
+                    >
+                      <LinkIcon aria-hidden /> {l.label}
+                      <span className="ms-visually-hidden"> (abre em nova aba)</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
         </div>
-      </header>
-
-      <div className="ms-container ms-post__container">
-        <div
-          className="ms-post__content"
-          // conteúdo já sanitizado no servidor (sanitize-html allowlist estrita)
-          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
-        />
-
-        {videos.length > 0 && (
-          <section className="ms-post__videos">
-            {videos.map((v) => (
-              <video key={v.id} controls preload="metadata" className="ms-post__video">
-                <source src={mediaUrl(v.url)} type={v.mimeType} />
-              </video>
-            ))}
-          </section>
-        )}
-
-        {post.youtube.length > 0 && (
-          <section className="ms-post__yt-grid">
-            {post.youtube.map((y) => (
-              <YouTubeEmbed key={y.id} id={y.youtubeId} title={y.title} />
-            ))}
-          </section>
-        )}
-
-        {images.length > 0 && (
-          <section className="ms-post__gallery">
-            {images.map((img, i) => (
-              <button
-                key={img.id}
-                className="ms-post__thumb"
-                onClick={() => setLightbox(i)}
-                aria-label="Ampliar imagem"
-              >
-                <MediaImage media={img} alt={img.alt ?? ''} thumb />
-              </button>
-            ))}
-          </section>
-        )}
-
-        {post.links.length > 0 && (
-          <section className="ms-post__links">
-            <h3 className="ms-post__links-title">Links relacionados</h3>
-            {post.links.map((l) => (
-              <a
-                key={l.id}
-                href={l.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ms-post__link"
-              >
-                <LinkIcon /> {l.label}
-              </a>
-            ))}
-          </section>
-        )}
       </div>
+
+      {related.length > 0 && (
+        <section
+          className="ms-section ms-container ms-post__related"
+          aria-labelledby="ms-post-related"
+        >
+          <SectionHeading
+            id="ms-post-related"
+            kicker="Blog"
+            title="Leia também"
+            actions={
+              <LinkButton to="/blog" variant="outline" size="sm">
+                Ver todas <ArrowRight aria-hidden />
+              </LinkButton>
+            }
+          />
+          <ul className="ms-postgrid" role="list">
+            {related.map((p) => (
+              <li key={p.id}>
+                <PostCard post={p} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Lightbox
         items={images.map((m) => ({ url: m.url, alt: m.alt }))}

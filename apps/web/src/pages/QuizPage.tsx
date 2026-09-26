@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { Trophy, Play, Check, XCircle, RotateCcw, Medal, Clock } from 'lucide-react';
-import type { LeaderboardEntryDTO, QuizResultDTO } from '@minerskills/shared';
+import { Check, Clock, Medal, Play, RotateCcw, Trophy, XCircle } from 'lucide-react';
+import type {
+  LeaderboardEntryDTO,
+  QuizQuestionPublicDTO,
+  QuizResultDTO,
+} from '@minerskills/shared';
 import { nicknameSchema } from '@minerskills/shared';
 import { PageHero } from '../components/layout/PageHero';
 import {
@@ -9,11 +12,12 @@ import {
   useLeaderboard,
   useSubmitQuiz,
 } from '../features/quiz/useQuiz';
-import { Button, Input, EmptyState, Field } from '../components/ui';
+import { Button, Card, EmptyState, Field, Input, SectionHeading } from '../components/ui';
+import { IconTile } from '../components/ui/tiles';
 import { QueryState } from '../components/ui/QueryState';
 import { ListSkeleton } from '../components/ui/skeletons';
 import { useToast } from '../components/ui/Toast';
-import { formatDuration } from '../lib/format';
+import { cx, formatDuration } from '../lib/format';
 import { queryClient } from '../lib/queryClient';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import './QuizPage.scss';
@@ -23,12 +27,17 @@ const DESCRIPTION =
 
 type Phase = 'intro' | 'playing' | 'result';
 
+/** Pausa entre escolher uma opção e avançar (a escolha fica visível antes da troca). */
+const ADVANCE_DELAY_MS = 220;
+
 export function QuizPage() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [nickname, setNickname] = useState('');
   const [nickError, setNickError] = useState<string>();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [current, setCurrent] = useState(0);
+  // opções travadas entre a escolha e a próxima pergunta (sem clique duplo)
+  const [locked, setLocked] = useState(false);
   const [result, setResult] = useState<QuizResultDTO | null>(null);
   const startRef = useRef(0);
   const toast = useToast();
@@ -42,7 +51,6 @@ export function QuizPage() {
 
   const total = questions?.length ?? 0;
   const q = questions?.[current];
-  const progress = total ? Math.round((current / total) * 100) : 0;
 
   const start = () => {
     const parsed = nicknameSchema.safeParse(nickname.trim());
@@ -54,22 +62,25 @@ export function QuizPage() {
     setAnswers({});
     setCurrent(0);
     setResult(null);
+    setLocked(false);
     startRef.current = performance.now();
     setPhase('playing');
     void refetch();
   };
 
   const choose = (optionId: string) => {
-    if (!q) return;
+    if (!q || locked) return;
     const next = { ...answers, [q.id]: optionId };
     setAnswers(next);
-    setTimeout(() => {
+    setLocked(true);
+    window.setTimeout(() => {
+      setLocked(false);
       if (current + 1 < total) {
         setCurrent((c) => c + 1);
       } else {
-        finish(next);
+        void finish(next);
       }
-    }, 220);
+    }, ADVANCE_DELAY_MS);
   };
 
   const finish = async (finalAnswers: Record<string, string>) => {
@@ -98,173 +109,150 @@ export function QuizPage() {
 
   return (
     <>
-      <PageHero kicker="Jogo" title="Quiz MinerSkills" subtitle={DESCRIPTION} />
+      <PageHero kicker="Jogo" title="Quiz MinerSkills" subtitle={DESCRIPTION} size="sm" />
 
       <section className="ms-section ms-container ms-quiz">
         <div className="ms-quiz__main">
-          <AnimatePresence mode="wait">
-            {phase === 'intro' && (
-              <motion.div
-                key="intro"
-                className="ms-quiz__card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+          {phase === 'intro' && (
+            <Card className="ms-quiz__card">
+              <IconTile icon={Trophy} size="lg" />
+              <h2 className="ms-quiz__heading">Pronto para o desafio?</h2>
+              <p className="ms-quiz__lead">
+                Escolha um apelido para aparecer no ranking e comece a jogar.
+              </p>
+              <form
+                className="ms-quiz__nick"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  start();
+                }}
+                noValidate
               >
-                <div className="ms-quiz__intro-icon">
-                  <Trophy />
-                </div>
-                <h2>Pronto para o desafio?</h2>
-                <p>Escolha um apelido para aparecer no leaderboard e comece a jogar.</p>
-                <div className="ms-quiz__nick">
-                  <Field error={nickError}>
-                    <Input
-                      placeholder="Seu apelido"
-                      value={nickname}
-                      maxLength={20}
-                      onChange={(e) => setNickname(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && start()}
-                      aria-label="Apelido"
-                    />
-                  </Field>
-                  <Button onClick={start} size="lg">
-                    <Play /> Começar
-                  </Button>
-                </div>
-              </motion.div>
-            )}
+                <Field label="Apelido" required error={nickError}>
+                  <Input
+                    placeholder="Seu apelido"
+                    value={nickname}
+                    maxLength={20}
+                    autoComplete="nickname"
+                    onChange={(e) => setNickname(e.target.value)}
+                  />
+                </Field>
+                <Button type="submit" size="lg">
+                  <Play aria-hidden /> Começar
+                </Button>
+              </form>
+            </Card>
+          )}
 
-            {phase === 'playing' && (
-              <motion.div
-                key="playing"
-                className="ms-quiz__card"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+          {phase === 'playing' && (
+            <Card className="ms-quiz__card">
+              <QueryState
+                query={questionsQuery}
+                skeleton={<ListSkeleton rows={4} lead={0} />}
+                isEmpty={(list) => list.length === 0}
+                empty={
+                  <EmptyState
+                    title="Nenhuma pergunta disponível"
+                    description="Volte mais tarde para jogar."
+                    action={
+                      <Button variant="outline" onClick={reset}>
+                        Voltar
+                      </Button>
+                    }
+                  />
+                }
               >
-                <QueryState
-                  query={questionsQuery}
-                  skeleton={<ListSkeleton rows={4} />}
-                  isEmpty={(list) => list.length === 0}
-                  empty={
-                    <EmptyState
-                      title="Nenhuma pergunta disponível"
-                      description="Volte mais tarde para jogar."
-                    />
-                  }
-                >
-                  {() =>
-                    q && (
-                      <>
-                        <div className="ms-quiz__progress">
-                          <div
-                            className="ms-quiz__progress-bar"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <span className="ms-quiz__counter">
-                          Pergunta {current + 1} de {total}
-                        </span>
-                        <motion.h2
-                          key={q.id}
-                          className="ms-quiz__question"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                        >
-                          {q.question}
-                        </motion.h2>
-                        <div className="ms-quiz__options">
-                          {q.options.map((opt, i) => (
+                {() =>
+                  q && (
+                    <>
+                      <div
+                        className="ms-quiz__progress"
+                        role="progressbar"
+                        aria-label="Progresso do quiz"
+                        aria-valuemin={0}
+                        aria-valuemax={total}
+                        aria-valuenow={current + 1}
+                      >
+                        <div
+                          className="ms-quiz__progress-bar"
+                          style={{ width: `${((current + 1) / total) * 100}%` }}
+                        />
+                      </div>
+                      <p className="ms-quiz__counter">
+                        Pergunta {current + 1} de {total}
+                      </p>
+                      <h2 className="ms-quiz__question" key={q.id}>
+                        {q.question}
+                      </h2>
+                      <div
+                        className="ms-quiz__options"
+                        role="group"
+                        aria-label="Opções de resposta"
+                      >
+                        {q.options.map((opt, i) => {
+                          const picked = answers[q.id] === opt.id;
+                          return (
                             <button
                               key={opt.id}
-                              className={`ms-quiz__option ${answers[q.id] === opt.id ? 'ms-quiz__option--picked' : ''}`}
+                              type="button"
+                              className={cx(
+                                'ms-quiz__option',
+                                picked && 'ms-quiz__option--picked',
+                              )}
                               onClick={() => choose(opt.id)}
+                              disabled={locked}
+                              aria-pressed={picked}
                             >
-                              <span className="ms-quiz__option-letter">
+                              <span className="ms-quiz__option-letter" aria-hidden>
                                 {String.fromCharCode(65 + i)}
                               </span>
-                              {opt.text}
+                              <span>{opt.text}</span>
                             </button>
-                          ))}
-                        </div>
-                      </>
-                    )
-                  }
-                </QueryState>
-              </motion.div>
-            )}
-
-            {phase === 'result' && result && (
-              <motion.div
-                key="result"
-                className="ms-quiz__card"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="ms-quiz__result-score">
-                  <span className="ms-quiz__result-big">
-                    {result.score}
-                    <span className="ms-quiz__result-total">
-                      /{result.totalQuestions}
-                    </span>
-                  </span>
-                  <div className="ms-quiz__result-meta">
-                    <span>
-                      <Medal /> {result.rank}º no ranking
-                    </span>
-                    <span>
-                      <Clock /> {formatDuration(result.durationMs)}
-                    </span>
-                  </div>
-                </div>
-                <p className="ms-quiz__result-msg">
-                  {result.score === result.totalQuestions
-                    ? 'Perfeito! Você é um verdadeiro Miner.'
-                    : result.score >= result.totalQuestions * 0.6
-                      ? 'Muito bem! Você conhece a equipe.'
-                      : 'Continue estudando a MinerSkills e tente de novo!'}
-                </p>
-                <Button onClick={reset} variant="outline">
-                  <RotateCcw /> Jogar novamente
-                </Button>
-
-                <div className="ms-quiz__corrections">
-                  {result.corrections.map((c, i) => {
-                    const correct = c.chosenOptionId === c.correctOptionId;
-                    return (
-                      <div
-                        key={c.questionId}
-                        className={`ms-quiz__correction ${correct ? 'is-correct' : 'is-wrong'}`}
-                      >
-                        {correct ? <Check /> : <XCircle />}
-                        <div>
-                          <span>Questão {i + 1}</span>
-                          {c.explanation && <p>{c.explanation}</p>}
-                        </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    </>
+                  )
+                }
+              </QueryState>
+            </Card>
+          )}
+
+          {phase === 'result' && result && (
+            <Card className="ms-quiz__card">
+              <QuizResult result={result} questions={questions ?? []} onReset={reset} />
+            </Card>
+          )}
         </div>
 
-        <aside className="ms-quiz__leaderboard">
-          <h3 className="ms-quiz__lb-title">
-            <Trophy /> Leaderboard
-          </h3>
+        <aside className="ms-quiz__leaderboard" aria-labelledby="ms-quiz-lb">
+          <SectionHeading
+            as="h2"
+            size="sm"
+            id="ms-quiz-lb"
+            kicker="Ranking"
+            title="Melhores pontuações"
+            dense
+          />
           <QueryState
             query={leaderboard}
             compact
-            skeleton={<ListSkeleton rows={5} />}
+            skeleton={<ListSkeleton rows={5} lead={0} />}
             isEmpty={(list) => list.length === 0}
             empty={
-              <EmptyState title="Sem pontuações" description="Seja o primeiro a jogar!" />
+              <EmptyState
+                size="sm"
+                title="Sem pontuações"
+                description="Seja o primeiro a jogar!"
+              />
             }
           >
-            {(list) => <Leaderboard entries={list} />}
+            {(list) => (
+              <Leaderboard
+                entries={list}
+                me={phase === 'result' ? nickname.trim() : undefined}
+              />
+            )}
           </QueryState>
         </aside>
       </section>
@@ -272,13 +260,103 @@ export function QuizPage() {
   );
 }
 
-function Leaderboard({ entries }: { entries: LeaderboardEntryDTO[] }) {
+function QuizResult({
+  result,
+  questions,
+  onReset,
+}: {
+  result: QuizResultDTO;
+  questions: QuizQuestionPublicDTO[];
+  onReset: () => void;
+}) {
+  const ratio = result.totalQuestions ? result.score / result.totalQuestions : 0;
+  const message =
+    ratio === 1
+      ? 'Perfeito! Você é um verdadeiro Miner.'
+      : ratio >= 0.6
+        ? 'Muito bem! Você conhece a equipe.'
+        : 'Continue estudando a MinerSkills e tente de novo!';
+
   return (
-    <ol className="ms-lb">
+    <>
+      <div className="ms-quiz__result">
+        <p className="ms-quiz__result-big">
+          {result.score}
+          <span className="ms-quiz__result-total">/{result.totalQuestions}</span>
+        </p>
+        <div className="ms-quiz__result-meta">
+          <span>
+            <Medal aria-hidden /> {result.rank}º no ranking
+          </span>
+          <span>
+            <Clock aria-hidden /> {formatDuration(result.durationMs)}
+          </span>
+        </div>
+      </div>
+      <h2 className="ms-quiz__heading">{message}</h2>
+      <Button onClick={onReset} variant="outline">
+        <RotateCcw aria-hidden /> Jogar novamente
+      </Button>
+
+      <ol
+        className="ms-quiz__corrections"
+        role="list"
+        aria-label="Correção das respostas"
+      >
+        {result.corrections.map((c, i) => {
+          const question = questions.find((qq) => qq.id === c.questionId);
+          const chosen = question?.options.find((o) => o.id === c.chosenOptionId)?.text;
+          const right = question?.options.find((o) => o.id === c.correctOptionId)?.text;
+          const ok = c.chosenOptionId === c.correctOptionId;
+          return (
+            <li
+              key={c.questionId}
+              className={cx(
+                'ms-quiz__correction',
+                ok ? 'ms-quiz__correction--ok' : 'ms-quiz__correction--wrong',
+              )}
+            >
+              {ok ? <Check aria-hidden /> : <XCircle aria-hidden />}
+              <div className="ms-quiz__correction-body">
+                <p className="ms-quiz__correction-q">
+                  <span className="ms-meta">Questão {i + 1}</span>
+                  {question?.question && <span>{question.question}</span>}
+                </p>
+                {!ok && chosen && (
+                  <p className="ms-quiz__correction-a">
+                    Sua resposta: <strong>{chosen}</strong>
+                  </p>
+                )}
+                {right && (
+                  <p className="ms-quiz__correction-a">
+                    Resposta correta: <strong>{right}</strong>
+                  </p>
+                )}
+                {c.explanation && (
+                  <p className="ms-quiz__correction-x">{c.explanation}</p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </>
+  );
+}
+
+/** Ranking: pódio com as cores dos tokens; a linha do jogador atual fica destacada. */
+function Leaderboard({ entries, me }: { entries: LeaderboardEntryDTO[]; me?: string }) {
+  return (
+    <ol className="ms-lb" role="list">
       {entries.map((e, i) => (
         <li
           key={e.id}
-          className={`ms-lb__row ${i < 3 ? `ms-lb__row--top ms-lb__row--${i + 1}` : ''}`}
+          className={cx(
+            'ms-lb__row',
+            i < 3 && `ms-lb__row--top ms-lb__row--${i + 1}`,
+            me && e.nickname === me && 'ms-lb__row--me',
+          )}
+          aria-current={me && e.nickname === me ? 'true' : undefined}
         >
           <span className="ms-lb__rank">{i + 1}</span>
           <span className="ms-lb__nick">{e.nickname}</span>

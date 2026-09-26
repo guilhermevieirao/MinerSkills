@@ -3,7 +3,7 @@
 @layer pages {
   .ms-quiz {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) 320px;
     gap: var(--ms-space-6);
     align-items: start;
 
@@ -11,148 +11,141 @@
       grid-template-columns: 1fr;
     }
 
+    &__main {
+      min-width: 0;
+    }
+
     &__card {
-      @include card-surface;
-      padding: var(--ms-space-8);
-      min-height: 380px;
       display: flex;
       flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ms-space-4);
+      min-height: 380px;
+      padding: var(--ms-space-8);
 
       @include below($bp-md) {
-        padding: var(--ms-space-5);
-      }
-
-      h2 {
-        font-size: var(--ms-text-2xl);
-        margin-bottom: var(--ms-space-2);
-      }
-      > p {
-        color: var(--ms-text-dim);
-        margin-bottom: var(--ms-space-5);
+        padding: var(--ms-card-pad);
       }
     }
 
-    &__intro-icon {
-      width: 72px;
-      height: 72px;
-      border-radius: var(--ms-radius-lg);
-      background: rgba(41, 217, 140, 0.1);
-      color: var(--ms-green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: var(--ms-space-4);
-      svg {
-        width: 36px;
-        height: 36px;
-      }
+    &__heading {
+      @include ui-heading;
+      font-size: var(--ms-title-lg);
+    }
+    &__lead {
+      color: var(--ms-text-dim);
     }
 
+    // ── Intro: apelido + começar ──
     &__nick {
       display: flex;
+      align-items: flex-end;
       gap: var(--ms-space-3);
-      align-items: flex-start;
+      width: 100%;
+      max-width: 520px;
+
       .ms-field {
         flex: 1;
-        margin-bottom: 0;
       }
       @include below($bp-sm) {
         flex-direction: column;
-        .ms-btn {
-          width: 100%;
-        }
+        align-items: stretch;
       }
     }
 
-    // playing
+    // ── Jogando ──
     &__progress {
+      width: 100%;
       height: 6px;
-      background: var(--ms-surface-2);
+      background: var(--ms-surface-3);
       border-radius: var(--ms-radius-pill);
       overflow: hidden;
-      margin-bottom: var(--ms-space-3);
     }
     &__progress-bar {
       height: 100%;
-      background: var(--ms-gradient);
+      background: var(--ms-green);
+      border-radius: inherit;
       transition: width var(--ms-dur) var(--ms-ease);
     }
     &__counter {
-      @include kicker;
-      margin-bottom: var(--ms-space-4);
-      display: block;
+      @include meta;
+      margin-top: calc(-1 * var(--ms-space-2));
     }
     &__question {
-      font-size: var(--ms-text-xl);
-      margin-bottom: var(--ms-space-6);
-      line-height: 1.3;
+      @include ui-heading;
+      font-size: var(--ms-title-lg);
+      animation: ms-fade-in var(--ms-dur) var(--ms-ease) both;
     }
     &__options {
       display: flex;
       flex-direction: column;
       gap: var(--ms-space-3);
+      width: 100%;
     }
     &__option {
       display: flex;
       align-items: center;
       gap: var(--ms-space-3);
-      padding: var(--ms-space-4);
+      width: 100%;
+      min-height: 56px;
+      padding: var(--ms-space-3) var(--ms-space-4);
       background: var(--ms-surface-2);
-      border: 1px solid var(--ms-border);
+      border: 1px solid var(--ms-border-control);
       border-radius: var(--ms-radius);
       color: var(--ms-text);
       text-align: left;
       font-size: var(--ms-text-base);
-      transition: all var(--ms-dur) var(--ms-ease);
+      transition:
+        border-color var(--ms-dur-fast) var(--ms-ease),
+        background-color var(--ms-dur-fast) var(--ms-ease);
 
-      &:hover {
+      @include hover {
         border-color: var(--ms-green);
-        transform: translateX(4px);
+        background: var(--ms-green-soft);
       }
       &--picked {
         border-color: var(--ms-green);
-        background: rgba(41, 217, 140, 0.1);
+        background: var(--ms-green-soft);
+      }
+      &:disabled {
+        cursor: default;
       }
     }
     &__option-letter {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px;
-      height: 30px;
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
       flex-shrink: 0;
       border-radius: var(--ms-radius-sm);
       background: var(--ms-surface-3);
       color: var(--ms-green);
       font-family: var(--ms-font-mono);
-      font-weight: 600;
+      font-weight: var(--ms-fw-semibold);
       font-size: var(--ms-text-sm);
     }
 
-    // result
-    &__result-score {
+    // ── Resultado ──
+    &__result {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       flex-wrap: wrap;
-      gap: var(--ms-space-4);
-      margin-bottom: var(--ms-space-4);
+      gap: var(--ms-space-4) var(--ms-space-6);
     }
     &__result-big {
-      font-family: var(--ms-font-display);
-      font-weight: 700;
-      font-size: 4rem;
-      line-height: 1;
-      color: var(--ms-green);
+      @include display-heading(1);
+      font-size: var(--ms-display-num);
+      color: var(--ms-text);
+      font-variant-numeric: tabular-nums;
     }
     &__result-total {
       color: var(--ms-text-faint);
-      font-size: 2rem;
+      font-size: 0.5em;
     }
     &__result-meta {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-2);
+      gap: var(--ms-space-1);
       span {
         display: inline-flex;
         align-items: center;
@@ -161,22 +154,20 @@
         font-size: var(--ms-text-sm);
       }
       svg {
-        width: 16px;
-        height: 16px;
-        color: var(--ms-green);
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-green-deep);
       }
     }
-    &__result-msg {
-      color: var(--ms-text-dim);
-      margin-bottom: var(--ms-space-5);
-    }
+
     &__corrections {
-      margin-top: var(--ms-space-6);
       display: flex;
       flex-direction: column;
       gap: var(--ms-space-2);
-      border-top: 1px solid var(--ms-border);
+      width: 100%;
+      margin-top: var(--ms-space-2);
       padding-top: var(--ms-space-5);
+      border-top: 1px solid var(--ms-border);
     }
     &__correction {
       display: flex;
@@ -185,44 +176,56 @@
       border-radius: var(--ms-radius-sm);
       background: var(--ms-surface-2);
       font-size: var(--ms-text-sm);
-      svg {
-        width: 18px;
-        height: 18px;
+
+      > svg {
+        width: var(--ms-icon);
+        height: var(--ms-icon);
         flex-shrink: 0;
         margin-top: 2px;
       }
-      span {
-        font-weight: 600;
+      &--ok > svg {
+        color: var(--ms-success);
       }
-      p {
-        color: var(--ms-text-dim);
-        margin-top: 2px;
-      }
-      &.is-correct svg {
-        color: var(--ms-green);
-      }
-      &.is-wrong svg {
+      &--wrong > svg {
         color: var(--ms-danger);
       }
     }
-
-    // leaderboard aside
-    &__leaderboard {
-      @include card-surface;
-      padding: var(--ms-space-5);
-      position: sticky;
-      top: calc(var(--ms-navbar-h) + var(--ms-space-4));
-    }
-    &__lb-title {
+    &__correction-body {
       display: flex;
-      align-items: center;
-      gap: var(--ms-space-2);
-      font-size: var(--ms-text-lg);
-      margin-bottom: var(--ms-space-4);
-      svg {
-        width: 20px;
-        height: 20px;
-        color: var(--ms-green);
+      flex-direction: column;
+      gap: var(--ms-space-1);
+      min-width: 0;
+    }
+    &__correction-q {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-weight: var(--ms-fw-semibold);
+      color: var(--ms-text);
+    }
+    &__correction-a {
+      color: var(--ms-text-dim);
+      strong {
+        color: var(--ms-text);
+        font-weight: var(--ms-fw-medium);
+      }
+    }
+    &__correction-x {
+      color: var(--ms-text-dim);
+    }
+
+    // ── Ranking (fixo ao rolar a partir de 1024px) ──
+    &__leaderboard {
+      @include card;
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+
+      @include from($bp-lg) {
+        @include sticky-panel;
+      }
+      .ms-heading {
+        margin-bottom: 0;
       }
     }
   }
@@ -234,42 +237,50 @@
 
     &__row {
       display: grid;
-      grid-template-columns: 32px 1fr auto;
+      grid-template-columns: 32px minmax(0, 1fr) auto;
       align-items: center;
       gap: var(--ms-space-3);
-      padding: var(--ms-space-2) var(--ms-space-3);
+      min-height: var(--ms-control);
+      padding: var(--ms-space-1) var(--ms-space-3);
       border-radius: var(--ms-radius-sm);
       background: var(--ms-surface-2);
+      border: 1px solid transparent;
 
       &--top {
-        border: 1px solid var(--ms-border-strong);
+        border-color: var(--ms-border);
       }
       &--1 .ms-lb__rank {
-        color: #ffd24a;
+        color: var(--ms-podium-1);
       }
       &--2 .ms-lb__rank {
-        color: #d6d6d6;
+        color: var(--ms-podium-2);
       }
       &--3 .ms-lb__rank {
-        color: #e0955b;
+        color: var(--ms-podium-3);
+      }
+      // o jogador que acabou de jogar
+      &--me {
+        border-color: var(--ms-green);
+        background: var(--ms-green-soft);
       }
     }
     &__rank {
       font-family: var(--ms-font-mono);
-      font-weight: 700;
+      font-weight: var(--ms-fw-bold);
       color: var(--ms-text-dim);
       text-align: center;
+      font-variant-numeric: tabular-nums;
     }
     &__nick {
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-weight: var(--ms-fw-medium);
+      font-size: var(--ms-text-sm);
+      @include line-clamp(1);
     }
     &__score {
       font-family: var(--ms-font-mono);
-      color: var(--ms-green);
+      color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
+      font-variant-numeric: tabular-nums;
     }
   }
 }

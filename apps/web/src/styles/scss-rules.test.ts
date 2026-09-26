@@ -33,14 +33,6 @@ const DEBT = new Set<string>([
   'admin/admin.scss',
   'admin/sections/ForumSection.scss',
   'admin/sections/InboxSection.scss',
-  'pages/BlogPostPage.scss',
-  'pages/ComoEntrarPage.scss',
-  'pages/EquipePage.scss',
-  'pages/GaleriaPage.scss',
-  'pages/HistoriaPage.scss',
-  'pages/PremiosPage.scss',
-  'pages/QuizPage.scss',
-  'pages/TemporadasPage.scss',
 ]);
 
 const NO_LAYER = new Set([

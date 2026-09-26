@@ -510,14 +510,23 @@ export function Field({
         className,
       )}
     >
+      {/* "(opcional)" fica FORA do <label>: é pista visual, não parte do nome do campo */}
       {label && (
-        <label
-          className={cx('ms-field__label', visuallyHiddenLabel && 'ms-visually-hidden')}
-          htmlFor={controlId}
+        <span
+          className={cx(
+            'ms-field__labelrow',
+            visuallyHiddenLabel && 'ms-visually-hidden',
+          )}
         >
-          {label}
-          {optional && <span className="ms-field__optional">(opcional)</span>}
-        </label>
+          <label className="ms-field__label" htmlFor={controlId}>
+            {label}
+          </label>
+          {optional && (
+            <span className="ms-field__optional" aria-hidden="true">
+              (opcional)
+            </span>
+          )}
+        </span>
       )}
       {content}
       {hint && (

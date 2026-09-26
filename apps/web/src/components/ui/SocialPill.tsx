@@ -13,16 +13,18 @@ export function SocialPill({
   href: string;
   className?: string;
 }) {
+  // e-mail e telefone abrem o app do sistema, não uma aba nova
+  const external = /^https?:/i.test(href);
   return (
     <a
       href={href}
-      target="_blank"
+      {...(external ? { target: '_blank' } : {})}
       rel="noopener noreferrer"
       className={cx('ms-socialpill', className)}
     >
       <SocialIcon platform={platform} />
       <span>{label}</span>
-      <span className="ms-visually-hidden"> (abre em nova aba)</span>
+      {external && <span className="ms-visually-hidden"> (abre em nova aba)</span>}
     </a>
   );
 }

@@ -4,6 +4,7 @@ import { PageHero } from '../components/layout/PageHero';
 import { usePosts } from '../features/posts/usePosts';
 import { Button, EmptyState, SearchField } from '../components/ui';
 import { QueryState } from '../components/ui/QueryState';
+import { Pagination } from '../components/ui/Pagination';
 import { CardGridSkeleton } from '../components/ui/skeletons';
 import { PostCard } from '../components/cards/PostCard';
 import { Reveal } from '../components/motion/Reveal';
@@ -24,6 +25,12 @@ export function BlogPage() {
     e.preventDefault();
     setPage(1);
     setQ(term.trim());
+  };
+
+  const clear = () => {
+    setTerm('');
+    setQ('');
+    setPage(1);
   };
 
   return (
@@ -59,14 +66,7 @@ export function BlogPage() {
               description={q ? `Nada para "${q}".` : 'Em breve, novidades por aqui.'}
               action={
                 q ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setTerm('');
-                      setQ('');
-                      setPage(1);
-                    }}
-                  >
+                  <Button variant="outline" onClick={clear}>
                     Limpar busca
                   </Button>
                 ) : undefined
@@ -75,43 +75,29 @@ export function BlogPage() {
           }
         >
           {(data) => (
-            <>
-              <Reveal>
-                <ul className="ms-postgrid" role="list">
-                  {data.items.map((post, i) => (
-                    <li key={post.id}>
-                      <PostCard post={post} priority={i < 3} />
-                    </li>
-                  ))}
-                </ul>
-              </Reveal>
-
-              {data.totalPages > 1 && (
-                <nav className="ms-blog__pagination" aria-label="Paginação">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    Anterior
-                  </Button>
-                  <span className="ms-blog__page-info">
-                    {page} / {data.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= data.totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Próxima
-                  </Button>
-                </nav>
-              )}
-            </>
+            <Reveal>
+              <ul
+                className="ms-postgrid"
+                role="list"
+                aria-busy={posts.isFetching || undefined}
+              >
+                {data.items.map((post, i) => (
+                  <li key={post.id}>
+                    <PostCard post={post} priority={i < 3} />
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
           )}
         </QueryState>
+
+        {/* fora do QueryState: não some enquanto a próxima página carrega */}
+        <Pagination
+          page={page}
+          totalPages={posts.data?.totalPages ?? 1}
+          onChange={setPage}
+          loading={posts.isFetching}
+        />
       </section>
     </>
   );
