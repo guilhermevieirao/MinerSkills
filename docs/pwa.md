@@ -16,6 +16,9 @@ site público e para o painel.
 | `display` | `standalone` |
 | `start_url` | `/` |
 | Ícones | 192, 512 e **maskable** 512 (+ apple-touch-icon) |
+| `id` / `orientation` | `/` / `any` |
+| Atalhos | Agenda, Blog, Como entrar |
+| Capturas | `public/screenshots/wide.png` (1280×720) e `narrow.png` (390×844), da Home, exibidas no diálogo de instalação |
 
 Os ícones são gerados a partir do selo circular da marca:
 
@@ -53,7 +56,8 @@ vez por sessão.
 
 `InstallPrompt` escuta `beforeinstallprompt` (Chromium), cancela o mini-infobar do
 navegador e guarda o evento; o rodapé passa a exibir o botão discreto
-**"Instalar app"** (linha `.ms-footer__install`), que chama `prompt()`. O botão some:
+**"Instalar app"** (bloco `.ms-footer__install` na coluna da marca, com uma linha de
+benefício), que chama `prompt()`. O botão some:
 
 - depois de `appinstalled`;
 - quando o site já roda como app (`display-mode: standalone`, ou
@@ -73,8 +77,9 @@ Três camadas, da mais silenciosa à mais visível:
 1. **Shell precacheado.** O Workbox guarda o app shell, JS/CSS com hash, fontes e
    SVGs na instalação; as páginas já visitadas continuam abrindo sem rede, e a API
    pública tem cache curto de fallback (tabela abaixo).
-2. **`OfflineBanner`.** Faixa fixa logo abaixo da navbar — **"Você está offline —
-   algumas páginas podem estar desatualizadas."** — controlada pelos eventos
+2. **`OfflineBanner`.** Pílula fixa na base da tela (não cobre a navbar nem barras
+   sticky) — **"Você está offline — o conteúdo pode estar desatualizado."** —
+   controlada pelos eventos
    `online`/`offline` (estado inicial em `navigator.onLine`). A região viva
    (`role="status"`) existe sempre, vazia quando há rede, para que o leitor de tela
    anuncie a mudança.
@@ -124,7 +129,7 @@ No Chrome DevTools:
 - **Application → Service Workers** — `sw.js` ativo. Para ver a barra de atualização:
   faça um build novo e recarregue; o SW novo fica em *waiting* e a barra aparece.
 - **Network → Offline** → recarregar: o shell e as imagens já visitadas continuam
-  aparecendo, a faixa "Você está offline" surge abaixo da navbar e uma consulta que
+  aparecendo, a pílula "Você está offline" surge na base da tela e uma consulta que
   falha mostra o `ErrorState` offline.
 - Com o SW ativo, uma ação no `/admin` deve **sempre** aparecer em Network (nunca
   "from ServiceWorker").

@@ -41,3 +41,6 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Capturas locais (apps/web: npm run screenshots)
+/apps/web/screenshots/

@@ -21,7 +21,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     // Scripts de manutenção em Node puro (stamp-schema, generate-icons, prepare-db)
-    files: ['**/*.mjs'],
+    files: ['**/*.mjs', '**/*.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -33,8 +33,16 @@ export default tseslint.config(
         URL: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
       },
     },
+  },
+  {
+    // CommonJS (scripts que carregam o Playwright do workspace)
+    files: ['**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs' },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     files: ['**/*.{ts,tsx}'],

@@ -56,7 +56,43 @@ export default defineConfig(({ mode }) => {
           theme_color: '#0A0A0A',
           background_color: '#0A0A0A',
           display: 'standalone',
+          orientation: 'any',
           start_url: '/',
+          categories: ['education', 'sports'],
+          // atalhos do ícone instalado (Android/desktop)
+          shortcuts: [
+            {
+              name: 'Agenda',
+              url: '/agenda',
+              icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Blog',
+              url: '/blog',
+              icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Como entrar',
+              url: '/como-entrar',
+              icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
+            },
+          ],
+          // prévia da instalação (Chrome): capturas da Home geradas em R6
+          screenshots: [
+            {
+              src: '/screenshots/wide.png',
+              sizes: '1280x720',
+              type: 'image/png',
+              form_factor: 'wide',
+              label: 'Página inicial da MinerSkills #10019',
+            },
+            {
+              src: '/screenshots/narrow.png',
+              sizes: '390x844',
+              type: 'image/png',
+              label: 'Página inicial no celular',
+            },
+          ],
           icons: [
             { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
             { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

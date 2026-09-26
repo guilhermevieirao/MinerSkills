@@ -19,7 +19,7 @@ Detalhes em [security.md](../security.md).
 
 | Rota | O quê |
 | --- | --- |
-| `/admin` | **Dashboard** — contadores (inclusive Patrocinadores e Temporadas), alerta de moderação pendente e alerta de mensagens novas na caixa de entrada. |
+| `/admin` | **Dashboard** — saudação com a data; **Pendências** acionáveis (mensagens novas, itens na fila de moderação, denúncias abertas) ou "Tudo em dia"; 8 **números** (posts, membros, robôs, eventos, fotos, prêmios, tópicos, temporadas); **atalhos** (Novo post, Novo evento, Enviar fotos, Novo membro, Nova pergunta — abrem a seção com `?novo=1`); **próximos eventos** e **últimas mensagens**. |
 | `/admin/paginas` | **Blocos de conteúdo** (landing, história, como entrar) + **Timeline**. |
 | `/admin/blog` | Posts: editor rich-text, capa, fotos, vídeos, YouTube, links, rascunho/publicado. |
 | `/admin/galeria` | Upload múltiplo, **legenda editável** por foto, **reordenação** (arraste pela alça ou botões "Mover para cima/baixo", com "Salvar ordem"/"Descartar"), exclusão. |
@@ -38,31 +38,56 @@ Detalhes em [security.md](../security.md).
 | `/admin/administradores` | **Administradores** — quem entra no painel: nome, e-mail e senha. A própria conta não pode ser excluída e sempre resta ao menos um admin. |
 | `/admin/conta` | **Minha conta** — nome e e-mail da sessão e **troca de senha** (exige a senha atual; a sessão continua ativa). |
 
+## Shell
+
+- **Sidebar agrupada** por intenção — Dashboard · Conteúdo (Páginas & Timeline, Blog,
+  Galeria, Mídia) · Equipe (Membros & robôs, Tags, Temporadas, Prêmios) · Comunidade
+  (Fórum, Quiz, Mensagens) · Site (Agenda, Patrocinadores, Redes sociais,
+  Configurações) · Acesso (Administradores, Minha conta). Fonte única em
+  `admin/adminNav.ts`, que também alimenta a trilha da topbar e o título da aba
+  (`Blog · Painel`). Grupos recolhíveis (estado no `localStorage`; o grupo da rota
+  atual nunca recolhe). Pendências (fórum: fila + denúncias; mensagens novas) em
+  badge de aviso, somadas no grupo recolhido.
+- **Topbar**: botão "Menu" (abaixo de 1024px), trilha "Painel › grupo › seção" e "Ver site".
+- **Rodapé da sidebar**: avatar, nome e "Sair" (com estado pendente e erro em toast).
+- Abaixo de 1024px a sidebar é um **drawer modal** (armadilha de foco, Esc, rolagem
+  travada, botão "Fechar", `inert` quando fechado).
+- "Pular para o conteúdo", `<main id="conteudo">`, anúncio de rota, `noindex`.
+- URL inexistente dentro do painel mostra **"Página não encontrada"**; erro de rede ao
+  verificar a sessão mostra "Tentar novamente" (só `401` leva ao login).
+
 ## Padrões
 
-Todas as telas seguem a mesma forma: **lista** (tabela ou grid) + **modal** de
-criação/edição + **confirmação** para excluir + **toast** de resultado.
+Todas as telas seguem a mesma forma: **cabeçalho** (`AdminPageHeader`: título,
+descrição e a ação primária) + **lista** (`DataTable` ou grade) com `QueryState`
+(esqueleto, erro com nova tentativa, vazio **com ação**) + **modal** de criação/edição +
+**confirmação** para excluir + **toast** de resultado.
 
 > Exceção: **Configurações** é um formulário único (sem lista/modal), gerado a partir de
 > `SETTING_DEFINITIONS` e salvo de uma vez em `PUT /api/admin/settings/bulk`.
 
 | Peça | Papel |
 | --- | --- |
-| `<Modal>` | Formulário em portal, fecha com `Esc`. |
-| `<ConfirmDialog>` | Nenhuma exclusão acontece sem confirmação. |
-| `<MediaPicker>` | Upload de imagem única com preview, ou **Escolher da biblioteca** (reaproveita uma imagem já enviada). |
-| `<MediaLibraryModal>` | Modal de escolha de imagem existente (busca + paginação); usado pelo `<MediaPicker>`. |
-| `<RichTextEditor>` | TipTap (blog). |
-| `<Field>` | Rótulo + erro + acessibilidade (associa `<label>` ao controle). |
+| `<AdminPageHeader>` | Título em escala de produto (Inter), descrição e ações; a ação primária nunca some durante o carregamento. |
+| `<DataTable>` | Tabela a partir de 768px e **cartões** abaixo (só um dos dois no DOM). Colunas com `primary` (título do cartão), `lead` (miniatura), `hideOnMobile`; `caption` para leitores de tela; toda linha com `data-row`. |
+| `<RowActions>` | Botões de linha em slots fixos com nome acessível ("Editar X", "Excluir X"); o excluir é discreto em repouso e vermelho só ao apontar/focar. |
+| `<Modal>` | Portal com pilha (Esc fecha só o de cima), `size` sm/md/lg, `description`, `footer` fixo (Salvar ligado ao `<form>` por `form=`), corpo rolável, tela cheia no celular. O fundo só fecha num clique que começa e termina nele. |
+| `<ConfirmDialog>` | Título específico, texto explicando o efeito, confirmação em vermelho sólido. Nenhuma exclusão sem confirmação. |
+| `useNewParam` | `?novo=1` abre o formulário de criação (atalhos do dashboard) e limpa o parâmetro. |
+| `<MediaPicker>` | Upload de imagem única com preview, ou **Escolher da biblioteca**. |
+| `<MediaLibraryModal>` | Escolha de imagem existente (busca + paginação). |
+| `<RichTextEditor>` | TipTap (blog); o conteúdo usa a mesma prosa do post publicado. |
+| `<Field>` / `<Switch>` | Rótulo, dica e erro associados; booleanos como interruptor. |
 
-Validação com os **mesmos schemas zod do servidor** (`packages/shared`) — os erros
-aparecem no campo antes mesmo da requisição. Após cada mutação, as queries públicas
-correspondentes são invalidadas, então o site reflete a mudança imediatamente.
+Validação com os **mesmos schemas zod do servidor** (`packages/shared`): erro no campo,
+foco no primeiro inválido, antes mesmo da requisição. Após cada mutação, as queries
+públicas correspondentes são invalidadas, então o site reflete a mudança imediatamente.
 
 ## Mobile
 
-Abaixo de 1024px a sidebar vira um **drawer** com overlay. Tabelas rolam na horizontal
-dentro do próprio contêiner — a página nunca rola lateralmente.
+Abaixo de 1024px a sidebar vira um **drawer**; abaixo de 768px as listagens viram
+**cartões** (título, campos em duas colunas e ações no rodapé do cartão) e os modais
+ocupam a tela inteira com as ações fixas na base. A página nunca rola na horizontal.
 
 ## Administradores
 

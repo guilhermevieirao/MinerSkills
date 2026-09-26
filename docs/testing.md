@@ -73,7 +73,7 @@ de erro diz exatamente isso.
 
 ---
 
-## O que a suíte e2e cobre (94 testes; 3 projetos)
+## O que a suíte e2e cobre (225 execuções em 3 projetos)
 
 Os projetos `chromium` (1440×900) e `mobile` (Pixel 7) rodam todos os specs. O projeto
 `tablet` (834×1112, com toque e `prefers-reduced-motion: reduce`) cobre a faixa 768–1279 px —
@@ -118,6 +118,10 @@ exercita de forma indireta:
 | `apps/api/src/lib/ics.test.ts`                   | `buildCalendar`: envelope VCALENDAR, `UID`, `DTSTAMP` fixo, `DTEND` padrão (+2h), escapes, `URL` padrão sem barra duplicada, dobra em 75 octetos UTF-8 e CRLF.                                                                                                                                                                                                         |
 | `apps/api/src/modules/seo/seo.service.test.ts`   | `escapeXml`, `normalizeSiteUrl`/`absoluteUrl` (barra final), `excerpt`, `buildSitemap` (urlset, `<loc>` absolutos, `<lastmod>` ISO só quando válido, sem duplicatas, `&` escapado), `buildRobots` e `buildOgHtml` (doctype, title/description/og/twitter/canonical/refresh, escape de HTML vindo dos dados, `twitter:card summary` sem imagem, datas só em `article`). |
 | `apps/web/src/lib/format.test.ts`                | `cx`, `isWebUrl` (só `http(s)` absoluto), `mediaUrl` (absolutas, `data:`, `/uploads`), `formatDuration` e `formatDate` em pt-BR.                                                                                                                                                                                                                                       |
+| `apps/web/src/styles/tokens.contrast.test.ts` | Contraste WCAG dos tokens: cada par texto × superfície ≥ 4,5:1 e contorno de controle ≥ 3:1; texto sobre o gradiente verde. A matriz está em [design-system.md](design-system.md#matriz-de-contraste-texto--fundo). |
+| `apps/web/src/styles/tokens.sync.test.ts` | Breakpoints (`lib/breakpoints.ts` × `$bp-*`) e movimento (`lib/motion.ts` × `_motion.scss`) iguais nos dois lados. |
+| `apps/web/src/styles/scss-rules.test.ts` | Toda folha declara sua `@layer`; `index.html` abre com a mesma ordem de camadas de `_layers.scss`; cor só por token fora de `_tokens.scss` (a lista de exceções está vazia); classes com prefixo `ms-`. |
+| `apps/web/src/components/layout/routes.test.ts` | Navegação × `PUBLIC_ROUTES` (shared): todo destino é uma rota fixa, nenhuma rota fica sem link, sem duplicatas entre grupos e rodapé, grupo ativo nas rotas filhas. |
 | `packages/shared/src/env.schema.test.ts`         | Defaults, conversão de inteiros/CSV/`TRUST_PROXY`, `JWT_SECRET` curto e `DATABASE_URL` ausente falhando.                                                                                                                                                                                                                                                               |
 | `packages/shared/src/calendar.test.ts`           | `toIcsDate` (UTC), `escapeIcsText` (RFC 5545), `eventEnd` e `googleCalendarUrl` (parâmetros, fim padrão, `location` opcional, codificação).                                                                                                                                                                                                                            |
 | `packages/shared/src/schemas/schemas.test.ts`    | `refine`s e regexes dos schemas zod: agenda (`endsAt >= startsAt`), quiz (exatamente uma correta), tag de membro (ícone da lista curada), equipe (chave de tag em minúsculas).                                                                                                                                                                                         |
@@ -212,7 +216,8 @@ abrir um drawer/lightbox, espere o foco entrar (`expect.poll`) antes de mandar T
 inicial é definido num efeito, não no clique.
 
 **Linhas do painel.** Localize um registro com `row(page, texto)` — toda linha de listagem,
-`<tr>` ou o cartão que a substitui no mobile, carrega `data-row` com o rótulo do registro — e a
+`<tr>` ou o cartão que a substitui abaixo de 768px (o `DataTable` renderiza só um dos dois, e
+os dois levam a classe `ms-adm__table`), carrega `data-row` com o rótulo do registro — e a
 ação com `rowAction(linha, 'Editar' | 'Excluir')`, que lê o nome acessível do botão
 ("Editar X", "Excluir X"). Nunca por `tr`, `.ms-btn--danger` ou `.ms-btn--ghost`: tag e variante
 visual mudam com o layout; o rótulo é o contrato. O botão do diálogo de confirmação é

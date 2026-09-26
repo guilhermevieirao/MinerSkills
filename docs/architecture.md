@@ -144,6 +144,25 @@ Regra prática: **nada de `<img src={mediaUrl(...)}>` nem de `isLoading ? <Loade
 nas páginas** — use `MediaImage` e `QueryState`. As classes que os testes e2e observam
 (`.ms-blog__card`, `.ms-gallery__item`, `.ms-event`…) ficam dentro de `children`.
 
+### Layout público: navegação, cabeçalho e rolagem
+
+- **Navegação em fonte única** — [`components/layout/navItems.ts`](../apps/web/src/components/layout/navItems.ts)
+  declara `NAV_GROUPS` ("A equipe", "Conteúdo"), `NAV_DIRECT` (Agenda, Contato),
+  `JOIN_ITEM` (Como entrar) e `FOOTER_COLUMNS`, derivados de `PUBLIC_ROUTES`
+  (`packages/shared/src/routes.ts`), a mesma lista do sitemap. A navbar mostra o menu
+  completo a partir de 1024px (grupos em `Dropdown`); abaixo, o drawer `MobileNav`
+  fica sempre montado (fechado: `inert` + `aria-hidden`).
+- **`<main>` compensa a navbar fixa uma única vez** (`padding-top: var(--ms-header-h)`);
+  só o hero da Home volta para baixo da barra transparente.
+- **`PageHero`** é o cabeçalho de toda página (kicker, h1, subtítulo e slots
+  `breadcrumb`, `actions`, `toolbar`, `media`), sem animação e no mesmo container do conteúdo.
+- **Rolagem (`ScrollManager` no `PublicLayout`)** — PUSH/REPLACE vão ao topo, salvo
+  `state.preserveScroll` (membro em `/equipe`, card em `/temporadas`); Voltar/Avançar
+  **restauram** a posição da entrada do histórico (guardada em `sessionStorage` por
+  `location.key`, com `history.scrollRestoration = 'manual'`).
+- Listas paginadas/filtradas usam `placeholderData: keepPreviousData` e a
+  `Pagination` fica **fora** do `QueryState` — a lista e os controles não somem durante a troca.
+
 ### Head por página
 
 [`lib/useDocumentHead.ts`](../apps/web/src/lib/useDocumentHead.ts) escreve `document.title`
@@ -178,7 +197,8 @@ em tempo de compilação se divergirem.
 - Um módulo por funcionalidade, no back e no front, com o mesmo nome.
 - Rotas públicas e de admin vivem no mesmo módulo, em routers separados
   (`xPublicRouter` / `xAdminRouter`).
-- Classes CSS sempre com prefixo `ms-` (BEM-ish).
+- Classes CSS sempre com prefixo `ms-` (BEM-ish); toda folha numa `@layer`; cor só por
+  token (ver [design-system.md](design-system.md), regras verificadas por teste).
 - Toda entrada validada com zod; todo HTML sanitizado no servidor.
 - Nenhum emoji na interface — apenas ícones da `lucide-react`.
 - Textos em pt-BR; a estrutura permite i18n no futuro sem refatorar.

@@ -19,20 +19,20 @@ preservado) e, no painel, `/admin/enciclopedia` → `/admin/equipe`.
 
 | Área | Comportamento |
 | --- | --- |
-| **Chips de filtro** | `Todos` · uma por tag de membro (vindas do banco) · uma por geração · `Robôs`. Botões com `aria-pressed` dentro de `.ms-enc__filters` (`role="tablist"`). |
-| **Grid** | Cards com foto, nome, função (com marcador verde) e ícone da tag principal. O card ativo ganha borda verde + halo. |
-| **Detalhe** | **Desktop:** painel lateral fixo (sticky). **Mobile:** tela cheia sobreposta, com botão de fechar. |
-| **Contador** | "N registros encontrados". |
+| **Filtros (cabeçalho)** | Chips de função — `Todos` · uma por tag de membro (vindas do banco) · `Robôs` — como botões com `aria-pressed` num `role="group"` (`.ms-enc__filters`, nunca `tablist`); no celular viram uma linha rolável. Ao lado, o `Select` **Geração** (Todas / 1ª / 2ª / 3ª). |
+| **Grade** | Cards-**link** (`/equipe/:slug`: abrem em nova aba, têm URL) com foto 4/5 ou avatar de iniciais, nome em Inter e função com o ícone da tag principal numa linha própria. O card atual leva `aria-current` e borda verde. 2 colunas no celular → auto-fill (mín. 200px). Ao trocar o filtro, a grade anterior fica esmaecida (`aria-busy`) até a nova chegar — o contador não pisca "0". |
+| **Ficha** | **≥1024px:** painel lateral de 400px, `sticky-panel` (rola por dentro, nunca passa da tela). **<1024px:** tela cheia em diálogo modal com barra de título (nome + Fechar de 44px), armadilha de foco, Esc e rolagem travada. |
+| **Contador** | "N registros encontrados" (`.ms-enc__count`, região viva), dentro do QueryState. |
+| **Vazio** | "Nenhum registro" com "Limpar filtros". |
 
-O detalhe traz foto, nome, idade (ou temporada, para robôs), geração, tags,
-seção **» Sobre** (parágrafos separados por linha em branco) e a citação. Robôs
-vinculados a uma temporada (ver [temporadas.md](temporadas.md)) mostram o nome dela
-como tag ao lado das metas.
+A ficha traz foto, nome, idade (ou temporada, para robôs), geração, tags, a seção
+**Sobre** (parágrafos separados por linha em branco) e a citação. Robôs vinculados a
+uma temporada (ver [temporadas.md](temporadas.md)) mostram o nome dela como tag.
 
 ## Filtros
 
 Traduzidos para query params: `?tag=<key>`, `?generation=`, `?kind=robot`.
-A filtragem acontece **no servidor**; o grid reanima com `layout` + `AnimatePresence`.
+A filtragem acontece **no servidor** (`placeholderData: keepPreviousData` mantém a grade anterior na tela durante a troca).
 
 As gerações vêm de [`constants.ts`](../../packages/shared/src/constants.ts)
 (`GENERATIONS`). As tags **não** — vêm do banco via `GET /api/member-tags` (hook
@@ -76,7 +76,8 @@ página do `PublicLayout` (`<PageTransition>` dentro de `<AnimatePresence>`) é 
 pelo **id da rota**, não pelo `pathname`. Clicar num membro só troca o parâmetro
 `slug`: a `EquipePage` continua montada, sem fade-out/fade-in, sem pulo de scroll para
 o topo, e o filtro ativo e a posição do grid ficam como estavam. Só a navegação entre
-páginas diferentes (ex.: `/equipe` → `/blog`) anima e rola ao topo.
+páginas diferentes (ex.: `/equipe` → `/blog`) anima e rola ao topo; Voltar/Avançar
+restauram a posição em que cada página estava (`ScrollManager` em `PublicLayout`).
 
 Há teste e2e para isso: grava um marcador em `window` antes do clique e confere que ele
 sobreviveu (não houve reload) e que a chip de filtro continua `aria-pressed="true"`
