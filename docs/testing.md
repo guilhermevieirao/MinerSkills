@@ -73,7 +73,7 @@ de erro diz exatamente isso.
 
 ---
 
-## O que a suíte e2e cobre (225 execuções em 3 projetos)
+## O que a suíte e2e cobre (229 execuções em 3 projetos)
 
 Os projetos `chromium` (1440×900) e `mobile` (Pixel 7) rodam todos os specs. O projeto
 `tablet` (834×1112, com toque e `prefers-reduced-motion: reduce`) cobre a faixa 768–1279 px —
