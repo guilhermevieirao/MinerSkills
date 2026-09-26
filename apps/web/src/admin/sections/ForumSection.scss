@@ -26,17 +26,69 @@
       line-height: 1;
     }
 
-    &__filters {
+    // Fila: um bloco por tipo (tópicos, respostas)
+    &__groups {
       display: flex;
-      flex-wrap: wrap;
-      gap: var(--ms-space-2);
-      margin-bottom: var(--ms-space-4);
+      flex-direction: column;
+      gap: var(--ms-space-8);
+    }
+    &__group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+    }
+    &__subtitle {
+      font-size: var(--ms-text-lg);
+      font-weight: var(--ms-fw-semibold);
     }
 
     &__list {
       display: flex;
       flex-direction: column;
       gap: var(--ms-space-3);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  // ── Item da fila de moderação (base em admin.scss) ──
+  .ms-mod-item {
+    &__actions {
+      align-self: center;
+    }
+
+    // "Ver completo": o corpo sai do limite de 3 linhas
+    &--expanded &__body p {
+      display: block;
+      -webkit-line-clamp: unset;
+      line-clamp: none;
+      overflow: visible;
+    }
+
+    &__more {
+      @include focus-ring;
+      display: block;
+      margin-top: var(--ms-space-1);
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--ms-green);
+      font: inherit;
+      font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-medium);
+      cursor: pointer;
+
+      @include hover {
+        text-decoration: underline;
+      }
+    }
+
+    @include below($bp-md) {
+      &__actions {
+        align-self: stretch;
+        justify-content: flex-end;
+      }
     }
   }
 
@@ -49,7 +101,7 @@
     padding: var(--ms-space-4);
 
     &--resolved {
-      opacity: 0.85;
+      background: var(--ms-surface-2);
     }
 
     &__head {
@@ -62,7 +114,6 @@
     &__date {
       margin-left: auto;
       font-size: var(--ms-text-xs);
-      color: var(--ms-text-faint);
       white-space: nowrap;
     }
 
@@ -73,13 +124,21 @@
 
     // Alvo (tópico ou resposta) resumido
     &__target {
-      @include card-surface;
       display: flex;
       flex-direction: column;
       gap: var(--ms-space-1);
       min-width: 0;
       padding: var(--ms-space-3) var(--ms-space-4);
+      border: 1px solid var(--ms-border);
+      border-radius: var(--ms-radius-sm);
       background: var(--ms-surface-2);
+    }
+
+    &__target-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--ms-space-2);
     }
 
     &__kind {
@@ -87,7 +146,7 @@
     }
 
     &__topic {
-      font-weight: 600;
+      font-weight: var(--ms-fw-semibold);
       overflow-wrap: anywhere;
     }
 
@@ -95,6 +154,7 @@
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
       overflow-wrap: anywhere;
+      @include line-clamp(3);
     }
 
     &__meta {
@@ -107,6 +167,11 @@
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: var(--ms-space-2);
+    }
+
+    // "Ver tópico" à esquerda, longe das ações que mudam o conteúdo
+    &__view {
+      margin-right: auto;
     }
   }
 }

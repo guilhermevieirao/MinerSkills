@@ -3,28 +3,14 @@
 @layer pages {
   // ── Caixa de entrada (/admin/mensagens) ──
   .ms-inbox {
-    &__toolbar {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ms-space-3);
-      margin-bottom: var(--ms-space-5);
-    }
-    &__filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--ms-space-2);
-    }
-    &__count {
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-3);
-    }
-
-    // ── Lista em cards ──
+    // ── Lista em cartões ──
     &__list {
       display: flex;
       flex-direction: column;
       gap: var(--ms-space-3);
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
     &__item {
@@ -40,20 +26,18 @@
       font: inherit;
       color: var(--ms-text);
       cursor: pointer;
-      transition:
-        border-color var(--ms-dur) var(--ms-ease),
-        transform var(--ms-dur) var(--ms-ease);
+      transition: border-color var(--ms-dur-fast) var(--ms-ease);
 
-      &:hover {
+      @include hover {
         border-color: var(--ms-green-deep);
-        transform: translateY(-2px);
       }
+      // nova: faixa verde à esquerda e remetente em destaque
       &--new {
-        border-left: 3px solid var(--ms-green);
+        box-shadow: inset 3px 0 0 var(--ms-green);
       }
 
       @include below($bp-md) {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) auto;
       }
     }
 
@@ -62,31 +46,16 @@
       align-items: center;
       gap: var(--ms-space-2);
       flex-wrap: wrap;
+
+      @include below($bp-md) {
+        grid-column: 1 / -1;
+        grid-row: 1;
+      }
     }
 
+    // gancho da suíte e2e ("Nova"/"Lida"/"Arquivada"); a pílula é o StatusBadge
     &__status {
       display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: var(--ms-radius-pill);
-      font-size: var(--ms-text-xs);
-      font-weight: 600;
-      white-space: nowrap;
-
-      &--new {
-        background: var(--ms-green-soft-strong);
-        color: var(--ms-green);
-      }
-      &--read {
-        background: var(--ms-surface-2);
-        color: var(--ms-text-dim);
-        border: 1px solid var(--ms-border);
-      }
-      &--archived {
-        background: var(--ms-surface-2);
-        color: var(--ms-text-faint);
-        border: 1px solid var(--ms-border);
-      }
     }
 
     &__who {
@@ -95,43 +64,35 @@
       min-width: 0;
       gap: 2px;
 
-      strong {
+      strong,
+      span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      strong {
+        font-weight: var(--ms-fw-medium);
       }
       span {
         font-size: var(--ms-text-sm);
         color: var(--ms-text-dim);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
+    }
+    &__item--new &__who strong {
+      font-weight: var(--ms-fw-semibold);
     }
 
     &__date {
       font-size: var(--ms-text-xs);
-      color: var(--ms-text-faint);
       white-space: nowrap;
+      align-self: start;
     }
 
     &__preview {
       grid-column: 1 / -1;
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    &__pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--ms-space-4);
-      margin-top: var(--ms-space-6);
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
+      @include line-clamp(1);
     }
 
     // ── Modal de detalhes ──
@@ -143,16 +104,12 @@
 
     &__facts {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
       gap: var(--ms-space-3);
       margin: 0;
 
       dt {
-        font-size: var(--ms-text-xs);
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--ms-text-dim);
+        @include kicker($color: var(--ms-text-dim));
       }
       dd {
         margin: 2px 0 0;
@@ -161,7 +118,7 @@
       }
       a {
         color: var(--ms-green);
-        &:hover {
+        @include hover {
           text-decoration: underline;
         }
       }
@@ -174,15 +131,6 @@
       line-height: 1.7;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
-    }
-
-    &__actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: var(--ms-space-3);
-      padding-top: var(--ms-space-5);
-      border-top: 1px solid var(--ms-border);
     }
   }
 }

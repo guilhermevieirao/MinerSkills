@@ -3,34 +3,25 @@
 @layer pages {
   // ── Galeria (painel): upload, lista reordenável e edição de legenda ──
   .ms-galadm {
+    // legenda dos próximos envios + dropzone, numa coluna de largura limitada
     &__upload {
-      display: grid;
-      gap: var(--ms-space-4);
+      @include stack(var(--ms-space-3));
+      max-width: 560px;
       margin-bottom: var(--ms-space-6);
-
-      .ms-input {
-        max-width: 400px;
+    }
+    &__dropzone {
+      &--over {
+        border-color: var(--ms-green);
+        background: var(--ms-green-soft);
+      }
+      &:disabled {
+        cursor: progress;
+        opacity: 0.7;
       }
     }
 
-    &__toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: var(--ms-space-3);
-      margin-bottom: var(--ms-space-4);
-    }
-    &__count {
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
-    }
     &__dirty {
       color: var(--ms-warning);
-    }
-    &__toolbar-actions {
-      display: flex;
-      gap: var(--ms-space-2);
     }
 
     &__list {
@@ -46,7 +37,7 @@
       @include card-surface;
       position: relative;
       display: grid;
-      grid-template-columns: auto auto 64px minmax(0, 1fr) auto;
+      grid-template-columns: auto auto auto minmax(0, 1fr) auto;
       align-items: center;
       gap: var(--ms-space-3);
       padding: var(--ms-space-2) var(--ms-space-3);
@@ -54,7 +45,7 @@
         border-color var(--ms-dur) var(--ms-ease),
         box-shadow var(--ms-dur) var(--ms-ease);
 
-      &:hover {
+      @include hover {
         border-color: var(--ms-border-strong);
       }
       &--dragging {
@@ -63,8 +54,11 @@
         z-index: 2;
       }
 
-      @include below($bp-sm) {
-        grid-template-columns: auto auto 56px minmax(0, 1fr);
+      // abaixo de 768px as ações descem para uma linha própria, sempre visíveis
+      @include below($bp-md) {
+        grid-template-columns: auto auto auto minmax(0, 1fr);
+        gap: var(--ms-space-2) var(--ms-space-3);
+        padding: var(--ms-space-3);
       }
     }
 
@@ -77,7 +71,7 @@
       touch-action: none;
       user-select: none;
 
-      &:hover {
+      @include hover {
         color: var(--ms-text);
         background: var(--ms-surface-2);
       }
@@ -99,16 +93,10 @@
     }
 
     &__thumb {
-      width: 64px;
-      height: 64px;
-      border-radius: var(--ms-radius-sm);
-      border: 1px solid var(--ms-border);
-      background: var(--ms-surface-2);
-      object-fit: cover;
+      --ms-thumb-size: 64px;
 
       @include below($bp-sm) {
-        width: 56px;
-        height: 56px;
+        --ms-thumb-size: 56px;
       }
     }
 
@@ -120,13 +108,19 @@
     }
     &__caption {
       font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-medium);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
 
       &--empty {
         color: var(--ms-text-faint);
+        font-weight: normal;
         font-style: italic;
+      }
+      @include below($bp-md) {
+        white-space: normal;
+        @include line-clamp(2);
       }
     }
     &__alt {
@@ -142,30 +136,23 @@
       gap: var(--ms-space-1);
       justify-content: flex-end;
 
-      @include below($bp-sm) {
+      @include below($bp-md) {
         grid-column: 1 / -1;
+        padding-top: var(--ms-space-2);
+        border-top: 1px solid var(--ms-border-subtle);
       }
     }
 
-    // Preview da foto dentro do modal de legenda
+    // prévia da foto dentro do modal de legenda
     &__preview {
       display: flex;
       align-items: center;
       gap: var(--ms-space-4);
-      margin-bottom: var(--ms-space-4);
 
-      img {
-        width: 90px;
-        height: 90px;
-        border-radius: var(--ms-radius);
-        border: 1px solid var(--ms-border);
-        background: var(--ms-surface-2);
-        object-fit: cover;
-        flex-shrink: 0;
-      }
       p {
         font-size: var(--ms-text-sm);
         color: var(--ms-text-dim);
+        overflow-wrap: anywhere;
       }
     }
   }

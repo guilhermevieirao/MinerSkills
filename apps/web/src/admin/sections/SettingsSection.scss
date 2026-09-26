@@ -5,15 +5,14 @@
   .ms-settings {
     @include card-surface;
     max-width: 760px;
-    padding: var(--ms-space-6);
 
-    @include below($bp-md) {
-      padding: var(--ms-space-4);
-    }
+    &__fields {
+      @include stack(var(--ms-space-5));
+      padding: var(--ms-space-6);
 
-    // o espaçamento entre campos é o do .ms-field; o último encosta na barra de ações
-    .ms-field:last-of-type {
-      margin-bottom: 0;
+      @include below($bp-md) {
+        padding: var(--ms-space-4);
+      }
     }
 
     &__actions {
@@ -21,20 +20,44 @@
       align-items: center;
       justify-content: flex-end;
       gap: var(--ms-space-4);
-      margin-top: var(--ms-space-6);
-      padding-top: var(--ms-space-5);
-      border-top: 1px solid var(--ms-border);
+      padding: var(--ms-space-4) var(--ms-space-6);
+      border-top: 1px solid var(--ms-border-subtle);
+      border-radius: 0 0 var(--ms-radius) var(--ms-radius);
+      background: var(--ms-surface);
 
+      @include below($bp-md) {
+        padding: var(--ms-space-3) var(--ms-space-4);
+      }
       @include below($bp-sm) {
         flex-direction: column-reverse;
         align-items: stretch;
         text-align: center;
       }
+
+      // alterações pendentes: a barra gruda na base da tela enquanto se rola o formulário
+      &--sticky {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding-bottom: calc(var(--ms-space-4) + env(safe-area-inset-bottom, 0px));
+        background: var(--ms-surface-2);
+        box-shadow: var(--ms-elev-2);
+      }
     }
 
     &__dirty {
+      margin-right: auto;
       font-size: var(--ms-text-sm);
       color: var(--ms-warning);
+
+      @include below($bp-sm) {
+        margin-right: 0;
+      }
     }
+  }
+
+  // os toasts sobem acima da barra fixa enquanto ela estiver na tela
+  :root:has(.ms-settings__actions--sticky) {
+    --ms-toast-offset: 72px;
   }
 }

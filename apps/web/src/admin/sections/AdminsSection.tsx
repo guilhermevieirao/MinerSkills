@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import {
   adminUserSchema,
   adminUserCreateSchema,
@@ -10,18 +10,25 @@ import {
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
 import { useAdminMe } from '../useAdminAuth';
-import { Button, Input, Field, Tag, Loader, EmptyState } from '../../components/ui';
+import { Button, EmptyState, Field, Input, Tag } from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Avatar } from '../../components/ui/Avatar';
+import { DateText } from '../../components/ui/DateText';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
-import { formatDate } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 
 const ADMINS_QUERY_KEY = ['admin-admins'];
 
 export function AdminsSection() {
-  const { data, isLoading } = useQuery({
+  const admins = useQuery({
     queryKey: ADMINS_QUERY_KEY,
     queryFn: adminApi.admins.list,
   });
@@ -51,79 +58,84 @@ export function AdminsSection() {
     }
   };
 
+  const newAdmin = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Novo administrador
+    </Button>
+  );
+
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Administradores</h1>
-          <p>Quem pode entrar no painel.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Novo administrador
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Administradores"
+        description="Quem pode entrar no painel."
+        actions={newAdmin}
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState title="Nenhum administrador cadastrado" />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Criado em</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((a) => {
-                const isMe = a.id === me?.id;
-                return (
-                  <tr key={a.id} data-row={a.name}>
-                    <td>
-                      {a.name}
-                      {isMe && (
-                        <>
-                          {' '}
-                          <Tag variant="muted">Você</Tag>
-                        </>
-                      )}
-                    </td>
-                    <td>{a.email}</td>
-                    <td>{formatDate(a.createdAt, 'dd/MM/yyyy')}</td>
-                    <td>
-                      <div className="ms-adm__row-actions">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Editar ${a.name}`}
-                          onClick={() => setEditing(a)}
-                        >
-                          <Pencil />
-                        </Button>
-                        {/* A própria conta não pode ser excluída (a API também barra). */}
-                        {!isMe && (
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            aria-label={`Excluir ${a.name}`}
-                            onClick={() => setDeleting(a)}
-                          >
-                            <Trash2 />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={admins}
+        skeleton={<ListSkeleton rows={3} lead={40} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<ShieldCheck />}
+            title="Nenhum administrador cadastrado"
+            description="Dê acesso ao painel a quem cuida do site."
+            action={newAdmin}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Administradores do painel"
+            rows={list}
+            rowKey={(a) => a.id}
+            rowLabel={(a) => a.name}
+            columns={[
+              {
+                key: 'avatar',
+                header: 'Avatar',
+                hideHeader: true,
+                lead: true,
+                width: '56px',
+                render: (a) => <Avatar name={a.name} size="sm" />,
+              },
+              {
+                key: 'name',
+                header: 'Nome',
+                primary: true,
+                render: (a) =>
+                  a.id === me?.id ? (
+                    <>
+                      {a.name} <Tag tone="neutral">Você</Tag>
+                    </>
+                  ) : (
+                    a.name
+                  ),
+              },
+              {
+                key: 'email',
+                header: 'E-mail',
+                render: (a) => <span className="ms-adm__muted">{a.email}</span>,
+              },
+              {
+                key: 'created',
+                header: 'Criado em',
+                hideOnMobile: true,
+                render: (a) => <DateText iso={a.createdAt} format="short" />,
+              },
+            ]}
+            actions={(a) => (
+              <RowActions
+                label={a.name}
+                onEdit={() => setEditing(a)}
+                // a própria conta não pode ser excluída (a API também barra)
+                onRemove={a.id === me?.id ? undefined : () => setDeleting(a)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <AdminForm
@@ -143,7 +155,8 @@ export function AdminsSection() {
 
       {deleting && (
         <ConfirmDialog
-          message={`Remover o acesso de "${deleting.name}" (${deleting.email})? Essa pessoa não conseguirá mais entrar no painel.`}
+          title="Remover acesso ao painel"
+          message={`"${deleting.name}" (${deleting.email}) não conseguirá mais entrar no painel. A exclusão não pode ser desfeita.`}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
           loading={removing}
@@ -175,6 +188,8 @@ function AdminForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   const save = async (e: React.FormEvent) => {
@@ -191,9 +206,8 @@ function AdminForm({
       candidate,
     );
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setErrors({});
@@ -212,6 +226,7 @@ function AdminForm({
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setErrors({ email: err.message });
+        requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       } else {
         toast.error(err instanceof ApiError ? err.message : 'Erro ao salvar.');
       }
@@ -224,9 +239,19 @@ function AdminForm({
     <Modal
       title={initial ? 'Editar administrador' : 'Novo administrador'}
       onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
     >
-      <form onSubmit={save}>
-        <Field label="Nome" error={errors.name}>
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
+        <Field label="Nome" required error={errors.name}>
           <Input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -236,7 +261,7 @@ function AdminForm({
           />
         </Field>
 
-        <Field label="E-mail" error={errors.email}>
+        <Field label="E-mail" required error={errors.email}>
           <Input
             type="email"
             value={form.email}
@@ -247,12 +272,12 @@ function AdminForm({
         </Field>
 
         {isMe ? (
-          <p style={{ color: 'var(--ms-text-dim)', fontSize: 'var(--ms-text-sm)' }}>
-            Para alterar a sua senha, use Minha conta.
-          </p>
+          <p className="ms-adm__muted">Para alterar a sua senha, use Minha conta.</p>
         ) : (
           <Field
             label="Senha"
+            required={!initial}
+            optional={!!initial}
             error={errors.password}
             hint={
               initial
@@ -269,15 +294,6 @@ function AdminForm({
             />
           </Field>
         )}
-
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
       </form>
     </Modal>
   );

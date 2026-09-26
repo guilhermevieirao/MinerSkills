@@ -1,18 +1,31 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Layers, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Layers, Plus } from 'lucide-react';
 import { seasonSchema, type SeasonDTO, type SeasonInput } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, EmptyState, Field, Input, Loader, Textarea } from '../../components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  Input,
+  StatusBadge,
+  Switch,
+  Textarea,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Thumb } from '../../components/ui/tiles';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
-import { mediaUrl } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
-import './SeasonsSection.scss';
 
 /**
  * Robôs e prêmios carregam `seasonRef` e a temporada carrega as contagens
@@ -42,7 +55,7 @@ function apiFieldErrors(err: unknown): Record<string, string> {
 }
 
 export function SeasonsSection() {
-  const { data, isLoading } = useQuery({
+  const seasons = useQuery({
     queryKey: ['admin-seasons'],
     queryFn: adminApi.seasons.list,
   });
@@ -70,108 +83,96 @@ export function SeasonsSection() {
   // Nada é apagado em cascata: o aviso só lista o que fica sem temporada.
   const deleteMessage = deleting
     ? deleting.robotsCount + deleting.awardsCount > 0
-      ? `Remover a temporada "${deleting.name}"? Os registros vinculados (${deleting.robotsCount} robôs, ${deleting.awardsCount} prêmios) continuam existindo, sem temporada.`
-      : `Remover a temporada "${deleting.name}"?`
+      ? `A temporada "${deleting.name}" sai do site. Os registros vinculados (${deleting.robotsCount} robôs, ${deleting.awardsCount} prêmios) continuam existindo, sem temporada.`
+      : `A temporada "${deleting.name}" sai do site e não pode ser recuperada.`
     : '';
+
+  const newSeason = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Nova temporada
+    </Button>
+  );
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Temporadas</h1>
-          <p>Jogos da FRC por ano: robôs, prêmios e eventos de cada temporada.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Nova temporada
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Temporadas"
+        description="Jogos da FRC por ano: robôs, prêmios e eventos de cada temporada."
+        actions={newSeason}
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState
-          title="Nenhuma temporada cadastrada"
-          description="Cadastre as temporadas para vincular robôs e prêmios e montar a página Temporadas."
-        />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Nome</th>
-                <th>Ano</th>
-                <th>Jogo</th>
-                <th>Atual</th>
-                <th>Robôs</th>
-                <th>Prêmios</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((s) => (
-                <tr key={s.id} data-row={s.name}>
-                  <td>
-                    {s.badge ? (
-                      <img
-                        className="ms-adm__thumb"
-                        src={mediaUrl(s.badge.thumbUrl ?? s.badge.url)}
-                        alt=""
-                      />
-                    ) : (
-                      <span className="ms-seasons-adm__badge-empty">
-                        <Layers />
-                      </span>
-                    )}
-                  </td>
-                  <td>{s.name}</td>
-                  <td>{s.year}</td>
-                  <td>
-                    {s.game ? (
-                      <span className="ms-seasons-adm__game" title={s.game}>
-                        {s.game}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>
-                    {s.isCurrent ? (
-                      <span className="ms-adm__status ms-adm__status--approved">
-                        Atual
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>{s.robotsCount}</td>
-                  <td>{s.awardsCount}</td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${s.name}`}
-                        onClick={() => setEditing(s)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${s.name}`}
-                        onClick={() => setDeleting(s)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={seasons}
+        skeleton={<ListSkeleton rows={4} lead={48} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Layers />}
+            title="Nenhuma temporada cadastrada"
+            description="Cadastre as temporadas para vincular robôs e prêmios e montar a página Temporadas."
+            action={newSeason}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Temporadas cadastradas"
+            rows={list}
+            rowKey={(s) => s.id}
+            rowLabel={(s) => s.name}
+            columns={[
+              {
+                key: 'badge',
+                header: 'Selo',
+                hideHeader: true,
+                lead: true,
+                width: '72px',
+                render: (s) => <Thumb media={s.badge} icon={Layers} />,
+              },
+              { key: 'name', header: 'Nome', primary: true, render: (s) => s.name },
+              { key: 'year', header: 'Ano', render: (s) => s.year },
+              {
+                key: 'game',
+                header: 'Jogo',
+                hideOnMobile: true,
+                render: (s) =>
+                  s.game ? (
+                    <span className="ms-adm__truncate ms-adm__muted" title={s.game}>
+                      {s.game}
+                    </span>
+                  ) : (
+                    '—'
+                  ),
+              },
+              {
+                // o rótulo "Atual" só aparece na linha da temporada atual (a suíte conta)
+                key: 'current',
+                header: 'Situação',
+                render: (s) => (s.isCurrent ? <StatusBadge status="current" /> : '—'),
+              },
+              {
+                key: 'robots',
+                header: 'Robôs',
+                align: 'end',
+                render: (s) => s.robotsCount,
+              },
+              {
+                key: 'awards',
+                header: 'Prêmios',
+                align: 'end',
+                render: (s) => s.awardsCount,
+              },
+            ]}
+            actions={(s) => (
+              <RowActions
+                label={s.name}
+                onEdit={() => setEditing(s)}
+                onRemove={() => setDeleting(s)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <SeasonForm
@@ -190,6 +191,7 @@ export function SeasonsSection() {
 
       {deleting && (
         <ConfirmDialog
+          title="Excluir temporada"
           message={deleteMessage}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
@@ -220,22 +222,29 @@ function SeasonForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
+  const currentHintId = useId();
   const toast = useToast();
+
+  const invalid = (errs: Record<string, string>) => {
+    setErrors(errs);
+    requestAnimationFrame(() => focusFirstInvalid(formRef.current));
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     // campo numérico vazio vira NaN — mensagem própria em vez da genérica do zod
     if (!Number.isInteger(form.year)) {
-      setErrors({ year: 'Informe o ano' });
+      invalid({ year: 'Informe o ano' });
       return;
     }
     const parsed = seasonSchema.safeParse(form);
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      invalid(fieldErrors(parsed.error));
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       if (initial) await adminApi.seasons.update(initial.id, parsed.data);
@@ -251,21 +260,35 @@ function SeasonForm({
   };
 
   return (
-    <Modal title={initial ? 'Editar temporada' : 'Nova temporada'} onClose={onClose}>
-      <form onSubmit={save} noValidate>
-        <Field label="Nome" error={errors.name}>
-          <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            maxLength={120}
-            autoFocus
-          />
-        </Field>
-
+    <Modal
+      title={initial ? 'Editar temporada' : 'Nova temporada'}
+      size="lg"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
         <div className="ms-modal__row">
-          <Field label="Ano" error={errors.year}>
+          <Field label="Nome" required error={errors.name}>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              maxLength={120}
+              autoFocus
+            />
+          </Field>
+          <Field label="Ano" required error={errors.year}>
             <Input
               type="number"
+              inputMode="numeric"
               min={1990}
               max={2100}
               value={Number.isInteger(form.year) ? form.year : ''}
@@ -277,22 +300,11 @@ function SeasonForm({
               }
             />
           </Field>
-          <Field
-            label="Ordem"
-            hint="Menor primeiro; no empate, o ano mais recente."
-            error={errors.order}
-          >
-            <Input
-              type="number"
-              min={0}
-              value={form.order}
-              onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
-            />
-          </Field>
         </div>
 
         <Field
           label="Jogo"
+          optional
           hint="Nome oficial do jogo (ex.: REEFSCAPE presented by Haas)."
           error={errors.game}
         >
@@ -303,8 +315,9 @@ function SeasonForm({
           />
         </Field>
 
-        <Field label="Resumo" error={errors.summary}>
+        <Field label="Resumo" optional error={errors.summary}>
           <Textarea
+            rows={4}
             value={form.summary ?? ''}
             onChange={(e) => setForm({ ...form, summary: e.target.value })}
             maxLength={2000}
@@ -319,27 +332,33 @@ function SeasonForm({
         />
         {errors.badgeId && <span className="ms-field__error">{errors.badgeId}</span>}
 
-        <div className="ms-field">
-          <label className="ms-checkbox">
-            <input
-              type="checkbox"
+        <div className="ms-form-section">
+          <span className="ms-form-section__title">Exibição</span>
+          <Field
+            label="Ordem"
+            hint="Menor primeiro; no empate, o ano mais recente."
+            error={errors.order}
+          >
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={form.order}
+              onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
+            />
+          </Field>
+          <div className="ms-field">
+            <Switch
               checked={form.isCurrent}
               onChange={(e) => setForm({ ...form, isCurrent: e.target.checked })}
-            />
-            Temporada atual
-          </label>
-          <span className="ms-field__hint">
-            Só uma temporada é a atual: marcar esta desmarca as demais.
-          </span>
-        </div>
-
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
+              aria-describedby={currentHintId}
+            >
+              Temporada atual
+            </Switch>
+            <span className="ms-field__hint" id={currentHintId}>
+              Só uma temporada é a atual: marcar esta desmarca as demais.
+            </span>
+          </div>
         </div>
       </form>
     </Modal>

@@ -1,14 +1,33 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react';
-import { updateMediaSchema, type MediaLibraryItemDTO, type MediaUsageDTO } from '@minerskills/shared';
+import { Images, Trash2 } from 'lucide-react';
+import {
+  updateMediaSchema,
+  type MediaLibraryItemDTO,
+  type MediaUsageDTO,
+} from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, EmptyState, Field, FilterChip, Input, Loader, Tag } from '../../components/ui';
+import {
+  Button,
+  ChipRow,
+  EmptyState,
+  Field,
+  FilterChip,
+  Input,
+  LinkButton,
+  SearchField,
+  Tag,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { CardGridSkeleton, ListSkeleton } from '../../components/ui/skeletons';
+import { MediaImage } from '../../components/ui/MediaImage';
+import { Pagination } from '../../components/ui/Pagination';
+import { DateText } from '../../components/ui/DateText';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   MEDIA_PER_PAGE,
-  MediaPagination,
   MediaThumb,
   formatBytes,
   useDebouncedValue,
@@ -16,7 +35,8 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
 import { ApiError } from '../../lib/api';
-import { formatDateTime, mediaUrl } from '../../lib/format';
+import { mediaUrl } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import './MediaSection.scss';
 
 type KindFilter = 'all' | 'image' | 'video';
@@ -68,6 +88,7 @@ export function MediaSection() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<MediaLibraryItemDTO | null>(null);
   const search = useDebouncedValue(q.trim());
+  const filtered = !!search || kind !== 'all';
 
   const params = {
     page,
@@ -75,23 +96,27 @@ export function MediaSection() {
     q: search || undefined,
     kind: kind === 'all' ? undefined : kind,
   };
-  const { data, isLoading } = useQuery({
+  const media = useQuery({
     queryKey: ['admin-media', params],
     queryFn: () => adminApi.media.list(params),
     placeholderData: keepPreviousData,
   });
 
+  const clearFilters = () => {
+    setQ('');
+    setKind('all');
+    setPage(1);
+  };
+
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Biblioteca de mídia</h1>
-          <p>Imagens e vídeos enviados; veja onde cada arquivo é usado.</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Biblioteca de mídia"
+        description="Imagens e vídeos enviados; veja onde cada arquivo é usado."
+      />
 
-      <div className="ms-media__toolbar">
-        <div className="ms-media__filters" role="group" aria-label="Tipo de mídia">
+      <div className="ms-toolbar">
+        <ChipRow label="Tipo de mídia">
           {KIND_FILTERS.map((f) => (
             <FilterChip
               key={f.value}
@@ -104,66 +129,88 @@ export function MediaSection() {
               {f.label}
             </FilterChip>
           ))}
-        </div>
-        <div className="ms-media__search">
-          <Field label="Buscar">
-            <Input
-              type="search"
-              placeholder="Nome do arquivo"
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
-              }}
-            />
-          </Field>
-        </div>
+        </ChipRow>
+        <SearchField
+          aria-label="Buscar"
+          placeholder="Buscar pelo nome do arquivo"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+          }}
+        />
+        {media.data && (
+          <div className="ms-toolbar__end">
+            <span className="ms-toolbar__count">
+              {media.data.total} {media.data.total === 1 ? 'arquivo' : 'arquivos'}
+            </span>
+          </div>
+        )}
       </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title="Nenhuma mídia encontrada"
-          description={
-            search
-              ? 'Tente outro termo de busca.'
-              : 'Os arquivos enviados pela galeria, pelos posts e pelos formulários com imagem aparecem aqui.'
-          }
-        />
-      ) : (
-        <>
-          <p className="ms-media__count">
-            {data.total} {data.total === 1 ? 'arquivo' : 'arquivos'}
-          </p>
-          <div className="ms-media__grid">
+      <QueryState
+        query={media}
+        skeleton={<CardGridSkeleton count={12} aspect="1" min={180} />}
+        isEmpty={(data) => data.items.length === 0}
+        empty={
+          <EmptyState
+            icon={<Images />}
+            title="Nenhuma mídia encontrada"
+            description={
+              filtered
+                ? 'Nenhum arquivo corresponde à busca ou ao filtro.'
+                : 'Os arquivos enviados pela galeria, pelos posts e pelos formulários com imagem aparecem aqui.'
+            }
+            action={
+              filtered ? (
+                <Button variant="outline" onClick={clearFilters}>
+                  Limpar filtros
+                </Button>
+              ) : (
+                <LinkButton to="/admin/galeria" variant="outline">
+                  Enviar fotos pela galeria
+                </LinkButton>
+              )
+            }
+          />
+        }
+      >
+        {(data) => (
+          <ul className="ms-media__grid" role="list">
             {data.items.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="ms-media__card"
-                onClick={() => setSelected(m)}
-              >
-                <MediaThumb media={m} />
-                <span className="ms-media__body">
-                  <span className="ms-media__name" title={m.originalName}>
-                    {m.originalName}
+              <li key={m.id} className="ms-media__cell">
+                <button
+                  type="button"
+                  className="ms-media__card"
+                  onClick={() => setSelected(m)}
+                >
+                  <MediaThumb media={m} />
+                  <span className="ms-media__body">
+                    <span className="ms-media__name" title={m.originalName}>
+                      {m.originalName}
+                    </span>
+                    <span className="ms-media__meta">{formatBytes(m.sizeBytes)}</span>
                   </span>
-                  <span className="ms-media__meta">{formatBytes(m.sizeBytes)}</span>
-                </span>
-                <span className="ms-media__badge">
-                  {m.usage.total > 0 ? (
-                    <Tag>{`Usada em ${m.usage.total}`}</Tag>
-                  ) : (
-                    <Tag variant="muted">Sem uso</Tag>
-                  )}
-                </span>
-              </button>
+                  <span className="ms-media__badge">
+                    {m.usage.total > 0 ? (
+                      <Tag tone="success">{`Usada em ${m.usage.total}`}</Tag>
+                    ) : (
+                      <Tag tone="neutral">Sem uso</Tag>
+                    )}
+                  </span>
+                </button>
+              </li>
             ))}
-          </div>
-          <MediaPagination page={data.page} totalPages={data.totalPages} onChange={setPage} />
-        </>
-      )}
+          </ul>
+        )}
+      </QueryState>
+
+      <Pagination
+        page={media.data?.page ?? page}
+        totalPages={media.data?.totalPages ?? 1}
+        onChange={setPage}
+        loading={media.isPlaceholderData}
+      />
 
       {selected && <MediaDetail item={selected} onClose={() => setSelected(null)} />}
     </div>
@@ -177,10 +224,16 @@ function usageGroups(usage: MediaUsageDTO): { label: string; items: string[] }[]
     { label: 'Fotos do post', items: usage.postMedia.map((p) => p.title) },
     {
       label: 'Galeria',
-      items: usage.gallery > 0 ? [`${usage.gallery} ${usage.gallery === 1 ? 'foto' : 'fotos'}`] : [],
+      items:
+        usage.gallery > 0
+          ? [`${usage.gallery} ${usage.gallery === 1 ? 'foto' : 'fotos'}`]
+          : [],
     },
     { label: 'Timeline', items: usage.timeline.map((t) => t.title) },
-    { label: 'Blocos de conteúdo', items: usage.contentBlocks.map((b) => `${b.page} / ${b.key}`) },
+    {
+      label: 'Blocos de conteúdo',
+      items: usage.contentBlocks.map((b) => `${b.page} / ${b.key}`),
+    },
     { label: 'Equipe', items: usage.encyclopedia.map((e) => e.name) },
     { label: 'Prêmios', items: usage.awards.map((a) => a.title) },
     { label: 'Patrocinadores', items: usage.sponsors.map((s) => s.name) },
@@ -188,16 +241,24 @@ function usageGroups(usage: MediaUsageDTO): { label: string; items: string[] }[]
   ].filter((g) => g.items.length > 0);
 }
 
-function MediaDetail({ item, onClose }: { item: MediaLibraryItemDTO; onClose: () => void }) {
+function MediaDetail({
+  item,
+  onClose,
+}: {
+  item: MediaLibraryItemDTO;
+  onClose: () => void;
+}) {
   const [alt, setAlt] = useState(item.alt ?? '');
   const [altError, setAltError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [forceMessage, setForceMessage] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
+  const altFormRef = useRef<HTMLFormElement>(null);
+  const altFormId = useId();
   const toast = useToast();
 
-  const { data: usage, isLoading: usageLoading } = useQuery({
+  const usage = useQuery({
     queryKey: ['admin-media-usage', item.id],
     queryFn: () => adminApi.media.usage(item.id),
   });
@@ -206,7 +267,8 @@ function MediaDetail({ item, onClose }: { item: MediaLibraryItemDTO; onClose: ()
     e.preventDefault();
     const parsed = updateMediaSchema.safeParse({ alt: alt.trim() || null });
     if (!parsed.success) {
-      setAltError('Máximo de 240 caracteres.');
+      setAltError(fieldErrors(parsed.error).alt ?? 'Máximo de 240 caracteres.');
+      requestAnimationFrame(() => focusFirstInvalid(altFormRef.current));
       return;
     }
     setAltError(undefined);
@@ -242,17 +304,29 @@ function MediaDetail({ item, onClose }: { item: MediaLibraryItemDTO; onClose: ()
     }
   };
 
-  const groups = usage ? usageGroups(usage) : [];
-
   return (
     <>
-      <Modal title="Detalhes da mídia" onClose={onClose}>
+      <Modal
+        title="Detalhes da mídia"
+        onClose={onClose}
+        footer={
+          <>
+            {/* destrutivo à esquerda, longe do fechar */}
+            <Button type="button" variant="danger" onClick={() => setConfirming(true)}>
+              <Trash2 aria-hidden /> Excluir
+            </Button>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Fechar
+            </Button>
+          </>
+        }
+      >
         <div className="ms-media__detail">
           <div className="ms-media__preview">
             {item.kind === 'video' ? (
               <video src={mediaUrl(item.url)} controls preload="metadata" />
             ) : (
-              <img src={mediaUrl(item.url)} alt={item.alt ?? ''} />
+              <MediaImage media={item} alt={item.alt ?? ''} />
             )}
           </div>
 
@@ -279,57 +353,69 @@ function MediaDetail({ item, onClose }: { item: MediaLibraryItemDTO; onClose: ()
             )}
             <div>
               <dt>Enviado em</dt>
-              <dd>{formatDateTime(item.createdAt)}</dd>
+              <dd>
+                <DateText iso={item.createdAt} format="datetime" meta={false} />
+              </dd>
             </div>
           </dl>
 
-          <form className="ms-media__alt" onSubmit={saveAlt}>
+          <form
+            id={altFormId}
+            ref={altFormRef}
+            className="ms-media__alt"
+            onSubmit={saveAlt}
+            noValidate
+          >
             <Field
               label="Texto alternativo (alt)"
+              optional
               hint="Descrição curta da imagem para leitores de tela."
               error={altError}
             >
-              <Input value={alt} maxLength={240} onChange={(e) => setAlt(e.target.value)} />
+              <Input
+                value={alt}
+                maxLength={240}
+                onChange={(e) => setAlt(e.target.value)}
+              />
             </Field>
             <Button type="submit" variant="outline" loading={saving}>
               Salvar
             </Button>
           </form>
 
-          <section className="ms-media__usage" aria-label="Onde é usada">
-            <h3>Onde é usada</h3>
-            {usageLoading ? (
-              <Loader />
-            ) : groups.length === 0 ? (
-              <p className="ms-media__none">Não é usada em nenhum lugar.</p>
-            ) : (
-              <dl>
-                {groups.map((g) => (
-                  <div key={g.label}>
-                    <dt>{g.label}</dt>
-                    {g.items.map((label, i) => (
-                      <dd key={`${g.label}-${i}`}>{label}</dd>
+          <section className="ms-media__usage" aria-labelledby={`${altFormId}-usage`}>
+            <h3 id={`${altFormId}-usage`}>Onde é usada</h3>
+            <QueryState
+              query={usage}
+              compact
+              skeleton={<ListSkeleton rows={2} lead={0} />}
+            >
+              {(data) => {
+                const groups = usageGroups(data);
+                return groups.length === 0 ? (
+                  <p className="ms-media__none">Não é usada em nenhum lugar.</p>
+                ) : (
+                  <dl>
+                    {groups.map((g) => (
+                      <div key={g.label}>
+                        <dt>{g.label}</dt>
+                        {g.items.map((label, i) => (
+                          <dd key={`${g.label}-${i}`}>{label}</dd>
+                        ))}
+                      </div>
                     ))}
-                  </div>
-                ))}
-              </dl>
-            )}
+                  </dl>
+                );
+              }}
+            </QueryState>
           </section>
-
-          <div className="ms-modal__actions">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Fechar
-            </Button>
-            <Button type="button" variant="danger" onClick={() => setConfirming(true)}>
-              <Trash2 /> Excluir
-            </Button>
-          </div>
         </div>
       </Modal>
 
       {confirming && (
         <ConfirmDialog
-          message={`Remover "${item.originalName}"? O arquivo e a miniatura serão apagados do servidor.`}
+          title="Excluir mídia"
+          message={`"${item.originalName}" e a miniatura serão apagados do servidor. Isso não pode ser desfeito.`}
           onConfirm={() => void remove(false)}
           onCancel={() => setConfirming(false)}
           loading={removing}

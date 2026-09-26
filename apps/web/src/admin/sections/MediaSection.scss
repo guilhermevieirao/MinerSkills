@@ -1,37 +1,15 @@
 @use '../../styles/mixins' as *;
 
 @layer pages {
-  // ── Biblioteca de mídia (/admin/midia) e modal "Escolher da biblioteca" ──
-  // Também é importado pelo <MediaLibraryModal>, que aparece em outras seções.
+  // ── Biblioteca de mídia (/admin/midia), modal "Escolher da biblioteca" e
+  // campo <MediaPicker>. Também é importado pelo <MediaLibraryModal> e pelo
+  // <MediaPicker>, que aparecem em outras seções.
   .ms-media {
-    &__toolbar {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: var(--ms-space-3) var(--ms-space-5);
-      margin-bottom: var(--ms-space-5);
-    }
-    &__filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--ms-space-2);
-    }
-    &__search {
-      flex: 1 1 240px;
-      max-width: 360px;
-      .ms-field {
-        margin-bottom: 0;
-      }
-    }
-    &__count {
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-3);
-    }
-
     // ── Grade de cards ──
     &__grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: var(--ms-space-4);
@@ -44,7 +22,15 @@
       &--compact {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
         gap: var(--ms-space-3);
+
+        @include below($bp-sm) {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
+    }
+    &__cell {
+      display: flex;
+      min-width: 0;
     }
 
     &__card {
@@ -52,6 +38,7 @@
       @include focus-ring;
       display: flex;
       flex-direction: column;
+      width: 100%;
       min-width: 0;
       padding: 0;
       overflow: hidden;
@@ -63,7 +50,7 @@
         border-color var(--ms-dur) var(--ms-ease),
         transform var(--ms-dur) var(--ms-ease);
 
-      &:hover {
+      @include hover {
         border-color: var(--ms-green-deep);
         transform: translateY(-2px);
       }
@@ -73,16 +60,23 @@
       display: block;
       width: 100%;
       aspect-ratio: 1;
-      object-fit: cover;
+      overflow: hidden;
       background: var(--ms-surface-2);
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
 
       &--video {
         display: grid;
         place-items: center;
-        color: var(--ms-green);
+        color: var(--ms-green-deep);
         svg {
-          width: 32px;
-          height: 32px;
+          width: var(--ms-icon-xl);
+          height: var(--ms-icon-xl);
         }
       }
     }
@@ -96,28 +90,23 @@
     }
     &__name {
       font-size: var(--ms-text-sm);
-      font-weight: 500;
+      font-weight: var(--ms-fw-medium);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     &__meta {
+      @include meta;
       font-size: var(--ms-text-xs);
-      color: var(--ms-text-dim);
     }
     &__badge {
       margin-top: auto;
       padding: 0 var(--ms-space-3) var(--ms-space-3);
     }
 
+    // paginação dentro do modal: mais perto da grade
     &__pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--ms-space-4);
-      margin-top: var(--ms-space-6);
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
+      margin-top: var(--ms-space-5);
     }
 
     // ── Modal de detalhes ──
@@ -138,6 +127,7 @@
       video {
         display: block;
         max-width: 100%;
+        height: auto;
         max-height: 320px;
         object-fit: contain;
       }
@@ -150,11 +140,8 @@
       margin: 0;
 
       dt {
-        font-size: var(--ms-text-xs);
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--ms-text-dim);
+        font-size: var(--ms-text-caption);
+        color: var(--ms-text-faint);
       }
       dd {
         margin: 2px 0 0;
@@ -170,29 +157,29 @@
 
       .ms-field {
         flex: 1;
+        min-width: 0;
         margin-bottom: 0;
       }
       // alinha o botão ao controle, abaixo do rótulo
-      .ms-btn {
+      > .ms-btn {
         margin-top: calc(var(--ms-text-sm) * 1.5 + var(--ms-space-2));
       }
 
       @include below($bp-sm) {
         flex-direction: column;
         align-items: stretch;
-        .ms-btn {
+        > .ms-btn {
           margin-top: 0;
         }
       }
     }
 
     &__usage {
+      padding-top: var(--ms-space-4);
+      border-top: 1px solid var(--ms-border-subtle);
+
       h3 {
-        font-size: var(--ms-text-xs);
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--ms-text-dim);
+        @include kicker($color: var(--ms-text-faint));
         margin-bottom: var(--ms-space-3);
       }
       dl {
@@ -203,7 +190,7 @@
       }
       dt {
         font-size: var(--ms-text-sm);
-        font-weight: 600;
+        font-weight: var(--ms-fw-semibold);
       }
       dd {
         margin: 2px 0 0;
@@ -211,11 +198,24 @@
         border-left: 2px solid var(--ms-border-strong);
         color: var(--ms-text-dim);
         font-size: var(--ms-text-sm);
+        overflow-wrap: anywhere;
       }
     }
     &__none {
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
+    }
+
+    // ── Campo de imagem única (<MediaPicker>) ──
+    &__picker {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--ms-space-3) var(--ms-space-4);
+    }
+    &__picker-actions {
+      @include cluster(var(--ms-space-2));
+      min-width: 0;
     }
   }
 }

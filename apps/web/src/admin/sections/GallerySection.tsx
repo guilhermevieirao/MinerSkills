@@ -1,24 +1,37 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Reorder, useDragControls } from 'motion/react';
 import {
-  UploadCloud,
-  Trash2,
-  Pencil,
-  ChevronUp,
   ChevronDown,
+  ChevronUp,
   GripVertical,
+  Images,
+  Pencil,
   Save,
+  Trash2,
   Undo2,
+  UploadCloud,
 } from 'lucide-react';
 import { galleryPhotoSchema, type GalleryPhotoDTO } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Loader, EmptyState, Input, Textarea, Field } from '../../components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  IconButton,
+  Input,
+  Textarea,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Thumb } from '../../components/ui/tiles';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
-import { mediaUrl, cx } from '../../lib/format';
+import { cx } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import './GallerySection.scss';
 
@@ -26,6 +39,7 @@ import './GallerySection.scss';
 function refresh() {
   void queryClient.invalidateQueries({ queryKey: ['admin-gallery'] });
   void queryClient.invalidateQueries({ queryKey: ['gallery'] });
+  void queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
 }
 
 function sameOrder(a: string[], b: string[]): boolean {
@@ -33,7 +47,7 @@ function sameOrder(a: string[], b: string[]): boolean {
 }
 
 export function GallerySection() {
-  const { data, isLoading } = useQuery({
+  const gallery = useQuery({
     queryKey: ['admin-gallery'],
     queryFn: adminApi.gallery.list,
   });
@@ -41,6 +55,7 @@ export function GallerySection() {
   const [editing, setEditing] = useState<GalleryPhotoDTO | null>(null);
   const [removing, setRemoving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [caption, setCaption] = useState('');
   /** Ordem local ainda não salva; `null` = seguir a ordem do servidor. */
   const [draft, setDraft] = useState<string[] | null>(null);
@@ -48,7 +63,7 @@ export function GallerySection() {
   const inputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
-  const photos = data ?? [];
+  const photos = gallery.data ?? [];
   const byId = new Map(photos.map((p) => [p.id, p]));
   const serverIds = photos.map((p) => p.id);
   // O rascunho é reconciliado com o servidor a cada render: fotos removidas
@@ -62,10 +77,15 @@ export function GallerySection() {
   const ordered = ids.map((id) => byId.get(id)!);
   const dirty = draft !== null && !sameOrder(ids, serverIds);
 
-  const upload = async (files: FileList) => {
+  const upload = async (files: File[]) => {
+    const images = files.filter((f) => f.type.startsWith('image/'));
+    if (images.length === 0) {
+      toast.error('Envie arquivos de imagem.');
+      return;
+    }
     setUploading(true);
     try {
-      for (const file of Array.from(files)) {
+      for (const file of images) {
         const media = await adminApi.media.upload(file);
         await adminApi.gallery.create({
           mediaId: media.id,
@@ -129,25 +149,62 @@ export function GallerySection() {
     }
   };
 
+  const pickFiles = () => inputRef.current?.click();
+
+  const uploadButton = (
+    <Button onClick={pickFiles} loading={uploading}>
+      <UploadCloud aria-hidden /> Enviar fotos
+    </Button>
+  );
+
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Galeria</h1>
-          <p>Envie fotos, edite as legendas e defina a ordem em que aparecem no site.</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Galeria"
+        description="Envie fotos, edite as legendas e defina a ordem em que aparecem no site."
+        actions={uploadButton}
+      />
 
       <div className="ms-galadm__upload">
-        {/* botão (não div): alcançável pelo teclado; o input de arquivo fica fora, oculto */}
+        <Field
+          label="Legenda para os próximos envios"
+          optional
+          hint="Aplicada a todas as fotos do próximo envio."
+        >
+          <Input
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            maxLength={240}
+          />
+        </Field>
+        {/* botão (não div): alcançável pelo teclado; também aceita arquivos soltos */}
         <button
           type="button"
-          className="ms-uploader__dropzone"
-          onClick={() => inputRef.current?.click()}
+          className={cx(
+            'ms-uploader__dropzone',
+            'ms-galadm__dropzone',
+            dragOver && 'ms-galadm__dropzone--over',
+          )}
+          onClick={pickFiles}
+          disabled={uploading}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            if (!uploading && e.dataTransfer.files.length) {
+              void upload(Array.from(e.dataTransfer.files));
+            }
+          }}
         >
-          <UploadCloud />
+          <UploadCloud aria-hidden />
           <span>
-            {uploading ? 'Enviando…' : 'Clique para enviar imagens (aceita múltiplas)'}
+            {uploading
+              ? 'Enviando…'
+              : 'Clique ou solte aqui para enviar imagens (aceita múltiplas)'}
           </span>
         </button>
         <input
@@ -157,81 +214,81 @@ export function GallerySection() {
           multiple
           hidden
           onChange={(e) => {
-            if (e.target.files?.length) void upload(e.target.files);
+            if (e.target.files?.length) void upload(Array.from(e.target.files));
             e.target.value = '';
           }}
         />
-        <Input
-          placeholder="Legenda opcional para os próximos envios"
-          aria-label="Legenda para os próximos envios"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          maxLength={240}
-        />
       </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : ordered.length === 0 ? (
-        <EmptyState
-          title="Galeria vazia"
-          description="Envie a primeira foto pela área acima."
-        />
-      ) : (
-        <>
-          <div className="ms-galadm__toolbar">
-            <p className="ms-galadm__count">
-              {ordered.length} {ordered.length === 1 ? 'foto' : 'fotos'}. Arraste pela
-              alça ou use as setas para reordenar.
-              {dirty && (
-                <span className="ms-galadm__dirty">
-                  {' '}
-                  Ordem alterada, ainda não salva.
-                </span>
-              )}
-            </p>
-            <div className="ms-galadm__toolbar-actions">
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={!dirty || savingOrder}
-                onClick={() => setDraft(null)}
-              >
-                <Undo2 /> Descartar
-              </Button>
-              <Button
-                size="sm"
-                disabled={!dirty}
-                loading={savingOrder}
-                onClick={saveOrder}
-              >
-                <Save /> Salvar ordem
-              </Button>
+      <QueryState
+        query={gallery}
+        skeleton={<ListSkeleton rows={4} lead={64} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Images />}
+            title="Galeria vazia"
+            description="Envie a primeira foto para ela aparecer na página Galeria do site."
+            action={uploadButton}
+          />
+        }
+      >
+        {() => (
+          <>
+            <div className="ms-toolbar">
+              <p className="ms-toolbar__count" aria-live="polite">
+                {ordered.length} {ordered.length === 1 ? 'foto' : 'fotos'}. Arraste pela
+                alça ou use as setas para reordenar.
+                {dirty && (
+                  <span className="ms-galadm__dirty">
+                    {' '}
+                    Ordem alterada, ainda não salva.
+                  </span>
+                )}
+              </p>
+              <div className="ms-toolbar__end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!dirty || savingOrder}
+                  onClick={() => setDraft(null)}
+                >
+                  <Undo2 aria-hidden /> Descartar
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!dirty}
+                  loading={savingOrder}
+                  onClick={saveOrder}
+                >
+                  <Save aria-hidden /> Salvar ordem
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <Reorder.Group
-            as="ul"
-            axis="y"
-            values={ids}
-            onReorder={setDraft}
-            className="ms-galadm__list"
-            aria-label="Fotos da galeria"
-          >
-            {ordered.map((photo, index) => (
-              <GalleryRow
-                key={photo.id}
-                photo={photo}
-                index={index}
-                total={ordered.length}
-                onMove={move}
-                onEdit={() => setEditing(photo)}
-                onDelete={() => setDeleting(photo)}
-              />
-            ))}
-          </Reorder.Group>
-        </>
-      )}
+            <Reorder.Group
+              as="ul"
+              axis="y"
+              values={ids}
+              onReorder={setDraft}
+              className="ms-galadm__list"
+              aria-label="Fotos da galeria"
+            >
+              {ordered.map((photo, index) => (
+                <GalleryRow
+                  key={photo.id}
+                  photo={photo}
+                  index={index}
+                  total={ordered.length}
+                  onMove={move}
+                  onEdit={() => setEditing(photo)}
+                  onDelete={() => setDeleting(photo)}
+                />
+              ))}
+            </Reorder.Group>
+          </>
+        )}
+      </QueryState>
 
       {editing && (
         <CaptionForm
@@ -246,10 +303,11 @@ export function GallerySection() {
 
       {deleting && (
         <ConfirmDialog
+          title="Excluir foto"
           message={
             deleting.caption
-              ? `Remover a foto "${deleting.caption}" da galeria?`
-              : 'Remover esta foto da galeria?'
+              ? `A foto "${deleting.caption}" sai da galeria do site. O arquivo continua na biblioteca de mídia.`
+              : 'A foto sai da galeria do site. O arquivo continua na biblioteca de mídia.'
           }
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
@@ -290,7 +348,6 @@ function GalleryRow({
       onDragEnd={() => setDragging(false)}
       className={cx('ms-galadm__item', dragging && 'ms-galadm__item--dragging')}
       data-id={photo.id}
-      title={alt || undefined}
     >
       <span
         className="ms-galadm__handle"
@@ -301,11 +358,7 @@ function GalleryRow({
         <GripVertical />
       </span>
       <span className="ms-galadm__pos">{index + 1}</span>
-      <img
-        className="ms-galadm__thumb"
-        src={mediaUrl(photo.media.thumbUrl ?? photo.media.url)}
-        alt={alt}
-      />
+      <Thumb media={photo.media} alt={alt} className="ms-galadm__thumb" />
       <div className="ms-galadm__info">
         <p
           className={cx(
@@ -320,44 +373,41 @@ function GalleryRow({
         </p>
       </div>
       <div className="ms-galadm__actions">
-        <Button
-          variant="ghost"
+        <IconButton
           size="sm"
           aria-label="Mover para cima"
           title="Mover para cima"
           disabled={index === 0}
           onClick={() => onMove(index, -1)}
         >
-          <ChevronUp />
-        </Button>
-        <Button
-          variant="ghost"
+          <ChevronUp aria-hidden />
+        </IconButton>
+        <IconButton
           size="sm"
           aria-label="Mover para baixo"
           title="Mover para baixo"
           disabled={index === total - 1}
           onClick={() => onMove(index, 1)}
         >
-          <ChevronDown />
-        </Button>
-        <Button
-          variant="ghost"
+          <ChevronDown aria-hidden />
+        </IconButton>
+        <IconButton
           size="sm"
           aria-label="Editar legenda"
           title="Editar legenda"
           onClick={onEdit}
         >
-          <Pencil />
-        </Button>
-        <Button
-          variant="danger"
+          <Pencil aria-hidden />
+        </IconButton>
+        <IconButton
           size="sm"
+          variant="danger"
           aria-label="Remover foto"
           title="Remover foto"
           onClick={onDelete}
         >
-          <Trash2 />
-        </Button>
+          <Trash2 aria-hidden />
+        </IconButton>
       </div>
     </Reorder.Item>
   );
@@ -375,6 +425,8 @@ function CaptionForm({
   const [caption, setCaption] = useState(photo.caption ?? '');
   const [error, setError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   const save = async (e: React.FormEvent) => {
@@ -385,7 +437,8 @@ function CaptionForm({
       order: photo.order,
     });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Legenda inválida');
+      setError(fieldErrors(parsed.error).caption ?? 'Legenda inválida');
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setSaving(true);
@@ -401,13 +454,23 @@ function CaptionForm({
   };
 
   return (
-    <Modal title="Editar legenda" onClose={onClose}>
-      <form onSubmit={save}>
+    <Modal
+      title="Editar legenda"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
         <div className="ms-galadm__preview">
-          <img
-            src={mediaUrl(photo.media.thumbUrl ?? photo.media.url)}
-            alt={photo.media.alt ?? ''}
-          />
+          <Thumb media={photo.media} alt={photo.media.alt ?? ''} size="lg" />
           <p>
             {photo.media.alt
               ? `Texto alternativo: ${photo.media.alt}`
@@ -416,6 +479,7 @@ function CaptionForm({
         </div>
         <Field
           label="Legenda"
+          optional
           hint="Até 240 caracteres. Deixe em branco para remover a legenda."
           error={error}
         >
@@ -430,14 +494,6 @@ function CaptionForm({
             autoFocus
           />
         </Field>
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
       </form>
     </Modal>
   );

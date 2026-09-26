@@ -1,53 +1,30 @@
 @use '../../styles/mixins' as *;
 
 @layer pages {
-  // ── Patrocinadores (painel): tabela com logo, nível e link ──
+  // ── Patrocinadores (painel): logo inteiro na miniatura e link externo truncado ──
   .ms-sponadm {
-    &__thumb {
+    // logos não podem ser cortados: cabem inteiros na miniatura, com respiro
+    &__logo img {
       object-fit: contain;
-      padding: 4px;
-      border: 1px solid var(--ms-border);
-    }
-
-    &__placeholder {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px dashed var(--ms-border);
-      color: var(--ms-text-faint);
-
-      svg {
-        width: 20px;
-        height: 20px;
-      }
-    }
-
-    &__row--inactive td {
-      color: var(--ms-text-faint);
+      padding: var(--ms-space-1);
     }
 
     &__link {
-      max-width: 260px;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ms-space-1);
+      max-width: 100%;
+      min-width: 0;
+      color: var(--ms-text-dim);
+      transition: color var(--ms-dur) var(--ms-ease);
 
-      a {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--ms-space-1);
-        max-width: 100%;
-        color: var(--ms-text-dim);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        transition: color var(--ms-dur) var(--ms-ease);
-
-        &:hover {
-          color: var(--ms-green);
-        }
-        svg {
-          width: 14px;
-          height: 14px;
-          flex-shrink: 0;
-        }
+      @include hover {
+        color: var(--ms-green);
+      }
+      svg {
+        width: var(--ms-icon-xs);
+        height: var(--ms-icon-xs);
+        flex-shrink: 0;
       }
     }
   }

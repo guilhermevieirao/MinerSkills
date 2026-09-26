@@ -1,7 +1,7 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Tags, TriangleAlert } from 'lucide-react';
+import { Bot, Plus, Tags, TriangleAlert, User, Users } from 'lucide-react';
 import {
   encyclopediaEntrySchema,
   GENERATIONS,
@@ -15,35 +15,49 @@ import {
 import { adminApi } from '../adminApi';
 import {
   Button,
-  LinkButton,
-  Input,
-  Textarea,
-  Select,
-  Field,
-  Loader,
   EmptyState,
+  Field,
+  FieldGroup,
   FilterChip,
+  Input,
+  LinkButton,
+  Select,
+  Skeleton,
+  StatusBadge,
+  Switch,
+  Tag,
+  Textarea,
 } from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Thumb } from '../../components/ui/tiles';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
+import { useNewParam } from '../lib/useNewParam';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
-import { mediaUrl } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import { TagIcon } from '../../features/encyclopedia/roleIcons';
 import { MEMBER_TAGS_QUERY_KEY } from '../../features/encyclopedia/useMemberTags';
 import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
 
 export function TeamSection() {
-  const { data, isLoading } = useQuery({
+  const entries = useQuery({
     queryKey: ['admin-encyclopedia'],
     queryFn: adminApi.encyclopedia.list,
   });
   const [editing, setEditing] = useState<EncyclopediaEntryDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<EncyclopediaEntryDTO | null>(null);
+  const [removing, setRemoving] = useState(false);
   const toast = useToast();
+
+  useNewParam(() => setCreating(true));
 
   // `usageCount` das tags é derivado dos registros: as listas de tags também
   // precisam ser invalidadas, senão a tela de tags mostra contagens antigas.
@@ -59,98 +73,110 @@ export function TeamSection() {
 
   const remove = async () => {
     if (!deleting) return;
-    await adminApi.encyclopedia.remove(deleting.id);
-    setDeleting(null);
-    toast.success('Registro removido.');
-    refresh();
+    setRemoving(true);
+    try {
+      await adminApi.encyclopedia.remove(deleting.id);
+      setDeleting(null);
+      toast.success('Registro removido.');
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao remover.');
+    } finally {
+      setRemoving(false);
+    }
   };
+
+  const newEntry = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Novo registro
+    </Button>
+  );
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Equipe</h1>
-          <p>Membros (atuais e antigos), treinadores e robôs.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--ms-space-2)' }}>
-          <LinkButton variant="outline" to="/admin/equipe/tags">
-            <Tags /> Gerenciar tags
-          </LinkButton>
-          <Button onClick={() => setCreating(true)}>
-            <Plus /> Novo registro
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Equipe"
+        description="Membros (atuais e antigos), treinadores e robôs."
+        actions={
+          <>
+            <LinkButton variant="outline" to="/admin/equipe/tags">
+              <Tags aria-hidden /> Gerenciar tags
+            </LinkButton>
+            {newEntry}
+          </>
+        }
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState title="Nenhum registro" />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Função</th>
-                <th>Geração</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((e) => (
-                <tr key={e.id} data-row={e.name}>
-                  <td>
-                    {e.photo && (
-                      <img
-                        className="ms-adm__thumb"
-                        src={mediaUrl(e.photo.thumbUrl ?? e.photo.url)}
-                        alt=""
-                      />
-                    )}
-                  </td>
-                  <td>{e.name}</td>
-                  <td>{e.kind === 'robot' ? 'Robô' : 'Membro'}</td>
-                  <td>{e.role ?? '—'}</td>
-                  <td>
-                    {e.generation ? GENERATION_LABELS[e.generation as Generation] : '—'}
-                  </td>
-                  <td>
-                    <span
-                      className={`ms-adm__status ms-adm__status--${e.isFormer ? 'pending' : 'approved'}`}
-                    >
-                      {e.isFormer ? 'Antigo' : 'Atual'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${e.name}`}
-                        onClick={() => setEditing(e)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${e.name}`}
-                        onClick={() => setDeleting(e)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={entries}
+        skeleton={<ListSkeleton rows={6} lead={48} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Users />}
+            title="Nenhum registro"
+            description="Cadastre membros, treinadores e robôs para montar a página Equipe."
+            action={newEntry}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Membros e robôs da equipe"
+            rows={list}
+            rowKey={(e) => e.id}
+            rowLabel={(e) => e.name}
+            columns={[
+              {
+                key: 'photo',
+                header: 'Foto',
+                hideHeader: true,
+                lead: true,
+                width: '72px',
+                render: (e) => (
+                  <Thumb media={e.photo} icon={e.kind === 'robot' ? Bot : User} />
+                ),
+              },
+              { key: 'name', header: 'Nome', primary: true, render: (e) => e.name },
+              {
+                key: 'kind',
+                header: 'Tipo',
+                render: (e) => (e.kind === 'robot' ? 'Robô' : 'Membro'),
+              },
+              {
+                key: 'role',
+                header: 'Função',
+                hideOnMobile: true,
+                render: (e) => e.role || '—',
+              },
+              {
+                key: 'generation',
+                header: 'Geração',
+                hideOnMobile: true,
+                render: (e) =>
+                  e.generation ? GENERATION_LABELS[e.generation as Generation] : '—',
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (e) =>
+                  e.isFormer ? (
+                    <Tag tone="neutral">Antigo</Tag>
+                  ) : (
+                    <StatusBadge status="current" />
+                  ),
+              },
+            ]}
+            actions={(e) => (
+              <RowActions
+                label={e.name}
+                onEdit={() => setEditing(e)}
+                onRemove={() => setDeleting(e)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <EntryForm
@@ -169,7 +195,9 @@ export function TeamSection() {
 
       {deleting && (
         <ConfirmDialog
-          message={`Remover "${deleting.name}"?`}
+          title="Excluir registro"
+          message={`"${deleting.name}" sai da página Equipe e não pode ser recuperado.`}
+          loading={removing}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
         />
@@ -196,7 +224,6 @@ function EntryForm({
     queryKey: ['admin-member-tags'],
     queryFn: adminApi.memberTags.list,
   });
-  const tagsLabelId = useId();
   const [form, setForm] = useState<EncyclopediaEntryInput>({
     kind: (initial?.kind as EntryKind) ?? 'member',
     name: initial?.name ?? '',
@@ -214,6 +241,8 @@ function EntryForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   // Temporadas cadastradas — só robôs têm o vínculo, então só eles carregam a lista.
@@ -244,11 +273,11 @@ function EntryForm({
     const seasonId = form.kind === 'robot' ? form.seasonId : null;
     const parsed = encyclopediaEntrySchema.safeParse({ ...form, tags, seasonId });
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       if (initial) await adminApi.encyclopedia.update(initial.id, parsed.data);
@@ -265,8 +294,22 @@ function EntryForm({
   const isRobot = form.kind === 'robot';
 
   return (
-    <Modal title={initial ? `Editar ${initial.name}` : 'Novo registro'} onClose={onClose}>
-      <form onSubmit={save}>
+    <Modal
+      title={initial ? `Editar ${initial.name}` : 'Novo registro'}
+      size="lg"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
         <div className="ms-modal__row">
           <Field label="Tipo">
             <Select
@@ -280,7 +323,7 @@ function EntryForm({
               ))}
             </Select>
           </Field>
-          <Field label="Nome" error={errors.name}>
+          <Field label="Nome" required error={errors.name}>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -289,7 +332,7 @@ function EntryForm({
         </div>
 
         <div className="ms-modal__row">
-          <Field label="Função (rótulo do card)">
+          <Field label="Função (rótulo do card)" optional error={errors.role}>
             <Input
               value={form.role ?? ''}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
@@ -298,6 +341,7 @@ function EntryForm({
           {isRobot ? (
             <Field
               label="Temporada"
+              optional
               hint="Vincula o robô à página Temporadas."
               error={errors.seasonId}
             >
@@ -314,9 +358,10 @@ function EntryForm({
               </Select>
             </Field>
           ) : (
-            <Field label="Idade" error={errors.age}>
+            <Field label="Idade" optional error={errors.age}>
               <Input
                 type="number"
+                inputMode="numeric"
                 value={form.age ?? ''}
                 onChange={(e) =>
                   setForm({
@@ -332,7 +377,9 @@ function EntryForm({
         {isRobot && (
           <Field
             label="Rótulo da temporada"
+            optional
             hint="Texto livre exibido no painel do robô (ex.: Temporada 2025)."
+            error={errors.season}
           >
             <Input
               value={form.season ?? ''}
@@ -343,7 +390,7 @@ function EntryForm({
 
         {!isRobot && (
           <>
-            <Field label="Geração">
+            <Field label="Geração" optional error={errors.generation}>
               <Select
                 value={form.generation ?? ''}
                 onChange={(e) =>
@@ -362,12 +409,9 @@ function EntryForm({
               </Select>
             </Field>
 
-            <div className="ms-field">
-              <span className="ms-field__label" id={tagsLabelId}>
-                Tags (filtros da página Equipe)
-              </span>
+            <FieldGroup label="Tags (filtros da página Equipe)" error={errors.tags}>
               {tagsLoading ? (
-                <Loader label="Carregando tags…" />
+                <Skeleton height={32} />
               ) : tagsError ? (
                 <span className="ms-field__error">
                   Não foi possível carregar as tags.
@@ -377,7 +421,7 @@ function EntryForm({
                   Nenhuma tag cadastrada. <Link to="/admin/equipe/tags">Criar tags</Link>
                 </span>
               ) : (
-                <div className="ms-tagpick" role="group" aria-labelledby={tagsLabelId}>
+                <div className="ms-tagpick">
                   {(memberTags ?? []).map((t) => (
                     <FilterChip
                       key={t.key}
@@ -390,7 +434,7 @@ function EntryForm({
                   ))}
                   {unknownTags.map((key) => (
                     <FilterChip key={key} active onClick={() => toggleTag(key)}>
-                      <TriangleAlert />
+                      <TriangleAlert aria-hidden />
                       {key}
                     </FilterChip>
                   ))}
@@ -403,23 +447,24 @@ function EntryForm({
                   <Link to="/admin/equipe/tags">Gerenciar tags</Link>
                 </span>
               )}
-              {errors.tags && <span className="ms-field__error">{errors.tags}</span>}
-            </div>
+            </FieldGroup>
           </>
         )}
 
         <Field
           label="Sobre"
+          required
           hint="Separe parágrafos com uma linha em branco."
           error={errors.about}
         >
           <Textarea
+            rows={6}
             value={form.about}
             onChange={(e) => setForm({ ...form, about: e.target.value })}
           />
         </Field>
 
-        <Field label="Citação (opcional)">
+        <Field label="Citação" optional error={errors.quote}>
           <Input
             value={form.quote ?? ''}
             onChange={(e) => setForm({ ...form, quote: e.target.value })}
@@ -433,33 +478,23 @@ function EntryForm({
           label="Foto"
         />
 
-        <div className="ms-modal__row">
-          <Field label="Ordem">
+        <div className="ms-form-section">
+          <span className="ms-form-section__title">Exibição</span>
+          <Field label="Ordem" error={errors.order}>
             <Input
               type="number"
+              inputMode="numeric"
+              min={0}
               value={form.order}
               onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
             />
           </Field>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <label className="ms-checkbox">
-              <input
-                type="checkbox"
-                checked={form.isFormer}
-                onChange={(e) => setForm({ ...form, isFormer: e.target.checked })}
-              />
-              {isRobot ? 'Robô antigo' : 'Ex-membro'}
-            </label>
-          </div>
-        </div>
-
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
+          <Switch
+            checked={form.isFormer}
+            onChange={(e) => setForm({ ...form, isFormer: e.target.checked })}
+          >
+            {isRobot ? 'Robô antigo' : 'Ex-membro'}
+          </Switch>
         </div>
       </form>
     </Modal>

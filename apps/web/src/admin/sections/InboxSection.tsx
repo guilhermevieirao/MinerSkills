@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Archive, Inbox, MailOpen, Trash2 } from 'lucide-react';
+import { Archive, Inbox, MailOpen, Reply, Trash2 } from 'lucide-react';
 import {
   CONTACT_KIND_LABELS,
   CONTACT_STATUS_LABELS,
@@ -9,13 +9,26 @@ import {
   type ContactStatus,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, EmptyState, FilterChip, Loader, Tag } from '../../components/ui';
+import {
+  Button,
+  ChipRow,
+  EmptyState,
+  FilterChip,
+  LinkButton,
+  StatusBadge,
+  Tag,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { DateText } from '../../components/ui/DateText';
+import { Pagination } from '../../components/ui/Pagination';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
 import { ApiError } from '../../lib/api';
-import { cx, formatDateTime } from '../../lib/format';
+import { cx } from '../../lib/format';
 import './InboxSection.scss';
 
 type StatusFilter = ContactStatus | 'all';
@@ -70,16 +83,19 @@ export function InboxSection() {
     status: status === 'all' ? undefined : status,
     kind: kind === 'all' ? undefined : kind,
   };
-  const { data, isLoading } = useQuery({
+  const messages = useQuery({
     queryKey: ['admin-contact', params],
     queryFn: () => adminApi.contact.list(params),
     placeholderData: keepPreviousData,
   });
+  const data = messages.data;
+  const filtered = status !== 'all' || kind !== 'all';
 
   // Excluir a última mensagem de uma página deixa `page` além do fim: a API
   // responde vazio (sem os botões de paginação) — volta para a última página.
   useEffect(() => {
-    if (data && page > data.totalPages) setPage(data.totalPages);
+    const last = Math.max(1, data?.totalPages ?? 1);
+    if (data && page > last) setPage(last);
   }, [data, page]);
 
   /** Abrir uma mensagem nova já a marca como lida (o badge da sidebar diminui). */
@@ -97,17 +113,21 @@ export function InboxSection() {
       });
   };
 
+  const clearFilters = () => {
+    setStatus('all');
+    setKind('all');
+    setPage(1);
+  };
+
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Mensagens</h1>
-          <p>Inscrições e contatos enviados pelo site.</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Mensagens"
+        description="Inscrições e contatos enviados pelo site."
+      />
 
-      <div className="ms-inbox__toolbar">
-        <div className="ms-inbox__filters" role="group" aria-label="Status">
+      <div className="ms-toolbar">
+        <ChipRow label="Status">
           {STATUS_FILTERS.map((f) => (
             <FilterChip
               key={f.value}
@@ -120,8 +140,8 @@ export function InboxSection() {
               {f.label}
             </FilterChip>
           ))}
-        </div>
-        <div className="ms-inbox__filters" role="group" aria-label="Tipo">
+        </ChipRow>
+        <ChipRow label="Tipo">
           {KIND_FILTERS.map((f) => (
             <FilterChip
               key={f.value}
@@ -134,80 +154,89 @@ export function InboxSection() {
               {f.label}
             </FilterChip>
           ))}
-        </div>
+        </ChipRow>
+        {data && data.total > 0 && (
+          <div className="ms-toolbar__end">
+            <span className="ms-toolbar__count" aria-live="polite">
+              {data.total} {data.total === 1 ? 'mensagem' : 'mensagens'}
+            </span>
+          </div>
+        )}
       </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          icon={<Inbox />}
-          title="Nenhuma mensagem"
-          description={
-            status === 'all' && kind === 'all'
-              ? 'As mensagens enviadas pelas páginas Contato e Como Entrar aparecem aqui.'
-              : 'Nenhuma mensagem com esses filtros.'
-          }
-        />
-      ) : (
-        <>
-          <p className="ms-inbox__count">
-            {data.total} {data.total === 1 ? 'mensagem' : 'mensagens'}
-          </p>
-          <div className="ms-inbox__list">
-            {data.items.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={cx(
-                  'ms-inbox__item',
-                  m.status === 'new' && 'ms-inbox__item--new',
-                )}
-                onClick={() => open(m)}
-              >
-                <span className="ms-inbox__badges">
-                  <span
-                    className={cx('ms-inbox__status', `ms-inbox__status--${m.status}`)}
-                  >
-                    {statusLabel(m.status)}
+      <QueryState
+        query={messages}
+        skeleton={<ListSkeleton rows={5} lead={0} />}
+        isEmpty={(d) => d.items.length === 0}
+        empty={
+          filtered ? (
+            <EmptyState
+              icon={<Inbox />}
+              title="Nenhuma mensagem"
+              description="Nenhuma mensagem com esses filtros."
+              action={
+                <Button variant="outline" onClick={clearFilters}>
+                  Limpar filtros
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Inbox />}
+              title="Nenhuma mensagem"
+              description="As mensagens enviadas pelas páginas Contato e Como Entrar aparecem aqui."
+              action={
+                <LinkButton to="/contato" external variant="outline">
+                  Abrir a página de contato
+                </LinkButton>
+              }
+            />
+          )
+        }
+      >
+        {(d) => (
+          <ul className="ms-inbox__list" role="list">
+            {d.items.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  className={cx(
+                    'ms-inbox__item',
+                    m.status === 'new' && 'ms-inbox__item--new',
+                  )}
+                  aria-label={`${m.name}, ${kindLabel(m.kind).toLowerCase()}, ${statusLabel(m.status).toLowerCase()}`}
+                  onClick={() => open(m)}
+                >
+                  <span className="ms-inbox__badges">
+                    <span className="ms-inbox__status">
+                      <StatusBadge status={m.status}>{statusLabel(m.status)}</StatusBadge>
+                    </span>
+                    <Tag tone="neutral">{kindLabel(m.kind)}</Tag>
                   </span>
-                  <Tag variant="muted">{kindLabel(m.kind)}</Tag>
-                </span>
-                <span className="ms-inbox__who">
-                  <strong>{m.name}</strong>
-                  <span>{m.email}</span>
-                </span>
-                <span className="ms-inbox__date">{formatDateTime(m.createdAt)}</span>
-                <span className="ms-inbox__preview">{preview(m.message)}</span>
-              </button>
+                  <span className="ms-inbox__who">
+                    <strong>{m.name}</strong>
+                    <span>{m.email}</span>
+                  </span>
+                  <DateText
+                    iso={m.createdAt}
+                    format="relative"
+                    className="ms-inbox__date"
+                  />
+                  <span className="ms-inbox__preview">{preview(m.message)}</span>
+                </button>
+              </li>
             ))}
-          </div>
-          {data.totalPages > 1 && (
-            <nav className="ms-inbox__pagination" aria-label="Paginação">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={data.page <= 1}
-                onClick={() => setPage(data.page - 1)}
-              >
-                Anterior
-              </Button>
-              <span>
-                Página {data.page} de {data.totalPages}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={data.page >= data.totalPages}
-                onClick={() => setPage(data.page + 1)}
-              >
-                Próxima
-              </Button>
-            </nav>
-          )}
-        </>
+          </ul>
+        )}
+      </QueryState>
+
+      {data && (
+        <Pagination
+          page={data.page}
+          totalPages={data.totalPages}
+          onChange={setPage}
+          loading={messages.isPlaceholderData}
+        />
       )}
 
       {selected && (
@@ -265,7 +294,12 @@ function MessageDetail({
 
   const facts: { label: string; value: React.ReactNode }[] = [
     { label: 'Tipo', value: kindLabel(message.kind) },
-    { label: 'Status', value: statusLabel(message.status) },
+    {
+      label: 'Status',
+      value: (
+        <StatusBadge status={message.status}>{statusLabel(message.status)}</StatusBadge>
+      ),
+    },
     { label: 'E-mail', value: <a href={`mailto:${message.email}`}>{message.email}</a> },
     { label: 'Telefone', value: message.phone ?? '—' },
     ...(message.kind === 'inscricao'
@@ -274,13 +308,61 @@ function MessageDetail({
           { label: 'Série/ano', value: message.grade ?? '—' },
         ]
       : []),
-    { label: 'Enviada em', value: formatDateTime(message.createdAt) },
-    { label: 'Lida em', value: message.readAt ? formatDateTime(message.readAt) : '—' },
+    {
+      label: 'Enviada em',
+      value: <DateText iso={message.createdAt} format="datetime" meta={false} />,
+    },
+    {
+      label: 'Lida em',
+      value: message.readAt ? (
+        <DateText iso={message.readAt} format="datetime" meta={false} />
+      ) : (
+        '—'
+      ),
+    },
   ];
 
   return (
     <>
-      <Modal title={message.name} onClose={onClose}>
+      <Modal
+        title={message.name}
+        onClose={onClose}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={busy}
+              onClick={() => setConfirming(true)}
+            >
+              <Trash2 aria-hidden /> Excluir
+            </Button>
+            {message.status !== 'new' && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => void setStatus('new', 'Mensagem marcada como nova.')}
+              >
+                <MailOpen aria-hidden /> Marcar como nova
+              </Button>
+            )}
+            {message.status !== 'archived' && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void setStatus('archived', 'Mensagem arquivada.')}
+              >
+                <Archive aria-hidden /> Arquivar
+              </Button>
+            )}
+            <LinkButton href={`mailto:${message.email}`}>
+              <Reply aria-hidden /> Responder
+            </LinkButton>
+          </>
+        }
+      >
         <div className="ms-inbox__detail">
           <dl className="ms-inbox__facts">
             {facts.map((f) => (
@@ -292,43 +374,13 @@ function MessageDetail({
           </dl>
 
           <p className="ms-inbox__message">{message.message}</p>
-
-          <div className="ms-inbox__actions">
-            {message.status !== 'archived' && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => void setStatus('archived', 'Mensagem arquivada.')}
-              >
-                <Archive /> Arquivar
-              </Button>
-            )}
-            {message.status !== 'new' && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => void setStatus('new', 'Mensagem marcada como nova.')}
-              >
-                <MailOpen /> Marcar como nova
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="danger"
-              disabled={busy}
-              onClick={() => setConfirming(true)}
-            >
-              <Trash2 /> Excluir
-            </Button>
-          </div>
         </div>
       </Modal>
 
       {confirming && (
         <ConfirmDialog
-          message={`Excluir a mensagem de "${message.name}"? Esta ação não pode ser desfeita.`}
+          title="Excluir mensagem"
+          message={`A mensagem de "${message.name}" sai da caixa de entrada e não pode ser recuperada.`}
           onConfirm={() => void remove()}
           onCancel={() => setConfirming(false)}
           loading={busy}

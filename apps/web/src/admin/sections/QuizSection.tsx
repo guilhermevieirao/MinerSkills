@@ -1,17 +1,41 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X, Trophy, Check } from 'lucide-react';
+import { Check, CircleHelp, Plus, Trophy, X } from 'lucide-react';
 import { quizQuestionSchema, type QuizQuestionInput } from '@minerskills/shared';
 import { adminApi, type AdminQuizQuestion } from '../adminApi';
-import { Button, Input, Textarea, Field, Loader, EmptyState } from '../../components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  FieldGroup,
+  IconButton,
+  Input,
+  StatusBadge,
+  Switch,
+  Textarea,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useNewParam } from '../lib/useNewParam';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
+import { cx } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 
+const MIN_OPTIONS = 2;
+const MAX_OPTIONS = 6;
+
+/** Letra da opção (A, B, C…): o rótulo real de cada campo de opção. */
+const letter = (index: number) => String.fromCharCode(65 + index);
+
 export function QuizSection() {
-  const { data, isLoading } = useQuery({
+  const questions = useQuery({
     queryKey: ['admin-quiz'],
     queryFn: adminApi.quiz.list,
   });
@@ -19,7 +43,10 @@ export function QuizSection() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<AdminQuizQuestion | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [busy, setBusy] = useState(false);
   const toast = useToast();
+
+  useNewParam(() => setCreating(true));
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin-quiz'] });
@@ -28,92 +55,104 @@ export function QuizSection() {
 
   const remove = async () => {
     if (!deleting) return;
-    await adminApi.quiz.remove(deleting.id);
-    setDeleting(null);
-    toast.success('Pergunta removida.');
-    refresh();
+    setBusy(true);
+    try {
+      await adminApi.quiz.remove(deleting.id);
+      setDeleting(null);
+      toast.success('Pergunta removida.');
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao remover a pergunta.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const resetLeaderboard = async () => {
-    await adminApi.quiz.resetLeaderboard();
-    setResetting(false);
-    toast.success('Leaderboard zerado.');
-    void queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+    setBusy(true);
+    try {
+      await adminApi.quiz.resetLeaderboard();
+      setResetting(false);
+      toast.success('Leaderboard zerado.');
+      void queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao zerar o leaderboard.');
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const newQuestion = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Nova pergunta
+    </Button>
+  );
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Quiz</h1>
-          <p>Perguntas do jogo sobre a MinerSkills, a FRC e a FIRST.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--ms-space-2)' }}>
-          <Button variant="danger" onClick={() => setResetting(true)}>
-            <Trophy /> Zerar leaderboard
-          </Button>
-          <Button onClick={() => setCreating(true)}>
-            <Plus /> Nova pergunta
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Quiz"
+        description="Perguntas do jogo sobre a MinerSkills, a FRC e a FIRST."
+        actions={
+          <>
+            <Button variant="danger" onClick={() => setResetting(true)}>
+              <Trophy aria-hidden /> Zerar leaderboard
+            </Button>
+            {newQuestion}
+          </>
+        }
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState
-          title="Nenhuma pergunta"
-          description="Crie a primeira pergunta do quiz."
-        />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th>Pergunta</th>
-                <th>Opções</th>
-                <th>Ativa</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((q) => (
-                <tr key={q.id} data-row={q.question}>
-                  <td>{q.question}</td>
-                  <td>{q.options.length}</td>
-                  <td>
-                    <span
-                      className={`ms-adm__status ms-adm__status--${q.active ? 'approved' : 'pending'}`}
-                    >
-                      {q.active ? 'Ativa' : 'Inativa'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${q.question}`}
-                        onClick={() => setEditing(q)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${q.question}`}
-                        onClick={() => setDeleting(q)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={questions}
+        skeleton={<ListSkeleton rows={5} lead={0} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<CircleHelp />}
+            title="Nenhuma pergunta"
+            description="Crie a primeira pergunta do quiz."
+            action={newQuestion}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Perguntas do quiz"
+            rows={list}
+            rowKey={(q) => q.id}
+            rowLabel={(q) => q.question}
+            columns={[
+              {
+                key: 'question',
+                header: 'Pergunta',
+                primary: true,
+                render: (q) => q.question,
+              },
+              {
+                key: 'options',
+                header: 'Opções',
+                align: 'end',
+                width: '96px',
+                render: (q) => q.options.length,
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                width: '120px',
+                render: (q) => <StatusBadge status={q.active ? 'active' : 'inactive'} />,
+              },
+            ]}
+            actions={(q) => (
+              <RowActions
+                label={q.question}
+                onEdit={() => setEditing(q)}
+                onRemove={() => setDeleting(q)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <QuizForm
@@ -132,23 +171,28 @@ export function QuizSection() {
 
       {deleting && (
         <ConfirmDialog
-          message="Remover esta pergunta?"
-          onConfirm={remove}
+          title="Excluir pergunta"
+          message={`A pergunta "${deleting.question}" sai do quiz e não pode ser recuperada.`}
+          loading={busy}
+          onConfirm={() => void remove()}
           onCancel={() => setDeleting(null)}
         />
       )}
       {resetting && (
         <ConfirmDialog
           title="Zerar leaderboard"
-          message="Todas as pontuações serão apagadas permanentemente. Continuar?"
+          message="Todas as pontuações do ranking serão apagadas permanentemente."
           confirmLabel="Zerar"
-          onConfirm={resetLeaderboard}
+          loading={busy}
+          onConfirm={() => void resetLeaderboard()}
           onCancel={() => setResetting(false)}
         />
       )}
     </div>
   );
 }
+
+type OptionDraft = { text: string; isCorrect: boolean };
 
 function QuizForm({
   initial,
@@ -163,18 +207,30 @@ function QuizForm({
   const [explanation, setExplanation] = useState(initial?.explanation ?? '');
   const [active, setActive] = useState(initial?.active ?? true);
   const [order, setOrder] = useState(initial?.order ?? 0);
-  const [options, setOptions] = useState<{ text: string; isCorrect: boolean }[]>(
+  const [options, setOptions] = useState<OptionDraft[]>(
     initial?.options.map((o) => ({ text: o.text, isCorrect: o.isCorrect })) ?? [
       { text: '', isCorrect: true },
       { text: '', isCorrect: false },
     ],
   );
-  const [error, setError] = useState<string>();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  /** Erro de cada opção (texto vazio/longo), pelo índice. */
+  const [optionErrors, setOptionErrors] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   const setCorrect = (index: number) =>
     setOptions((opts) => opts.map((o, i) => ({ ...o, isCorrect: i === index })));
+
+  const setOptionText = (index: number, text: string) =>
+    setOptions((opts) => opts.map((o, i) => (i === index ? { ...o, text } : o)));
+
+  const removeOption = (index: number) => {
+    setOptions((opts) => opts.filter((_, i) => i !== index));
+    setOptionErrors({});
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,10 +243,29 @@ function QuizForm({
     };
     const parsed = quizQuestionSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Dados inválidos');
+      const errs = fieldErrors(parsed.error);
+      const perOption: Record<number, string> = {};
+      let groupError: string | undefined;
+      for (const issue of parsed.error.issues) {
+        if (issue.path[0] !== 'options') continue;
+        const index = issue.path[1];
+        if (typeof index === 'number') {
+          if (!(index in perOption)) perOption[index] = issue.message;
+        } else {
+          groupError ??= issue.message;
+        }
+      }
+      // no grupo fica só o erro do conjunto (quantidade, "exatamente uma correta")
+      if (groupError) errs.options = groupError;
+      else delete errs.options;
+      setErrors(errs);
+      setOptionErrors(perOption);
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
+      toast.error('Verifique os campos do formulário.');
       return;
     }
-    setError(undefined);
+    setErrors({});
+    setOptionErrors({});
     setSaving(true);
     try {
       if (initial) await adminApi.quiz.update(initial.id, parsed.data);
@@ -205,109 +280,122 @@ function QuizForm({
   };
 
   return (
-    <Modal title={initial ? 'Editar pergunta' : 'Nova pergunta'} onClose={onClose}>
-      <form onSubmit={save}>
-        <Field label="Pergunta">
+    <Modal
+      title={initial ? 'Editar pergunta' : 'Nova pergunta'}
+      size="lg"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
+        <Field label="Pergunta" required error={errors.question}>
           <Textarea
+            rows={3}
             value={question}
-            style={{ minHeight: 70 }}
             onChange={(e) => setQuestion(e.target.value)}
           />
         </Field>
 
-        <div className="ms-field">
-          <span className="ms-field__label">Opções (marque a correta)</span>
-          <div className="ms-repeater">
+        <FieldGroup
+          label="Opções"
+          hint={`Marque a opção correta. De ${MIN_OPTIONS} a ${MAX_OPTIONS} opções.`}
+          error={errors.options}
+        >
+          <ul className="ms-repeater" role="list">
             {options.map((o, i) => (
-              <div key={i} className="ms-repeater__item">
+              <li key={i} className="ms-repeater__item">
                 <button
                   type="button"
-                  className={`ms-quiz-correct ${o.isCorrect ? 'ms-quiz-correct--on' : ''}`}
+                  className={cx('ms-quiz-correct', o.isCorrect && 'ms-quiz-correct--on')}
                   onClick={() => setCorrect(i)}
-                  aria-label="Marcar como correta"
+                  aria-pressed={o.isCorrect}
+                  aria-label={`Marcar opção ${letter(i)} como correta`}
                   title="Marcar como correta"
                 >
-                  <Check />
+                  <Check aria-hidden />
                 </button>
-                <Input
-                  value={o.text}
-                  placeholder={`Opção ${i + 1}`}
-                  onChange={(e) =>
-                    setOptions((opts) =>
-                      opts.map((x, k) => (k === i ? { ...x, text: e.target.value } : x)),
-                    )
-                  }
-                />
-                {options.length > 2 && (
-                  <Button
+                <Field
+                  label={`Opção ${letter(i)}`}
+                  visuallyHiddenLabel
+                  required
+                  error={optionErrors[i]}
+                >
+                  <Input
+                    value={o.text}
+                    placeholder={`Opção ${i + 1}`}
+                    onChange={(e) => setOptionText(i, e.target.value)}
+                  />
+                </Field>
+                {options.length > MIN_OPTIONS && (
+                  <IconButton
                     type="button"
-                    variant="danger"
                     size="sm"
-                    onClick={() => setOptions((opts) => opts.filter((_, k) => k !== i))}
+                    variant="danger"
+                    aria-label={`Remover opção ${letter(i)}`}
+                    onClick={() => removeOption(i)}
                   >
-                    <X />
-                  </Button>
+                    <X aria-hidden />
+                  </IconButton>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
-          {options.length < 6 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              style={{ marginTop: 'var(--ms-space-3)' }}
-              onClick={() =>
-                setOptions((opts) => [...opts, { text: '', isCorrect: false }])
-              }
-            >
-              <Plus /> Adicionar opção
-            </Button>
+          </ul>
+          {options.length < MAX_OPTIONS && (
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setOptions((opts) => [...opts, { text: '', isCorrect: false }])
+                }
+              >
+                <Plus aria-hidden /> Adicionar opção
+              </Button>
+            </div>
           )}
-        </div>
+        </FieldGroup>
 
-        <Field label="Explicação (mostrada no resultado)">
+        <Field
+          label="Explicação"
+          optional
+          hint="Mostrada no resultado, junto da resposta correta."
+          error={errors.explanation}
+        >
           <Textarea
+            rows={3}
             value={explanation}
-            style={{ minHeight: 60 }}
             onChange={(e) => setExplanation(e.target.value)}
           />
         </Field>
 
-        <div className="ms-modal__row">
-          <Field label="Ordem">
-            <Input
-              type="number"
-              value={order}
-              onChange={(e) => setOrder(Number(e.target.value))}
-            />
-          </Field>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <label className="ms-checkbox">
-              <input
-                type="checkbox"
-                checked={active}
-                onChange={(e) => setActive(e.target.checked)}
+        <FieldGroup label="Exibição">
+          <Switch checked={active} onChange={(e) => setActive(e.target.checked)}>
+            Ativa no quiz
+          </Switch>
+          <div className="ms-modal__row">
+            <Field
+              label="Ordem"
+              hint="Menor número aparece primeiro."
+              error={errors.order}
+            >
+              <Input
+                type="number"
+                min={0}
+                value={order}
+                onChange={(e) => setOrder(Number(e.target.value))}
               />
-              Ativa no quiz
-            </label>
+            </Field>
           </div>
-        </div>
-
-        {error && (
-          <p style={{ color: 'var(--ms-danger)', fontSize: 'var(--ms-text-sm)' }}>
-            {error}
-          </p>
-        )}
-
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
+        </FieldGroup>
       </form>
     </Modal>
   );

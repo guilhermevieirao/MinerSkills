@@ -1,33 +1,40 @@
 @use '../../styles/mixins' as *;
 
 @layer pages {
-  // ── Minha conta: perfil + troca de senha ──
+  // ── Minha conta: perfil + troca de senha, em duas colunas iguais ──
   .ms-account {
     display: grid;
-    grid-template-columns: minmax(0, 320px) minmax(0, 480px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ms-space-5);
     align-items: start;
+    max-width: 1040px;
 
     @include below($bp-lg) {
-      grid-template-columns: minmax(0, 480px);
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 560px;
     }
 
     &__card {
-      @include card-surface;
-      padding: var(--ms-space-5);
+      @include card;
+      @include stack(var(--ms-space-4));
 
-      h2 {
-        display: flex;
-        align-items: center;
-        gap: var(--ms-space-2);
-        font-size: var(--ms-text-lg);
-        margin-bottom: var(--ms-space-4);
+      @include below($bp-md) {
+        padding: var(--ms-card-pad-sm);
+      }
+    }
 
-        svg {
-          width: 20px;
-          height: 20px;
-          color: var(--ms-green);
-        }
+    &__title {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-2);
+      font-size: var(--ms-title-sm);
+      line-height: var(--ms-lh-snug);
+
+      svg {
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-green);
+        flex-shrink: 0;
       }
     }
 
@@ -35,46 +42,42 @@
       display: flex;
       align-items: center;
       gap: var(--ms-space-4);
-      margin-bottom: var(--ms-space-4);
+      min-width: 0;
     }
 
-    &__avatar {
-      flex-shrink: 0;
-      display: grid;
-      place-items: center;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: var(--ms-surface-2);
-      color: var(--ms-green);
-
-      svg {
-        width: 28px;
-        height: 28px;
-      }
+    &__identity {
+      @include stack(var(--ms-space-1));
+      min-width: 0;
     }
 
     &__name {
-      display: block;
-      font-weight: 600;
+      font-weight: var(--ms-fw-semibold);
     }
 
     &__email {
-      display: block;
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
-      word-break: break-all;
+      overflow-wrap: anywhere;
     }
 
     &__hint {
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
-      margin-bottom: var(--ms-space-4);
+    }
+
+    &__form {
+      @include stack(var(--ms-space-4));
     }
 
     &__actions {
       display: flex;
       justify-content: flex-end;
+
+      @include below($bp-sm) {
+        > .ms-btn {
+          width: 100%;
+        }
+      }
     }
   }
 }

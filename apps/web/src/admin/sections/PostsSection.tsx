@@ -1,21 +1,39 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X, UploadCloud, Film } from 'lucide-react';
+import { Film, Newspaper, Plus, UploadCloud, X } from 'lucide-react';
 import {
   postSchema,
-  type PostListItemDTO,
-  type PostInput,
   type MediaAssetDTO,
+  type PostInput,
+  type PostListItemDTO,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Textarea, Field, Loader, EmptyState } from '../../components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  IconButton,
+  Input,
+  StatusBadge,
+  Switch,
+  Textarea,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Thumb } from '../../components/ui/tiles';
+import { DateText } from '../../components/ui/DateText';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { useNewParam } from '../lib/useNewParam';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
-import { formatDate, mediaUrl } from '../../lib/format';
+import { mediaUrl } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 
 /** Extrai o ID de uma URL do YouTube (ou aceita o próprio ID). */
@@ -29,103 +47,106 @@ function parseYoutubeId(input: string): string | null {
 }
 
 export function PostsSection() {
-  const { data, isLoading } = useQuery({
+  const posts = useQuery({
     queryKey: ['admin-posts'],
     queryFn: adminApi.posts.list,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<PostListItemDTO | null>(null);
+  const [removing, setRemoving] = useState(false);
   const toast = useToast();
+
+  useNewParam(() => setCreating(true));
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
     void queryClient.invalidateQueries({ queryKey: ['posts'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
   };
 
   const remove = async () => {
     if (!deleting) return;
-    await adminApi.posts.remove(deleting.id);
-    setDeleting(null);
-    toast.success('Post removido.');
-    refresh();
+    setRemoving(true);
+    try {
+      await adminApi.posts.remove(deleting.id);
+      setDeleting(null);
+      toast.success('Post removido.');
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao remover o post.');
+    } finally {
+      setRemoving(false);
+    }
   };
+
+  const newPost = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Novo post
+    </Button>
+  );
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Blog</h1>
-          <p>Notícias, novidades e bastidores da equipe.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Novo post
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Blog"
+        description="Notícias, novidades e bastidores da equipe."
+        actions={newPost}
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState title="Nenhum post" description="Crie o primeiro post do blog." />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Título</th>
-                <th>Status</th>
-                <th>Publicado em</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((p) => (
-                <tr key={p.id} data-row={p.title}>
-                  <td>
-                    {p.cover && (
-                      <img
-                        className="ms-adm__thumb"
-                        src={mediaUrl(p.cover.thumbUrl ?? p.cover.url)}
-                        alt=""
-                      />
-                    )}
-                  </td>
-                  <td>{p.title}</td>
-                  <td>
-                    <span
-                      className={`ms-adm__status ms-adm__status--${p.published ? 'published' : 'draft'}`}
-                    >
-                      {p.published ? 'Publicado' : 'Rascunho'}
-                    </span>
-                  </td>
-                  <td>{p.publishedAt ? formatDate(p.publishedAt, 'dd/MM/yyyy') : '—'}</td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${p.title}`}
-                        onClick={() => setEditingId(p.id)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${p.title}`}
-                        onClick={() => setDeleting(p)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={posts}
+        skeleton={<ListSkeleton rows={5} lead={48} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Newspaper />}
+            title="Nenhum post"
+            description="Crie o primeiro post do blog."
+            action={newPost}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Posts do blog"
+            rows={list}
+            rowKey={(p) => p.id}
+            rowLabel={(p) => p.title}
+            columns={[
+              {
+                key: 'cover',
+                header: 'Capa',
+                hideHeader: true,
+                lead: true,
+                width: '72px',
+                render: (p) => <Thumb media={p.cover} />,
+              },
+              { key: 'title', header: 'Título', primary: true, render: (p) => p.title },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (p) => (
+                  <StatusBadge status={p.published ? 'published' : 'draft'} />
+                ),
+              },
+              {
+                key: 'date',
+                header: 'Publicado em',
+                render: (p) =>
+                  p.publishedAt ? <DateText iso={p.publishedAt} format="short" /> : '—',
+              },
+            ]}
+            actions={(p) => (
+              <RowActions
+                label={p.title}
+                onEdit={() => setEditingId(p.id)}
+                onRemove={() => setDeleting(p)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editingId) && (
         <PostForm
@@ -144,7 +165,9 @@ export function PostsSection() {
 
       {deleting && (
         <ConfirmDialog
-          message={`Remover o post "${deleting.title}"?`}
+          title="Excluir post"
+          message={`O post "${deleting.title}" sai do blog e não pode ser recuperado.`}
+          loading={removing}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
         />
@@ -162,22 +185,25 @@ function PostForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { data: existing, isLoading } = useQuery({
+  const existing = useQuery({
     queryKey: ['admin-post', id],
     queryFn: () => adminApi.posts.get(id!),
     enabled: !!id,
   });
 
-  if (id && isLoading) {
+  // editar: o mesmo modal mostra o esqueleto até o registro chegar
+  if (id && !existing.data) {
     return (
-      <Modal title="Carregando…" onClose={onClose}>
-        <Loader />
+      <Modal title="Editar post" size="lg" onClose={onClose}>
+        <QueryState query={existing} skeleton={<ListSkeleton rows={4} lead={0} />}>
+          {() => null}
+        </QueryState>
       </Modal>
     );
   }
 
   return (
-    <PostFormInner existing={existing ?? null} onClose={onClose} onSaved={onSaved} />
+    <PostFormInner existing={existing.data ?? null} onClose={onClose} onSaved={onSaved} />
   );
 }
 
@@ -211,6 +237,8 @@ function PostFormInner({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   const uploadMedia = async (files: FileList) => {
@@ -258,12 +286,12 @@ function PostFormInner({
     e.preventDefault();
     const parsed = postSchema.safeParse(form);
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       toast.error('Verifique os campos do formulário.');
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       if (existing) await adminApi.posts.update(existing.id, parsed.data);
@@ -278,9 +306,23 @@ function PostFormInner({
   };
 
   return (
-    <Modal title={existing ? 'Editar post' : 'Novo post'} onClose={onClose}>
-      <form onSubmit={save}>
-        <Field label="Título" error={errors.title}>
+    <Modal
+      title={existing ? 'Editar post' : 'Novo post'}
+      size="lg"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
+        <Field label="Título" required error={errors.title}>
           <Input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -288,12 +330,13 @@ function PostFormInner({
         </Field>
         <Field
           label="Resumo"
+          required
           hint="Texto curto exibido na listagem."
           error={errors.excerpt}
         >
           <Textarea
+            rows={3}
             value={form.excerpt}
-            style={{ minHeight: 70 }}
             onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
           />
         </Field>
@@ -312,15 +355,15 @@ function PostFormInner({
           />
         </Field>
 
-        {/* Mídia extra (fotos e vídeos) */}
-        <div className="ms-field">
-          <span className="ms-field__label">Fotos e vídeos do post</span>
+        <div className="ms-form-section">
+          <span className="ms-form-section__title">Fotos e vídeos do post</span>
           <button
             type="button"
             className="ms-uploader__dropzone"
             onClick={() => fileRef.current?.click()}
+            disabled={uploading}
           >
-            {uploading ? <Film /> : <UploadCloud />}
+            {uploading ? <Film aria-hidden /> : <UploadCloud aria-hidden />}
             <span>
               {uploading ? 'Enviando…' : 'Clique para enviar fotos ou vídeos (mp4/webm)'}
             </span>
@@ -337,61 +380,53 @@ function PostFormInner({
             }}
           />
           {mediaPreview.length > 0 && (
-            <div className="ms-adm__grid" style={{ marginTop: 'var(--ms-space-3)' }}>
-              {mediaPreview.map((m) => (
-                <div key={m.id} className="ms-gal-item">
+            <ul className="ms-thumb-grid" role="list">
+              {mediaPreview.map((m, i) => (
+                <li key={m.id} className="ms-thumb-grid__item">
                   {m.kind === 'video' ? (
-                    <div
-                      style={{
-                        display: 'grid',
-                        placeItems: 'center',
-                        height: '100%',
-                        background: 'var(--ms-surface-2)',
-                      }}
-                    >
-                      <Film style={{ width: 32, height: 32, color: 'var(--ms-green)' }} />
-                    </div>
+                    <Film aria-hidden />
                   ) : (
                     <img src={mediaUrl(m.thumbUrl ?? m.url)} alt="" />
                   )}
-                  <div className="ms-gal-item__overlay">
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      type="button"
-                      onClick={() => removeMedia(m.id)}
-                    >
-                      <X />
-                    </Button>
-                  </div>
-                </div>
+                  <IconButton
+                    aria-label={`Remover mídia ${i + 1}`}
+                    size="sm"
+                    variant="danger"
+                    type="button"
+                    onClick={() => removeMedia(m.id)}
+                  >
+                    <X aria-hidden />
+                  </IconButton>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
-        {/* YouTube */}
-        <div className="ms-field">
-          <span className="ms-field__label">Vídeos do YouTube</span>
-          <div style={{ display: 'flex', gap: 'var(--ms-space-2)' }}>
-            <Input
-              placeholder="Cole a URL do YouTube"
-              value={ytInput}
-              onChange={(e) => setYtInput(e.target.value)}
-            />
+        <div className="ms-form-section">
+          <span className="ms-form-section__title">Vídeos do YouTube</span>
+          <div className="ms-inline-add">
+            <Field label="URL ou ID do vídeo" visuallyHiddenLabel>
+              <Input
+                placeholder="Cole a URL do YouTube"
+                value={ytInput}
+                onChange={(e) => setYtInput(e.target.value)}
+              />
+            </Field>
             <Button type="button" variant="outline" onClick={addYoutube}>
               Adicionar
             </Button>
           </div>
           {form.youtube.length > 0 && (
-            <div className="ms-repeater" style={{ marginTop: 'var(--ms-space-3)' }}>
+            <ul className="ms-repeater" role="list">
               {form.youtube.map((y, i) => (
-                <div key={`${y.youtubeId}-${i}`} className="ms-repeater__item">
-                  <code style={{ flex: 1 }}>{y.youtubeId}</code>
-                  <Button
+                <li key={`${y.youtubeId}-${i}`} className="ms-repeater__item">
+                  <code className="ms-repeater__text">{y.youtubeId}</code>
+                  <IconButton
                     type="button"
-                    variant="danger"
                     size="sm"
+                    variant="danger"
+                    aria-label={`Remover vídeo ${y.youtubeId}`}
                     onClick={() =>
                       setForm((f) => ({
                         ...f,
@@ -399,73 +434,66 @@ function PostFormInner({
                       }))
                     }
                   >
-                    <X />
-                  </Button>
-                </div>
+                    <X aria-hidden />
+                  </IconButton>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
-        {/* Links */}
-        <div className="ms-field">
-          <span className="ms-field__label">Links relacionados</span>
-          <div style={{ display: 'flex', gap: 'var(--ms-space-2)' }}>
-            <Input
-              placeholder="Rótulo"
-              value={linkLabel}
-              onChange={(e) => setLinkLabel(e.target.value)}
-            />
-            <Input
-              placeholder="https://…"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-            />
+        <div className="ms-form-section">
+          <span className="ms-form-section__title">Links relacionados</span>
+          <div className="ms-inline-add">
+            <Field label="Rótulo do link" visuallyHiddenLabel>
+              <Input
+                placeholder="Rótulo"
+                value={linkLabel}
+                onChange={(e) => setLinkLabel(e.target.value)}
+              />
+            </Field>
+            <Field label="Endereço do link" visuallyHiddenLabel>
+              <Input
+                placeholder="https://…"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+            </Field>
             <Button type="button" variant="outline" onClick={addLink}>
               Adicionar
             </Button>
           </div>
           {form.links.length > 0 && (
-            <div className="ms-repeater" style={{ marginTop: 'var(--ms-space-3)' }}>
+            <ul className="ms-repeater" role="list">
               {form.links.map((l, i) => (
-                <div key={`${l.url}-${i}`} className="ms-repeater__item">
-                  <span style={{ flex: 1 }}>
-                    <strong>{l.label}</strong> —{' '}
-                    <span style={{ color: 'var(--ms-text-dim)' }}>{l.url}</span>
+                <li key={`${l.url}-${i}`} className="ms-repeater__item">
+                  <span className="ms-repeater__text">
+                    <strong>{l.label}</strong>{' '}
+                    <span className="ms-adm__muted ms-adm__truncate">{l.url}</span>
                   </span>
-                  <Button
+                  <IconButton
                     type="button"
-                    variant="danger"
                     size="sm"
+                    variant="danger"
+                    aria-label={`Remover link ${l.label}`}
                     onClick={() =>
                       setForm((f) => ({ ...f, links: f.links.filter((_, k) => k !== i) }))
                     }
                   >
-                    <X />
-                  </Button>
-                </div>
+                    <X aria-hidden />
+                  </IconButton>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
-        <label className="ms-checkbox">
-          <input
-            type="checkbox"
-            checked={form.published}
-            onChange={(e) => setForm({ ...form, published: e.target.checked })}
-          />
+        <Switch
+          checked={form.published}
+          onChange={(e) => setForm({ ...form, published: e.target.checked })}
+        >
           Publicado (visível no site)
-        </label>
-
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
+        </Switch>
       </form>
     </Modal>
   );

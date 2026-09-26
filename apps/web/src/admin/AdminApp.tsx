@@ -26,6 +26,7 @@ import { SponsorsSection } from './sections/SponsorsSection';
 import { InboxSection } from './sections/InboxSection';
 import { SeasonsSection } from './sections/SeasonsSection';
 import './admin.scss';
+import './admin-kit.scss';
 
 /** URL do painel que não existe: diz isso, em vez de cair no dashboard em silêncio. */
 function AdminNotFound() {

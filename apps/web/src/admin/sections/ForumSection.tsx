@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Check,
   X,
-  Trash2,
   ShieldCheck,
   MessageSquare,
   Flag,
@@ -19,30 +17,60 @@ import {
   type ReportStatus,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, EmptyState, FilterChip, Loader, Tag } from '../../components/ui';
+import {
+  Button,
+  ChipRow,
+  EmptyState,
+  FilterChip,
+  IconButton,
+  LinkButton,
+  StatusBadge,
+  Tag,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { DateText } from '../../components/ui/DateText';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
 import { ApiError } from '../../lib/api';
-import { cx, formatDateTime, timeAgo } from '../../lib/format';
+import { cx } from '../../lib/format';
 import './ForumSection.scss';
 
 type Tab = 'queue' | 'all' | 'reports';
+type Moderation = 'approved' | 'rejected';
 
-const STATUS_LABEL: Record<string, string> = {
-  approved: 'Aprovado',
-  pending: 'Pendente',
-  rejected: 'Rejeitado',
-};
+const TABS: { value: Tab; label: string; icon: typeof Flag }[] = [
+  { value: 'queue', label: 'Fila de moderação', icon: ShieldCheck },
+  { value: 'all', label: 'Todos os tópicos', icon: MessageSquare },
+  { value: 'reports', label: 'Denúncias', icon: Flag },
+];
 
 const REPORT_FILTERS: { value: ReportStatus; label: string }[] = [
   { value: 'open', label: 'Abertas' },
   { value: 'resolved', label: 'Resolvidas' },
 ];
 
+/** Corpo acima deste tamanho (ou com muitas linhas) ganha o "Ver completo". */
+const LONG_BODY = 240;
+
 function reasonLabel(reason: string): string {
   return REPORT_REASON_LABELS[reason as ReportReason] ?? reason;
 }
+
+function isLong(body: string): boolean {
+  return body.length > LONG_BODY || body.split('\n').length > 3;
+}
+
+/** Leva ao fórum público (resolve os vazios: nada para moderar ou denunciado). */
+const openForum = (
+  <LinkButton to="/forum" external variant="outline">
+    <ExternalLink aria-hidden /> Abrir o fórum
+  </LinkButton>
+);
 
 /**
  * Nome do admin a partir do id gravado em `moderatedBy`/`resolvedBy`. A lista
@@ -71,43 +99,36 @@ export function ForumSection() {
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Fórum</h1>
-          <p>Modere tópicos e respostas enviados pela comunidade.</p>
-        </div>
+      <AdminPageHeader
+        title="Fórum"
+        description="Modere tópicos e respostas enviados pela comunidade."
+      />
+
+      {/* botões com aria-pressed (não role=tab): a suíte e2e os clica por getByRole('button') */}
+      <div className="ms-forum-adm__tabs" role="group" aria-label="Visão do fórum">
+        {TABS.map(({ value, label, icon: Icon }) => (
+          <Button
+            key={value}
+            variant={tab === value ? 'primary' : 'outline'}
+            size="sm"
+            aria-pressed={tab === value}
+            onClick={() => setTab(value)}
+          >
+            <Icon aria-hidden /> {label}
+            {value === 'reports' && openCount > 0 && (
+              <>
+                <span className="ms-forum-adm__badge" aria-hidden>
+                  {openCount}
+                </span>
+                <span className="ms-visually-hidden">
+                  ({openCount} {openCount === 1 ? 'aberta' : 'abertas'})
+                </span>
+              </>
+            )}
+          </Button>
+        ))}
       </div>
-      <div className="ms-forum-adm__tabs">
-        <Button
-          variant={tab === 'queue' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => setTab('queue')}
-        >
-          <ShieldCheck /> Fila de moderação
-        </Button>
-        <Button
-          variant={tab === 'all' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => setTab('all')}
-        >
-          <MessageSquare /> Todos os tópicos
-        </Button>
-        <Button
-          variant={tab === 'reports' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => setTab('reports')}
-        >
-          <Flag /> Denúncias
-          {openCount > 0 && (
-            <span
-              className="ms-forum-adm__badge"
-              aria-label={`${openCount} ${openCount === 1 ? 'aberta' : 'abertas'}`}
-            >
-              {openCount}
-            </span>
-          )}
-        </Button>
-      </div>
+
       {tab === 'queue' && <ModerationQueueTab />}
       {tab === 'all' && <AllTopicsTab />}
       {tab === 'reports' && <ReportsTab />}
@@ -129,211 +150,309 @@ function refreshForum() {
 }
 
 function ModerationQueueTab() {
-  const { data, isLoading } = useQuery({
+  const queue = useQuery({
     queryKey: ['admin-moderation'],
     queryFn: adminApi.forum.moderation,
   });
+  // item em andamento: `${id}:${status}` (desabilita o par, gira só o clicado)
+  const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
 
-  const moderateTopic = async (id: string, status: 'approved' | 'rejected') => {
-    await adminApi.forum.setTopic(id, status);
-    toast.success(status === 'approved' ? 'Tópico aprovado.' : 'Tópico rejeitado.');
-    refreshForum();
+  const moderate = async (
+    kind: 'topic' | 'reply',
+    id: string,
+    status: Moderation,
+  ): Promise<void> => {
+    setBusy(`${id}:${status}`);
+    try {
+      if (kind === 'topic') {
+        await adminApi.forum.setTopic(id, status);
+        toast.success(status === 'approved' ? 'Tópico aprovado.' : 'Tópico rejeitado.');
+      } else {
+        await adminApi.forum.setReply(id, status);
+        toast.success(
+          status === 'approved' ? 'Resposta aprovada.' : 'Resposta rejeitada.',
+        );
+      }
+      refreshForum();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao moderar.');
+    } finally {
+      setBusy(null);
+    }
   };
-  const moderateReply = async (id: string, status: 'approved' | 'rejected') => {
-    await adminApi.forum.setReply(id, status);
-    toast.success(status === 'approved' ? 'Resposta aprovada.' : 'Resposta rejeitada.');
-    refreshForum();
-  };
-
-  if (isLoading) return <Loader />;
-  const empty = !data || (data.topics.length === 0 && data.replies.length === 0);
-  if (empty) {
-    return (
-      <EmptyState
-        icon={<ShieldCheck />}
-        title="Fila vazia"
-        description="Nada aguardando moderação."
-      />
-    );
-  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-8)' }}>
-      {data.topics.length > 0 && (
-        <div>
-          <h2
-            style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}
-          >
-            Tópicos pendentes ({data.topics.length})
-          </h2>
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-3)' }}
-          >
-            {data.topics.map((t) => (
-              <div key={t.id} className="ms-mod-item">
-                <div className="ms-mod-item__body">
-                  <strong>{t.title}</strong>
-                  <p>{t.body}</p>
-                  <span className="ms-mod-item__meta">
-                    por {t.nickname} · {timeAgo(t.createdAt)}
-                  </span>
-                </div>
-                <div className="ms-mod-item__actions">
-                  <Button size="sm" onClick={() => moderateTopic(t.id, 'approved')}>
-                    <Check /> Aprovar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => moderateTopic(t.id, 'rejected')}
-                  >
-                    <X /> Rejeitar
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <QueryState
+      query={queue}
+      skeleton={<ListSkeleton rows={3} lead={0} />}
+      isEmpty={(d) => d.topics.length === 0 && d.replies.length === 0}
+      empty={
+        <EmptyState
+          icon={<ShieldCheck />}
+          title="Fila vazia"
+          description="Nada aguardando moderação. Tópicos e respostas novos aparecem aqui."
+          action={openForum}
+        />
+      }
+    >
+      {(data) => (
+        <div className="ms-forum-adm__groups">
+          {data.topics.length > 0 && (
+            <section className="ms-forum-adm__group" aria-labelledby="ms-forum-topics">
+              <h2 id="ms-forum-topics" className="ms-forum-adm__subtitle">
+                Tópicos pendentes ({data.topics.length})
+              </h2>
+              <ul className="ms-forum-adm__list" role="list">
+                {data.topics.map((t) => (
+                  <li key={t.id}>
+                    <ModerationItem
+                      title={t.title}
+                      body={t.body}
+                      nickname={t.nickname}
+                      createdAt={t.createdAt}
+                      busy={busy}
+                      id={t.id}
+                      onModerate={(status) => void moderate('topic', t.id, status)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      {data.replies.length > 0 && (
-        <div>
-          <h2
-            style={{ fontSize: 'var(--ms-text-lg)', marginBottom: 'var(--ms-space-3)' }}
-          >
-            Respostas pendentes ({data.replies.length})
-          </h2>
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ms-space-3)' }}
-          >
-            {data.replies.map((r) => (
-              <div key={r.id} className="ms-mod-item">
-                <div className="ms-mod-item__body">
-                  <span className="ms-mod-item__topic">em: {r.topicTitle}</span>
-                  <p>{r.body}</p>
-                  <span className="ms-mod-item__meta">
-                    por {r.nickname} · {timeAgo(r.createdAt)}
-                  </span>
-                </div>
-                <div className="ms-mod-item__actions">
-                  <Button size="sm" onClick={() => moderateReply(r.id, 'approved')}>
-                    <Check /> Aprovar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => moderateReply(r.id, 'rejected')}
-                  >
-                    <X /> Rejeitar
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+          {data.replies.length > 0 && (
+            <section className="ms-forum-adm__group" aria-labelledby="ms-forum-replies">
+              <h2 id="ms-forum-replies" className="ms-forum-adm__subtitle">
+                Respostas pendentes ({data.replies.length})
+              </h2>
+              <ul className="ms-forum-adm__list" role="list">
+                {data.replies.map((r) => (
+                  <li key={r.id}>
+                    <ModerationItem
+                      context={r.topicTitle}
+                      body={r.body}
+                      nickname={r.nickname}
+                      createdAt={r.createdAt}
+                      busy={busy}
+                      id={r.id}
+                      onModerate={(status) => void moderate('reply', r.id, status)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       )}
-    </div>
+    </QueryState>
+  );
+}
+
+/**
+ * Item da fila: título (tópico) ou "em: tópico" (resposta), corpo em até 3
+ * linhas com "Ver completo", autoria e as ações Aprovar/Rejeitar em slots
+ * fixos. Os nomes acessíveis começam pelo verbo ("Aprovar {título}").
+ */
+function ModerationItem({
+  id,
+  title,
+  context,
+  body,
+  nickname,
+  createdAt,
+  busy,
+  onModerate,
+}: {
+  id: string;
+  /** Tópico: o título. */
+  title?: string;
+  /** Resposta: o título do tópico em que ela entra. */
+  context?: string;
+  body: string;
+  nickname: string;
+  createdAt: string;
+  busy: string | null;
+  onModerate: (status: Moderation) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const bodyId = `ms-mod-body-${id}`;
+  const subject = title ?? `resposta de ${nickname}`;
+  const pending = busy?.startsWith(`${id}:`) ?? false;
+
+  return (
+    <article className={cx('ms-mod-item', expanded && 'ms-mod-item--expanded')}>
+      <div className="ms-mod-item__body">
+        {title ? (
+          <strong>{title}</strong>
+        ) : (
+          <span className="ms-mod-item__topic">em: {context}</span>
+        )}
+        <p id={bodyId}>{body}</p>
+        <span className="ms-mod-item__meta">
+          por {nickname} · <DateText iso={createdAt} format="relative" meta={false} />
+        </span>
+        {isLong(body) && (
+          <button
+            type="button"
+            className="ms-mod-item__more"
+            aria-expanded={expanded}
+            aria-controls={bodyId}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Ver menos' : 'Ver completo'}
+          </button>
+        )}
+      </div>
+      <div className="ms-mod-item__actions">
+        <Button
+          size="sm"
+          variant="danger"
+          aria-label={`Rejeitar ${subject}`}
+          disabled={pending}
+          loading={busy === `${id}:rejected`}
+          onClick={() => onModerate('rejected')}
+        >
+          <X aria-hidden /> Rejeitar
+        </Button>
+        <Button
+          size="sm"
+          aria-label={`Aprovar ${subject}`}
+          disabled={pending}
+          loading={busy === `${id}:approved`}
+          onClick={() => onModerate('approved')}
+        >
+          <Check aria-hidden /> Aprovar
+        </Button>
+      </div>
+    </article>
   );
 }
 
 function AllTopicsTab() {
-  const { data, isLoading } = useQuery({
+  const topics = useQuery({
     queryKey: ['admin-forum-topics'],
     queryFn: adminApi.forum.allTopics,
   });
   const adminName = useAdminName();
   const [deleting, setDeleting] = useState<ForumTopicDTO | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
 
   const remove = async () => {
     if (!deleting) return;
-    await adminApi.forum.removeTopic(deleting.id);
-    setDeleting(null);
-    toast.success('Tópico removido.');
-    refreshForum();
+    setRemoving(true);
+    try {
+      await adminApi.forum.removeTopic(deleting.id);
+      setDeleting(null);
+      toast.success('Tópico removido.');
+      refreshForum();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao remover o tópico.');
+    } finally {
+      setRemoving(false);
+    }
   };
 
-  const setStatus = async (id: string, status: string) => {
-    await adminApi.forum.setTopic(id, status);
-    toast.success('Status atualizado.');
-    refreshForum();
+  const setStatus = async (id: string, status: Moderation) => {
+    setBusy(id);
+    try {
+      await adminApi.forum.setTopic(id, status);
+      toast.success('Status atualizado.');
+      refreshForum();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao atualizar o status.');
+    } finally {
+      setBusy(null);
+    }
   };
-
-  if (isLoading) return <Loader />;
-  if (!data || data.length === 0) return <EmptyState title="Nenhum tópico" />;
 
   return (
-    <div className="ms-adm__table-wrap">
-      <table className="ms-adm__table">
-        <thead>
-          <tr>
-            <th>Título</th>
-            <th>Autor</th>
-            <th>Status</th>
-            <th>Moderado por</th>
-            <th>Respostas</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((t) => (
-            <tr key={t.id} data-row={t.title}>
-              <td>{t.title}</td>
-              <td>{t.nickname}</td>
-              <td>
-                <span className={`ms-adm__status ms-adm__status--${t.status}`}>
-                  {STATUS_LABEL[t.status] ?? t.status}
-                </span>
-              </td>
-              <td>{adminName(t.moderatedBy)}</td>
-              <td>{t.replyCount}</td>
-              <td>
-                <div className="ms-adm__row-actions">
-                  {t.status !== 'approved' && (
-                    <Button
+    <>
+      <QueryState
+        query={topics}
+        skeleton={<ListSkeleton rows={5} lead={0} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<MessageSquare />}
+            title="Nenhum tópico"
+            description="Os tópicos criados no fórum público aparecem aqui."
+            action={openForum}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Tópicos do fórum"
+            rows={list}
+            rowKey={(t) => t.id}
+            rowLabel={(t) => t.title}
+            columns={[
+              { key: 'title', header: 'Título', primary: true, render: (t) => t.title },
+              { key: 'author', header: 'Autor', render: (t) => t.nickname },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (t) => <StatusBadge status={t.status} />,
+              },
+              {
+                key: 'moderatedBy',
+                header: 'Moderado por',
+                hideOnMobile: true,
+                render: (t) => adminName(t.moderatedBy),
+              },
+              {
+                key: 'replies',
+                header: 'Respostas',
+                align: 'end',
+                render: (t) => t.replyCount,
+              },
+            ]}
+            actions={(t) => (
+              <RowActions
+                label={t.title}
+                onRemove={() => setDeleting(t)}
+                // slots fixos: o botão do status atual fica desabilitado, não some
+                extra={
+                  <>
+                    <IconButton
                       size="sm"
-                      variant="ghost"
                       aria-label={`Aprovar ${t.title}`}
                       title="Aprovar"
-                      onClick={() => setStatus(t.id, 'approved')}
+                      disabled={t.status === 'approved' || busy === t.id}
+                      onClick={() => void setStatus(t.id, 'approved')}
                     >
-                      <Check />
-                    </Button>
-                  )}
-                  {t.status !== 'rejected' && (
-                    <Button
+                      <Check aria-hidden />
+                    </IconButton>
+                    <IconButton
                       size="sm"
-                      variant="ghost"
                       aria-label={`Rejeitar ${t.title}`}
                       title="Rejeitar"
-                      onClick={() => setStatus(t.id, 'rejected')}
+                      disabled={t.status === 'rejected' || busy === t.id}
+                      onClick={() => void setStatus(t.id, 'rejected')}
                     >
-                      <X />
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    aria-label={`Excluir ${t.title}`}
-                    onClick={() => setDeleting(t)}
-                  >
-                    <Trash2 />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                      <X aria-hidden />
+                    </IconButton>
+                  </>
+                }
+              />
+            )}
+          />
+        )}
+      </QueryState>
+
       {deleting && (
         <ConfirmDialog
-          message={`Remover o tópico "${deleting.title}" e todas as respostas?`}
-          onConfirm={remove}
+          title="Excluir tópico"
+          message={`O tópico "${deleting.title}" e todas as respostas saem do fórum e não podem ser recuperados.`}
+          loading={removing}
+          onConfirm={() => void remove()}
           onCancel={() => setDeleting(null)}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -344,7 +463,7 @@ function AllTopicsTab() {
  */
 function ReportsTab() {
   const [filter, setFilter] = useState<ReportStatus>('open');
-  const { data, isLoading } = useQuery({
+  const reports = useQuery({
     queryKey: ['admin-forum-reports', filter],
     queryFn: () => adminApi.forum.reports(filter),
   });
@@ -400,111 +519,128 @@ function ReportsTab() {
 
   return (
     <div>
-      <div className="ms-forum-adm__filters" role="group" aria-label="Status da denúncia">
-        {REPORT_FILTERS.map((f) => (
-          <FilterChip
-            key={f.value}
-            active={filter === f.value}
-            onClick={() => setFilter(f.value)}
-          >
-            {f.label}
-          </FilterChip>
-        ))}
+      <div className="ms-toolbar">
+        <ChipRow label="Status da denúncia">
+          {REPORT_FILTERS.map((f) => (
+            <FilterChip
+              key={f.value}
+              active={filter === f.value}
+              onClick={() => setFilter(f.value)}
+            >
+              {f.label}
+            </FilterChip>
+          ))}
+        </ChipRow>
       </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState
-          icon={<Flag />}
-          title={
-            filter === 'open' ? 'Nenhuma denúncia aberta' : 'Nenhuma denúncia resolvida'
-          }
-          description={
-            filter === 'open'
-              ? 'As denúncias enviadas pelos visitantes aparecem aqui.'
-              : 'Denúncias resolvidas ficam registradas nesta lista.'
-          }
-        />
-      ) : (
-        <div className="ms-forum-adm__list">
-          {data.map((r) => (
-            <article
-              key={r.id}
-              className={cx(
-                'ms-report-item',
-                r.status === 'resolved' && 'ms-report-item--resolved',
-              )}
-            >
-              <div className="ms-report-item__head">
-                <Tag>{reasonLabel(r.reason)}</Tag>
-                <span className={`ms-adm__status ms-adm__status--${r.target.status}`}>
-                  {STATUS_LABEL[r.target.status] ?? r.target.status}
-                </span>
-                <span className="ms-report-item__date">
-                  {formatDateTime(r.createdAt)}
-                </span>
-              </div>
-
-              {r.details && <p className="ms-report-item__details">{r.details}</p>}
-
-              <div className="ms-report-item__target">
-                <span className="ms-report-item__kind">
-                  {r.target.type === 'topic' ? 'Tópico' : 'Resposta'}
-                </span>
-                <span className="ms-report-item__topic">em: {r.target.topicTitle}</span>
-                <p className="ms-report-item__excerpt">{r.target.excerpt}</p>
-                <span className="ms-report-item__meta">por {r.target.nickname}</span>
-              </div>
-
-              {r.status === 'resolved' && r.resolvedAt && (
-                <span className="ms-report-item__meta">
-                  Resolvida {timeAgo(r.resolvedAt)} por {adminName(r.resolvedBy)}
-                </span>
-              )}
-
-              <div className="ms-report-item__actions">
-                <Link
-                  to={`/forum/${r.target.topicId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ms-btn ms-btn--outline ms-btn--sm"
+      <QueryState
+        query={reports}
+        skeleton={<ListSkeleton rows={3} lead={0} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Flag />}
+            title={
+              filter === 'open' ? 'Nenhuma denúncia aberta' : 'Nenhuma denúncia resolvida'
+            }
+            description={
+              filter === 'open'
+                ? 'As denúncias enviadas pelos visitantes aparecem aqui.'
+                : 'Denúncias resolvidas ficam registradas nesta lista.'
+            }
+            action={openForum}
+          />
+        }
+      >
+        {(list) => (
+          <ul className="ms-forum-adm__list" role="list">
+            {list.map((r) => (
+              <li key={r.id}>
+                <article
+                  className={cx(
+                    'ms-report-item',
+                    r.status === 'resolved' && 'ms-report-item--resolved',
+                  )}
                 >
-                  <ExternalLink /> Ver tópico
-                </Link>
-                {r.target.status !== 'rejected' && (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    disabled={busy === r.id}
-                    onClick={() => void rejectContent(r)}
-                  >
-                    <X /> Rejeitar conteúdo
-                  </Button>
-                )}
-                {r.status === 'open' ? (
-                  <Button
-                    size="sm"
-                    disabled={busy === r.id}
-                    onClick={() => void resolve(r)}
-                  >
-                    <Check /> Resolver
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy === r.id}
-                    onClick={() => void reopen(r)}
-                  >
-                    <RotateCcw /> Reabrir
-                  </Button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+                  <div className="ms-report-item__head">
+                    <Tag tone="neutral">{reasonLabel(r.reason)}</Tag>
+                    <StatusBadge status={r.status} />
+                    <DateText
+                      iso={r.createdAt}
+                      format="datetime"
+                      className="ms-report-item__date"
+                    />
+                  </div>
+
+                  {r.details && <p className="ms-report-item__details">{r.details}</p>}
+
+                  <div className="ms-report-item__target">
+                    <div className="ms-report-item__target-head">
+                      <span className="ms-report-item__kind">
+                        {r.target.type === 'topic' ? 'Tópico' : 'Resposta'}
+                      </span>
+                      <StatusBadge status={r.target.status} />
+                    </div>
+                    <span className="ms-report-item__topic">
+                      em: {r.target.topicTitle}
+                    </span>
+                    <p className="ms-report-item__excerpt">{r.target.excerpt}</p>
+                    <span className="ms-report-item__meta">por {r.target.nickname}</span>
+                  </div>
+
+                  {r.status === 'resolved' && r.resolvedAt && (
+                    <span className="ms-report-item__meta">
+                      Resolvida{' '}
+                      <DateText iso={r.resolvedAt} format="relative" meta={false} /> por{' '}
+                      {adminName(r.resolvedBy)}
+                    </span>
+                  )}
+
+                  <div className="ms-report-item__actions">
+                    <LinkButton
+                      to={`/forum/${r.target.topicId}`}
+                      external
+                      variant="ghost"
+                      size="sm"
+                      className="ms-report-item__view"
+                    >
+                      <ExternalLink aria-hidden /> Ver tópico
+                    </LinkButton>
+                    {r.target.status !== 'rejected' && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={busy === r.id}
+                        onClick={() => void rejectContent(r)}
+                      >
+                        <X aria-hidden /> Rejeitar conteúdo
+                      </Button>
+                    )}
+                    {r.status === 'open' ? (
+                      <Button
+                        size="sm"
+                        disabled={busy === r.id}
+                        onClick={() => void resolve(r)}
+                      >
+                        <Check aria-hidden /> Resolver
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy === r.id}
+                        onClick={() => void reopen(r)}
+                      >
+                        <RotateCcw aria-hidden /> Reabrir
+                      </Button>
+                    )}
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        )}
+      </QueryState>
     </div>
   );
 }

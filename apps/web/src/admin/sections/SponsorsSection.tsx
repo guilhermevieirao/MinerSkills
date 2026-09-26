@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Handshake, ExternalLink } from 'lucide-react';
+import { Plus, Handshake, ExternalLink } from 'lucide-react';
 import {
   sponsorSchema,
   SPONSOR_TIERS,
@@ -10,13 +10,29 @@ import {
   type SponsorTier,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Select, Field, Loader, EmptyState } from '../../components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  FieldGroup,
+  Input,
+  Select,
+  StatusBadge,
+  Switch,
+} from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Thumb } from '../../components/ui/tiles';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
-import { isWebUrl, mediaUrl } from '../../lib/format';
+import { isWebUrl } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import { SPONSORS_QUERY_KEY } from '../../features/sponsors/useSponsors';
 import './SponsorsSection.scss';
@@ -33,7 +49,7 @@ function tierLabel(tier: string): string {
 }
 
 export function SponsorsSection() {
-  const { data, isLoading } = useQuery({
+  const sponsors = useQuery({
     queryKey: ['admin-sponsors'],
     queryFn: adminApi.sponsors.list,
   });
@@ -58,103 +74,104 @@ export function SponsorsSection() {
     }
   };
 
+  const newSponsor = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Novo patrocinador
+    </Button>
+  );
+
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Patrocinadores</h1>
-          <p>Empresas e instituições que apoiam a equipe.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Novo patrocinador
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Patrocinadores"
+        description="Empresas e instituições que apoiam a equipe."
+        actions={newSponsor}
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState
-          title="Nenhum patrocinador cadastrado"
-          description="Cadastre quem apoia a equipe para aparecer na Home e no rodapé do site."
-        />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Nome</th>
-                <th>Nível</th>
-                <th>Link</th>
-                <th>Ordem</th>
-                <th>Ativo</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((s) => (
-                <tr
-                  key={s.id}
-                  data-row={s.name}
-                  className={s.active ? undefined : 'ms-sponadm__row--inactive'}
-                >
-                  <td>
-                    {s.logo ? (
-                      <img
-                        className="ms-adm__thumb ms-sponadm__thumb"
-                        src={mediaUrl(s.logo.thumbUrl ?? s.logo.url)}
-                        alt=""
-                      />
-                    ) : (
-                      <span className="ms-adm__thumb ms-sponadm__placeholder" aria-hidden>
-                        <Handshake />
+      <QueryState
+        query={sponsors}
+        skeleton={<ListSkeleton rows={4} lead={48} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Handshake />}
+            title="Nenhum patrocinador cadastrado"
+            description="Cadastre quem apoia a equipe para aparecer na Home e no rodapé do site."
+            action={newSponsor}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Patrocinadores"
+            rows={list}
+            rowKey={(s) => s.id}
+            rowLabel={(s) => s.name}
+            columns={[
+              {
+                key: 'logo',
+                header: 'Logo',
+                hideHeader: true,
+                lead: true,
+                width: '72px',
+                render: (s) => (
+                  <Thumb media={s.logo} icon={Handshake} className="ms-sponadm__logo" />
+                ),
+              },
+              { key: 'name', header: 'Nome', primary: true, render: (s) => s.name },
+              { key: 'tier', header: 'Nível', render: (s) => tierLabel(s.tier) },
+              {
+                key: 'url',
+                header: 'Link',
+                hideOnMobile: true,
+                render: (s) =>
+                  isWebUrl(s.url) ? (
+                    <a
+                      className="ms-sponadm__link"
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={s.url}
+                    >
+                      <ExternalLink aria-hidden />
+                      <span className="ms-adm__truncate">
+                        {s.url.replace(/^https?:\/\//, '')}
                       </span>
-                    )}
-                  </td>
-                  <td>{s.name}</td>
-                  <td>{tierLabel(s.tier)}</td>
-                  <td className="ms-sponadm__link">
-                    {isWebUrl(s.url) ? (
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={s.url}
-                      >
-                        <ExternalLink /> {s.url.replace(/^https?:\/\//, '')}
-                      </a>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>{s.order}</td>
-                  <td>{s.active ? 'Sim' : 'Não'}</td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${s.name}`}
-                        onClick={() => setEditing(s)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${s.name}`}
-                        onClick={() => setDeleting(s)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                      <span className="ms-visually-hidden"> (abre em nova aba)</span>
+                    </a>
+                  ) : (
+                    <span className="ms-adm__muted">—</span>
+                  ),
+              },
+              {
+                key: 'order',
+                header: 'Ordem',
+                align: 'end',
+                width: '80px',
+                hideOnMobile: true,
+                render: (s) => s.order,
+              },
+              {
+                key: 'active',
+                header: 'Status',
+                render: (s) =>
+                  s.active ? (
+                    <StatusBadge status="active">Ativo</StatusBadge>
+                  ) : (
+                    <StatusBadge status="inactive">Inativo</StatusBadge>
+                  ),
+              },
+            ]}
+            actions={(s) => (
+              <RowActions
+                label={s.name}
+                onEdit={() => setEditing(s)}
+                onRemove={() => setDeleting(s)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <SponsorForm
@@ -173,7 +190,8 @@ export function SponsorsSection() {
 
       {deleting && (
         <ConfirmDialog
-          message={`Remover o patrocinador "${deleting.name}"? Ele deixa de aparecer na Home e no rodapé.`}
+          title="Excluir patrocinador"
+          message={`O patrocinador "${deleting.name}" deixa de aparecer na Home e no rodapé do site. A exclusão não pode ser desfeita.`}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
           loading={removing}
@@ -216,15 +234,16 @@ function SponsorForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = sponsorSchema.safeParse({ ...form, url: form.url.trim() || null });
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setErrors({});
@@ -246,9 +265,19 @@ function SponsorForm({
     <Modal
       title={initial ? 'Editar patrocinador' : 'Novo patrocinador'}
       onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
     >
-      <form onSubmit={save} noValidate>
-        <Field label="Nome" error={errors.name}>
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
+        <Field label="Nome" required error={errors.name}>
           <Input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -258,7 +287,8 @@ function SponsorForm({
         </Field>
         <Field
           label="Site"
-          hint="Opcional. Endereço completo, com https://"
+          optional
+          hint="Endereço completo, com https://"
           error={errors.url}
         >
           <Input
@@ -270,51 +300,49 @@ function SponsorForm({
             maxLength={400}
           />
         </Field>
-        <div className="ms-modal__row">
-          <Field label="Nível" error={errors.tier}>
-            <Select
-              value={form.tier}
-              onChange={(e) => setForm({ ...form, tier: e.target.value as SponsorTier })}
-            >
-              {SPONSOR_TIERS.map((t) => (
-                <option key={t} value={t}>
-                  {SPONSOR_TIER_LABELS[t]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Ordem" hint="Posição dentro do nível." error={errors.order}>
-            <Input
-              type="number"
-              min={0}
-              value={form.order}
-              onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
-            />
-          </Field>
-        </div>
         <MediaPicker
           value={form.logoId}
           preview={initial?.logo}
           onChange={(m) => setForm({ ...form, logoId: m?.id ?? null })}
           label="Logo"
         />
-        {errors.logoId && <span className="ms-field__error">{errors.logoId}</span>}
-        <label className="ms-checkbox">
-          <input
-            type="checkbox"
+        {errors.logoId && (
+          <span className="ms-field__error" role="alert">
+            {errors.logoId}
+          </span>
+        )}
+        <FieldGroup label="Exibição">
+          <div className="ms-modal__row">
+            <Field label="Nível" required error={errors.tier}>
+              <Select
+                value={form.tier}
+                onChange={(e) =>
+                  setForm({ ...form, tier: e.target.value as SponsorTier })
+                }
+              >
+                {SPONSOR_TIERS.map((t) => (
+                  <option key={t} value={t}>
+                    {SPONSOR_TIER_LABELS[t]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Ordem" hint="Posição dentro do nível." error={errors.order}>
+              <Input
+                type="number"
+                min={0}
+                value={form.order}
+                onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
+              />
+            </Field>
+          </div>
+          <Switch
             checked={form.active}
             onChange={(e) => setForm({ ...form, active: e.target.checked })}
-          />
-          Ativo
-        </label>
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
+          >
+            Ativo (aparece na Home e no rodapé)
+          </Switch>
+        </FieldGroup>
       </form>
     </Modal>
   );

@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Film } from 'lucide-react';
+import { Film, ImageOff } from 'lucide-react';
 import type { MediaAssetDTO } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, EmptyState, Field, Input, Loader } from '../../components/ui';
+import { Button, EmptyState, SearchField } from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { CardGridSkeleton } from '../../components/ui/skeletons';
+import { MediaImage } from '../../components/ui/MediaImage';
+import { Pagination } from '../../components/ui/Pagination';
 import { Modal } from './Modal';
-import { cx, mediaUrl } from '../../lib/format';
+import { cx } from '../../lib/format';
 import '../sections/MediaSection.scss';
 
 /** Itens por página da biblioteca (grade de cards). */
@@ -28,59 +32,28 @@ export function useDebouncedValue<T>(value: T, delay = 300): T {
   return debounced;
 }
 
-/** Miniatura: imagem (thumb) ou ícone de filme para vídeos. */
-export function MediaThumb({ media, className }: { media: MediaAssetDTO; className?: string }) {
-  if (media.kind === 'video') {
-    return (
-      <span className={cx('ms-media__thumb ms-media__thumb--video', className)} aria-hidden>
-        <Film />
-      </span>
-    );
-  }
-  return (
-    <img
-      className={cx('ms-media__thumb', className)}
-      src={mediaUrl(media.thumbUrl ?? media.url)}
-      alt={media.alt ?? ''}
-      loading="lazy"
-    />
-  );
-}
-
-/** Navegação 'Anterior' / 'Próxima' das listas paginadas de mídia. */
-export function MediaPagination({
-  page,
-  totalPages,
-  onChange,
+/**
+ * Miniatura quadrada do card: imagem (thumb) ou ícone de filme para vídeos.
+ * Decorativa — o nome do arquivo, ao lado, é o que identifica o card.
+ */
+export function MediaThumb({
+  media,
+  className,
 }: {
-  page: number;
-  totalPages: number;
-  onChange: (page: number) => void;
+  media: MediaAssetDTO;
+  className?: string;
 }) {
   return (
-    <nav className="ms-media__pagination" aria-label="Paginação">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={page <= 1}
-        onClick={() => onChange(page - 1)}
-      >
-        Anterior
-      </Button>
-      <span>
-        Página {page} de {totalPages}
-      </span>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={page >= totalPages}
-        onClick={() => onChange(page + 1)}
-      >
-        Próxima
-      </Button>
-    </nav>
+    <span
+      className={cx(
+        'ms-media__thumb',
+        media.kind === 'video' && 'ms-media__thumb--video',
+        className,
+      )}
+      aria-hidden
+    >
+      {media.kind === 'video' ? <Film /> : <MediaImage media={media} alt="" thumb />}
+    </span>
   );
 }
 
@@ -99,17 +72,28 @@ export function MediaLibraryModal({
   const [page, setPage] = useState(1);
   const search = useDebouncedValue(q.trim());
 
-  const params = { kind: 'image' as const, page, perPage: MEDIA_PER_PAGE, q: search || undefined };
-  const { data, isLoading } = useQuery({
+  const params = {
+    kind: 'image' as const,
+    page,
+    perPage: MEDIA_PER_PAGE,
+    q: search || undefined,
+  };
+  const media = useQuery({
     queryKey: ['admin-media', params],
     queryFn: () => adminApi.media.list(params),
     placeholderData: keepPreviousData,
   });
 
   return (
-    <Modal title="Escolher da biblioteca" onClose={onClose}>
-      <Field label="Buscar">
-        <Input
+    <Modal
+      title="Escolher da biblioteca"
+      description="Clique em uma imagem para usá-la neste campo."
+      size="lg"
+      onClose={onClose}
+    >
+      <div className="ms-toolbar">
+        <SearchField
+          aria-label="Buscar na biblioteca"
           placeholder="Nome do arquivo"
           value={q}
           autoFocus
@@ -118,37 +102,68 @@ export function MediaLibraryModal({
             setPage(1);
           }}
         />
-      </Field>
-
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title="Nenhuma imagem encontrada"
-          description={search ? 'Tente outro termo de busca.' : 'Envie uma imagem pelo botão "Enviar".'}
-        />
-      ) : (
-        <>
-          <div className="ms-media__grid ms-media__grid--compact">
-            {data.items.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="ms-media__card"
-                title={m.originalName}
-                onClick={() => onSelect(m)}
-              >
-                <MediaThumb media={m} />
-                <span className="ms-media__body">
-                  <span className="ms-media__name">{m.originalName}</span>
-                  <span className="ms-media__meta">{formatBytes(m.sizeBytes)}</span>
-                </span>
-              </button>
-            ))}
+        {media.data && (
+          <div className="ms-toolbar__end">
+            <span className="ms-toolbar__count">
+              {media.data.total} {media.data.total === 1 ? 'imagem' : 'imagens'}
+            </span>
           </div>
-          <MediaPagination page={data.page} totalPages={data.totalPages} onChange={setPage} />
-        </>
-      )}
+        )}
+      </div>
+
+      <QueryState
+        query={media}
+        skeleton={<CardGridSkeleton count={8} aspect="1" min={130} body={false} />}
+        isEmpty={(data) => data.items.length === 0}
+        empty={
+          <EmptyState
+            size="sm"
+            icon={<ImageOff />}
+            title="Nenhuma imagem encontrada"
+            description={
+              search
+                ? 'Tente outro termo de busca.'
+                : 'Envie uma imagem pelo botão "Enviar".'
+            }
+            action={
+              search ? (
+                <Button variant="outline" size="sm" onClick={() => setQ('')}>
+                  Limpar busca
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      >
+        {(data) => (
+          <ul className="ms-media__grid ms-media__grid--compact" role="list">
+            {data.items.map((m) => (
+              <li key={m.id} className="ms-media__cell">
+                <button
+                  type="button"
+                  className="ms-media__card"
+                  title={m.originalName}
+                  onClick={() => onSelect(m)}
+                >
+                  <MediaThumb media={m} />
+                  <span className="ms-media__body">
+                    <span className="ms-media__name">{m.originalName}</span>
+                    <span className="ms-media__meta">{formatBytes(m.sizeBytes)}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </QueryState>
+
+      <Pagination
+        page={media.data?.page ?? page}
+        totalPages={media.data?.totalPages ?? 1}
+        onChange={setPage}
+        loading={media.isPlaceholderData}
+        className="ms-media__pagination"
+      />
     </Modal>
   );
 }

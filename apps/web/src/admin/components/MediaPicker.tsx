@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
-import { UploadCloud, ImageOff, Library } from 'lucide-react';
+import { Image as ImageIcon, ImageOff, Library, UploadCloud, X } from 'lucide-react';
 import type { MediaAssetDTO } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { mediaUrl } from '../../lib/format';
-import { Button } from '../../components/ui';
+import { Button, FieldGroup } from '../../components/ui';
+import { Thumb } from '../../components/ui/tiles';
 import { useToast } from '../../components/ui/Toast';
 import { ApiError } from '../../lib/api';
 import { MediaLibraryModal } from './MediaLibraryModal';
+import '../sections/MediaSection.scss';
 
 /**
  * Campo de imagem única: faz upload de um arquivo novo ou escolhe uma imagem
@@ -28,6 +29,7 @@ export function MediaPicker({
   const [current, setCurrent] = useState<MediaAssetDTO | null>(preview ?? null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const toast = useToast();
+  const hasImage = !!(current || value);
 
   const pickFromLibrary = (media: MediaAssetDTO) => {
     setCurrent(media);
@@ -50,21 +52,11 @@ export function MediaPicker({
   };
 
   return (
-    <div className="ms-field">
-      <span className="ms-field__label">{label}</span>
-      <div className="ms-uploader__preview">
-        {current || value ? (
-          <img
-            className="ms-uploader__thumb"
-            src={mediaUrl(current?.thumbUrl ?? current?.url ?? '')}
-            alt=""
-          />
-        ) : (
-          <div className="ms-uploader__thumb" style={{ display: 'grid', placeItems: 'center' }}>
-            <ImageOff style={{ width: 24, height: 24, color: 'var(--ms-text-faint)' }} />
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: 'var(--ms-space-2)', flexWrap: 'wrap' }}>
+    <FieldGroup label={label}>
+      <div className="ms-media__picker">
+        {/* imagem definida mas sem prévia carregada: ícone neutro, não "sem imagem" */}
+        <Thumb media={current} icon={hasImage ? ImageIcon : ImageOff} size="lg" />
+        <div className="ms-media__picker-actions">
           <Button
             type="button"
             variant="outline"
@@ -72,12 +64,17 @@ export function MediaPicker({
             loading={uploading}
             onClick={() => inputRef.current?.click()}
           >
-            <UploadCloud /> Enviar
+            <UploadCloud aria-hidden /> Enviar
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setLibraryOpen(true)}>
-            <Library /> Escolher da biblioteca
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setLibraryOpen(true)}
+          >
+            <Library aria-hidden /> Escolher da biblioteca
           </Button>
-          {(current || value) && (
+          {hasImage && (
             <Button
               type="button"
               variant="ghost"
@@ -87,7 +84,7 @@ export function MediaPicker({
                 onChange(null);
               }}
             >
-              Remover
+              <X aria-hidden /> Remover
             </Button>
           )}
         </div>
@@ -104,8 +101,11 @@ export function MediaPicker({
         />
       </div>
       {libraryOpen && (
-        <MediaLibraryModal onSelect={pickFromLibrary} onClose={() => setLibraryOpen(false)} />
+        <MediaLibraryModal
+          onSelect={pickFromLibrary}
+          onClose={() => setLibraryOpen(false)}
+        />
       )}
-    </div>
+    </FieldGroup>
   );
 }

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Tags } from 'lucide-react';
 import {
   memberTagSchema,
   MEMBER_TAG_ICONS,
@@ -9,12 +9,18 @@ import {
   type MemberTagIcon,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Field, Loader, EmptyState } from '../../components/ui';
+import { Button, EmptyState, Field, FieldGroup, Input } from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
 import { cx } from '../../lib/format';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import { TagIcon } from '../../features/encyclopedia/roleIcons';
 import { MEMBER_TAGS_QUERY_KEY } from '../../features/encyclopedia/useMemberTags';
@@ -65,7 +71,7 @@ function invalidateTagQueries() {
 }
 
 export function MemberTagsSection() {
-  const { data, isLoading } = useQuery({
+  const tags = useQuery({
     queryKey: ['admin-member-tags'],
     queryFn: adminApi.memberTags.list,
   });
@@ -92,84 +98,83 @@ export function MemberTagsSection() {
 
   const deleteMessage = deleting
     ? deleting.usageCount > 0
-      ? `Remover a tag "${deleting.label}"? Ela está vinculada a ${deleting.usageCount} ${
+      ? `A tag "${deleting.label}" sai dos filtros da página Equipe. Ela está vinculada a ${deleting.usageCount} ${
           deleting.usageCount === 1 ? 'registro' : 'registros'
         }, que perderão essa tag.`
-      : `Remover a tag "${deleting.label}"?`
+      : `A tag "${deleting.label}" sai dos filtros da página Equipe e não pode ser recuperada.`
     : '';
+
+  const newTag = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Nova tag
+    </Button>
+  );
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Tags da equipe</h1>
-          <p>Categorias usadas para classificar e filtrar os membros.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Nova tag
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Tags da equipe"
+        description="Categorias usadas para classificar e filtrar os membros."
+        actions={newTag}
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState
-          title="Nenhuma tag cadastrada"
-          description="Crie tags para classificar os membros e gerar os filtros da página Equipe."
-        />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Nome</th>
-                <th>Chave</th>
-                <th>Em uso</th>
-                <th>Ordem</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((t) => (
-                <tr key={t.id} data-row={t.label}>
-                  <td>
-                    <span className="ms-adm__icon-cell">
-                      <TagIcon icon={t.icon} />
-                    </span>
-                  </td>
-                  <td>{t.label}</td>
-                  <td>
-                    <code className="ms-adm__code">{t.key}</code>
-                  </td>
-                  <td>{t.usageCount}</td>
-                  <td>{t.order}</td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${t.label}`}
-                        onClick={() => setEditing(t)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${t.label}`}
-                        onClick={() => setDeleting(t)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={tags}
+        skeleton={<ListSkeleton rows={4} lead={0} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Tags />}
+            title="Nenhuma tag cadastrada"
+            description="Crie tags para classificar os membros e gerar os filtros da página Equipe."
+            action={newTag}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Tags da equipe"
+            rows={list}
+            rowKey={(t) => t.id}
+            rowLabel={(t) => t.label}
+            columns={[
+              {
+                key: 'icon',
+                header: 'Ícone',
+                hideHeader: true,
+                lead: true,
+                width: '56px',
+                render: (t) => (
+                  <span className="ms-adm__icon-cell">
+                    <TagIcon icon={t.icon} />
+                  </span>
+                ),
+              },
+              { key: 'label', header: 'Nome', primary: true, render: (t) => t.label },
+              {
+                key: 'key',
+                header: 'Chave',
+                hideOnMobile: true,
+                render: (t) => <code className="ms-adm__code">{t.key}</code>,
+              },
+              {
+                key: 'usage',
+                header: 'Em uso',
+                align: 'end',
+                render: (t) => t.usageCount,
+              },
+              { key: 'order', header: 'Ordem', align: 'end', render: (t) => t.order },
+            ]}
+            actions={(t) => (
+              <RowActions
+                label={t.label}
+                onEdit={() => setEditing(t)}
+                onRemove={() => setDeleting(t)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <TagForm
@@ -188,6 +193,7 @@ export function MemberTagsSection() {
 
       {deleting && (
         <ConfirmDialog
+          title="Excluir tag"
           message={deleteMessage}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
@@ -214,6 +220,8 @@ function TagForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
 
   // Clicar no ícone já selecionado limpa a escolha (a tag cai no ícone padrão).
@@ -224,11 +232,11 @@ function TagForm({
     e.preventDefault();
     const parsed = memberTagSchema.safeParse(form);
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       if (initial) await adminApi.memberTags.update(initial.id, parsed.data);
@@ -243,10 +251,24 @@ function TagForm({
   };
 
   return (
-    <Modal title={initial ? 'Editar tag' : 'Nova tag'} onClose={onClose}>
-      <form onSubmit={save}>
+    <Modal
+      title={initial ? 'Editar tag' : 'Nova tag'}
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
         <Field
           label="Nome da tag"
+          required
           error={errors.label}
           hint={initial ? `Chave: ${initial.key} (não muda ao renomear)` : undefined}
         >
@@ -258,9 +280,12 @@ function TagForm({
           />
         </Field>
 
-        <div className="ms-field">
-          <span className="ms-field__label">Ícone</span>
-          <div className="ms-iconpick" role="group" aria-label="Ícone da tag">
+        <FieldGroup
+          label="Ícone"
+          hint="Clique no ícone escolhido de novo para voltar ao padrão."
+          error={errors.icon}
+        >
+          <div className="ms-iconpick">
             {MEMBER_TAG_ICONS.map((icon) => (
               <button
                 key={icon}
@@ -278,8 +303,7 @@ function TagForm({
               </button>
             ))}
           </div>
-          {errors.icon && <span className="ms-field__error">{errors.icon}</span>}
-        </div>
+        </FieldGroup>
 
         <Field
           label="Ordem"
@@ -288,20 +312,12 @@ function TagForm({
         >
           <Input
             type="number"
+            inputMode="numeric"
             min={0}
             value={form.order}
             onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
           />
         </Field>
-
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
       </form>
     </Modal>
   );

@@ -1,33 +1,42 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Star } from 'lucide-react';
+import { Plus, Trophy } from 'lucide-react';
 import { awardSchema, type AwardDTO, type AwardInput } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
 import {
   Button,
-  Input,
-  Textarea,
-  Select,
-  Field,
-  Loader,
   EmptyState,
+  Field,
+  Input,
+  Select,
+  StatusBadge,
+  Switch,
+  Textarea,
 } from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { Thumb } from '../../components/ui/tiles';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { DataTable } from '../components/DataTable';
+import { RowActions } from '../components/RowActions';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MediaPicker } from '../components/MediaPicker';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
+import { fieldErrors, focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import { SEASONS_QUERY_KEY } from '../../features/seasons/useSeasons';
 
 export function AwardsSection() {
-  const { data, isLoading } = useQuery({
+  const awards = useQuery({
     queryKey: ['admin-awards'],
     queryFn: adminApi.awards.list,
   });
   const [editing, setEditing] = useState<AwardDTO | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<AwardDTO | null>(null);
+  const [removing, setRemoving] = useState(false);
   const toast = useToast();
 
   // As temporadas contam prêmios vinculados: também precisam ser renovadas.
@@ -40,81 +49,94 @@ export function AwardsSection() {
 
   const remove = async () => {
     if (!deleting) return;
-    await adminApi.awards.remove(deleting.id);
-    setDeleting(null);
-    toast.success('Prêmio removido.');
-    refresh();
+    setRemoving(true);
+    try {
+      await adminApi.awards.remove(deleting.id);
+      setDeleting(null);
+      toast.success('Prêmio removido.');
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Erro ao remover.');
+    } finally {
+      setRemoving(false);
+    }
   };
+
+  const newAward = (
+    <Button onClick={() => setCreating(true)}>
+      <Plus aria-hidden /> Novo prêmio
+    </Button>
+  );
 
   return (
     <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Prêmios & Conquistas</h1>
-          <p>Reconhecimentos da equipe.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus /> Novo prêmio
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Prêmios & Conquistas"
+        description="Reconhecimentos da equipe."
+        actions={newAward}
+      />
 
-      {isLoading ? (
-        <Loader />
-      ) : !data || data.length === 0 ? (
-        <EmptyState title="Nenhum prêmio cadastrado" />
-      ) : (
-        <div className="ms-adm__table-wrap">
-          <table className="ms-adm__table">
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Evento</th>
-                <th>Ano</th>
-                <th>Temporada</th>
-                <th>Destaque</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((a) => (
-                <tr key={a.id} data-row={a.title}>
-                  <td>{a.title}</td>
-                  <td>{a.event}</td>
-                  <td>{a.year}</td>
-                  <td>{a.seasonRef?.name ?? '—'}</td>
-                  <td>
-                    {a.highlight ? (
-                      <Star style={{ width: 16, color: 'var(--ms-green)' }} />
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>
-                    <div className="ms-adm__row-actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Editar ${a.title}`}
-                        onClick={() => setEditing(a)}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        aria-label={`Excluir ${a.title}`}
-                        onClick={() => setDeleting(a)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <QueryState
+        query={awards}
+        skeleton={<ListSkeleton rows={5} lead={48} />}
+        isEmpty={(list) => list.length === 0}
+        empty={
+          <EmptyState
+            icon={<Trophy />}
+            title="Nenhum prêmio cadastrado"
+            description="Registre os prêmios e conquistas para montar a página Prêmios."
+            action={newAward}
+          />
+        }
+      >
+        {(list) => (
+          <DataTable
+            caption="Prêmios e conquistas"
+            rows={list}
+            rowKey={(a) => a.id}
+            rowLabel={(a) => a.title}
+            columns={[
+              {
+                key: 'media',
+                header: 'Imagem',
+                hideHeader: true,
+                lead: true,
+                width: '72px',
+                render: (a) => <Thumb media={a.media} icon={Trophy} />,
+              },
+              { key: 'title', header: 'Título', primary: true, render: (a) => a.title },
+              {
+                key: 'event',
+                header: 'Evento',
+                render: (a) => (
+                  <span className="ms-adm__truncate" title={a.event}>
+                    {a.event}
+                  </span>
+                ),
+              },
+              { key: 'year', header: 'Ano', render: (a) => a.year },
+              {
+                key: 'season',
+                header: 'Temporada',
+                hideOnMobile: true,
+                render: (a) => a.seasonRef?.name ?? '—',
+              },
+              {
+                key: 'highlight',
+                header: 'Destaque',
+                render: (a) => <StatusBadge status={a.highlight ? 'yes' : 'no'} />,
+              },
+            ]}
+            actions={(a) => (
+              <RowActions
+                label={a.title}
+                onEdit={() => setEditing(a)}
+                onRemove={() => setDeleting(a)}
+              />
+            )}
+          />
+        )}
+      </QueryState>
 
       {(creating || editing) && (
         <AwardForm
@@ -133,7 +155,9 @@ export function AwardsSection() {
 
       {deleting && (
         <ConfirmDialog
-          message={`Remover o prêmio "${deleting.title}"?`}
+          title="Excluir prêmio"
+          message={`O prêmio "${deleting.title}" sai da página Prêmios e não pode ser recuperado.`}
+          loading={removing}
           onConfirm={remove}
           onCancel={() => setDeleting(null)}
         />
@@ -163,6 +187,8 @@ function AwardForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const toast = useToast();
   const { data: seasons } = useQuery({
     queryKey: ['admin-seasons'],
@@ -173,11 +199,11 @@ function AwardForm({
     e.preventDefault();
     const parsed = awardSchema.safeParse(form);
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const i of parsed.error.issues) errs[i.path[0] as string] = i.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       if (initial) await adminApi.awards.update(initial.id, parsed.data);
@@ -192,38 +218,55 @@ function AwardForm({
   };
 
   return (
-    <Modal title={initial ? 'Editar prêmio' : 'Novo prêmio'} onClose={onClose}>
-      <form onSubmit={save}>
-        <Field label="Título" error={errors.title}>
+    <Modal
+      title={initial ? 'Editar prêmio' : 'Novo prêmio'}
+      size="lg"
+      onClose={onClose}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} ref={formRef} onSubmit={save} noValidate>
+        <Field label="Título" required error={errors.title}>
           <Input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
         </Field>
         <div className="ms-modal__row">
-          <Field label="Evento" error={errors.event}>
+          <Field label="Evento" required error={errors.event}>
             <Input
               value={form.event}
               onChange={(e) => setForm({ ...form, event: e.target.value })}
             />
           </Field>
-          <Field label="Ano" error={errors.year}>
+          <Field label="Ano" required error={errors.year}>
             <Input
               type="number"
+              inputMode="numeric"
               value={form.year}
               onChange={(e) => setForm({ ...form, year: Number(e.target.value) })}
             />
           </Field>
         </div>
-        <Field label="Descrição" error={errors.description}>
+        <Field label="Descrição" required error={errors.description}>
           <Textarea
+            rows={4}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
         </Field>
         <Field
           label="Temporada"
-          hint="Opcional: agrupa o prêmio na página Temporadas."
+          optional
+          hint="Agrupa o prêmio na página Temporadas."
           error={errors.seasonId}
         >
           <Select
@@ -244,22 +287,12 @@ function AwardForm({
           onChange={(m) => setForm({ ...form, mediaId: m?.id ?? null })}
           label="Imagem / badge (opcional)"
         />
-        <label className="ms-checkbox">
-          <input
-            type="checkbox"
-            checked={form.highlight}
-            onChange={(e) => setForm({ ...form, highlight: e.target.checked })}
-          />
+        <Switch
+          checked={form.highlight}
+          onChange={(e) => setForm({ ...form, highlight: e.target.checked })}
+        >
           Destaque (aparece em evidência)
-        </label>
-        <div className="ms-modal__actions">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Salvar
-          </Button>
-        </div>
+        </Switch>
       </form>
     </Modal>
   );

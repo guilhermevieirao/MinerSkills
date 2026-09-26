@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   SETTING_DEFINITIONS,
@@ -8,9 +8,14 @@ import {
   type SettingKey,
 } from '@minerskills/shared';
 import { adminApi } from '../adminApi';
-import { Button, Input, Textarea, Field, Loader, EmptyState } from '../../components/ui';
+import { Button, Input, Textarea, Field, Switch } from '../../components/ui';
+import { QueryState } from '../../components/ui/QueryState';
+import { ListSkeleton } from '../../components/ui/skeletons';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { useToast } from '../../components/ui/Toast';
 import { queryClient } from '../../lib/queryClient';
+import { cx } from '../../lib/format';
+import { focusFirstInvalid } from '../../lib/forms';
 import { ApiError } from '../../lib/api';
 import { SETTINGS_QUERY_KEY } from '../../features/social/useSocial';
 import './SettingsSection.scss';
@@ -37,15 +42,33 @@ function formFromList(items: SettingDTO[] | undefined): SettingsForm {
 }
 
 export function SettingsSection() {
-  const { data, isLoading, isError } = useQuery({
+  const settings = useQuery({
     queryKey: ADMIN_SETTINGS_QUERY_KEY,
     queryFn: adminApi.settings.list,
   });
+
+  return (
+    <div>
+      <AdminPageHeader
+        title="Configurações"
+        description="Textos e opções gerais do site."
+      />
+
+      <QueryState query={settings} skeleton={<ListSkeleton rows={5} lead={0} />}>
+        {(data) => <SettingsFormView data={data} />}
+      </QueryState>
+    </div>
+  );
+}
+
+/** O formulário só monta depois que a lista chegou (o QueryState cuida do resto). */
+function SettingsFormView({ data }: { data: SettingDTO[] }) {
   // Só o que o usuário digitou fica em estado local; o resto vem direto da query.
   // Assim não há efeito de sincronização nem risco de um refetch apagar a edição.
   const [edits, setEdits] = useState<Partial<SettingsForm>>({});
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const toast = useToast();
 
   const form: SettingsForm = { ...formFromList(data), ...edits };
@@ -69,7 +92,10 @@ export function SettingsSection() {
       else errs[def.key] = parsed.error.issues[0]?.message ?? 'Valor inválido';
     }
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (Object.keys(errs).length > 0) {
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
+      return;
+    }
 
     setSaving(true);
     try {
@@ -87,42 +113,33 @@ export function SettingsSection() {
   };
 
   return (
-    <div>
-      <div className="ms-adm__head">
-        <div>
-          <h1>Configurações</h1>
-          <p>Textos e opções gerais do site.</p>
-        </div>
+    <form ref={formRef} className="ms-settings" onSubmit={save} noValidate>
+      <div className="ms-settings__fields">
+        {SETTING_DEFINITIONS.map((def) => (
+          <SettingField
+            key={def.key}
+            def={def}
+            value={form[def.key]}
+            error={errors[def.key]}
+            onChange={(value) => update(def.key, value)}
+          />
+        ))}
       </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : isError ? (
-        <EmptyState
-          title="Não foi possível carregar as configurações"
-          description="Recarregue a página para tentar novamente."
-        />
-      ) : (
-        <form className="ms-settings" onSubmit={save}>
-          {SETTING_DEFINITIONS.map((def) => (
-            <SettingField
-              key={def.key}
-              def={def}
-              value={form[def.key]}
-              error={errors[def.key]}
-              onChange={(value) => update(def.key, value)}
-            />
-          ))}
-
-          <div className="ms-settings__actions">
-            {isDirty && <span className="ms-settings__dirty">Alterações não salvas</span>}
-            <Button type="submit" loading={saving}>
-              Salvar
-            </Button>
-          </div>
-        </form>
-      )}
-    </div>
+      {/* com alterações pendentes a barra gruda no fim da tela: salvar nunca some */}
+      <div
+        className={cx('ms-settings__actions', isDirty && 'ms-settings__actions--sticky')}
+      >
+        {isDirty && (
+          <span className="ms-settings__dirty" role="status">
+            Alterações não salvas
+          </span>
+        )}
+        <Button type="submit" loading={saving}>
+          Salvar
+        </Button>
+      </div>
+    </form>
   );
 }
 
@@ -139,20 +156,24 @@ function SettingField({
   onChange: (value: string) => void;
 }) {
   if (def.type === 'boolean') {
+    const hintId = `ms-setting-${def.key}-hint`;
     return (
       <div className="ms-field">
-        <label className="ms-checkbox">
-          <input
-            type="checkbox"
-            checked={value === 'true'}
-            onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
-          />
+        <Switch
+          checked={value === 'true'}
+          onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
+          aria-describedby={hintId}
+          aria-invalid={error ? true : undefined}
+        >
           {def.label}
-        </label>
-        {error ? (
-          <span className="ms-field__error">{error}</span>
-        ) : (
-          <span className="ms-field__hint">{def.hint}</span>
+        </Switch>
+        <span className="ms-field__hint" id={hintId}>
+          {def.hint}
+        </span>
+        {error && (
+          <span className="ms-field__error" role="alert">
+            {error}
+          </span>
         )}
       </div>
     );

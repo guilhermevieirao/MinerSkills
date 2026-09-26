@@ -1,0 +1,17 @@
+@use '../../styles/mixins' as *;
+
+@layer pages {
+  // ── Páginas & Timeline: um grupo (título + tabela) por página editável ──
+  .ms-pagesadm {
+    @include stack(var(--ms-space-7));
+
+    &__group {
+      @include stack(var(--ms-space-3));
+    }
+
+    &__title {
+      font-size: var(--ms-title-sm);
+      line-height: var(--ms-lh-snug);
+    }
+  }
+}

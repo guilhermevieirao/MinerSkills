@@ -1,0 +1,32 @@
+@use '../../styles/mixins' as *;
+
+@layer pages {
+  // ── Editor de texto: linha de URL (link / YouTube) logo abaixo da barra ──
+  .ms-rte {
+    &__prompt {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: var(--ms-space-2) var(--ms-space-3);
+      padding: var(--ms-space-3);
+      border-bottom: 1px solid var(--ms-border);
+      background: var(--ms-surface-2);
+
+      > .ms-field {
+        flex: 1 1 240px;
+        min-width: 0;
+        margin-bottom: 0;
+      }
+    }
+    &__prompt-actions {
+      @include cluster(var(--ms-space-2));
+      // alinha ao controle (abaixo do rótulo), mesmo com erro sob o campo
+      min-height: var(--ms-control);
+      margin-top: calc(var(--ms-text-sm) * 1.5 + var(--ms-space-2));
+
+      @include below($bp-sm) {
+        margin-top: 0;
+      }
+    }
+  }
+}

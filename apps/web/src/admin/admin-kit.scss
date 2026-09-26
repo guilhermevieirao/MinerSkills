@@ -1,0 +1,377 @@
+@use '../styles/mixins' as *;
+
+// Componentes compartilhados das seções do painel: Modal, ConfirmDialog,
+// DataTable (tabela ≥768px e cartões abaixo), barra de ferramentas e
+// auxiliares de formulário.
+
+@layer pages {
+  // ── Modal: cabeçalho e rodapé fora da área rolável; tela cheia no celular ──
+  .ms-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ms-z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--ms-space-6) var(--ms-space-4);
+    background: var(--ms-overlay);
+    backdrop-filter: blur(3px);
+
+    @include below($bp-md) {
+      padding: 0;
+      align-items: stretch;
+    }
+
+    &__panel {
+      @include card-surface;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 640px;
+      max-height: calc(100dvh - 2 * var(--ms-space-6));
+      overflow: hidden;
+      box-shadow: var(--ms-elev-3);
+      animation: ms-fade-in var(--ms-dur-fast) var(--ms-ease) both;
+
+      &--sm {
+        max-width: 440px;
+      }
+      &--lg {
+        max-width: 880px;
+      }
+
+      @include below($bp-md) {
+        max-width: none;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        border: 0;
+
+        &--sm {
+          height: auto;
+          max-height: calc(100dvh - 2 * var(--ms-space-4));
+          margin: auto var(--ms-space-4);
+          border-radius: var(--ms-radius);
+          border: 1px solid var(--ms-border);
+        }
+      }
+    }
+
+    &__head {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--ms-space-3);
+      padding: var(--ms-space-5) var(--ms-space-5) var(--ms-space-4) var(--ms-space-6);
+      border-bottom: 1px solid var(--ms-border-subtle);
+
+      @include below($bp-md) {
+        padding: calc(var(--ms-space-3) + env(safe-area-inset-top, 0px)) var(--ms-space-3)
+          var(--ms-space-3) var(--ms-space-4);
+      }
+      h2 {
+        font-size: var(--ms-title);
+        padding-top: var(--ms-space-2);
+      }
+    }
+    &__heading {
+      min-width: 0;
+    }
+    &__desc {
+      margin-top: var(--ms-space-1);
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+    }
+    &__close {
+      display: inline-grid;
+      place-items: center;
+      width: var(--ms-control);
+      height: var(--ms-control);
+      flex-shrink: 0;
+      border: 0;
+      border-radius: var(--ms-radius-md);
+      background: transparent;
+      color: var(--ms-text-dim);
+      @include touch-target;
+
+      svg {
+        width: var(--ms-icon);
+        height: var(--ms-icon);
+      }
+      @include hover {
+        color: var(--ms-text);
+        background: var(--ms-surface-2);
+      }
+    }
+
+    // única área que rola
+    &__body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: var(--ms-space-5) var(--ms-space-6);
+
+      &:empty {
+        display: none;
+      }
+      @include below($bp-md) {
+        padding: var(--ms-space-4);
+      }
+      // formulários do painel: espaçamento entre campos pelo contêiner
+      > form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--ms-space-4);
+      }
+    }
+    &__text {
+      color: var(--ms-text-dim);
+    }
+
+    // ações: no rodapé do painel (prop `footer`, sempre visível) ou no fim do corpo
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: var(--ms-space-3);
+      padding-top: var(--ms-space-4);
+      border-top: 1px solid var(--ms-border-subtle);
+
+      // ação destrutiva à esquerda, longe do salvar
+      > .ms-btn--danger:first-child {
+        margin-right: auto;
+      }
+    }
+    &__footer {
+      flex-shrink: 0;
+      padding: var(--ms-space-4) var(--ms-space-6);
+
+      @include below($bp-md) {
+        padding: var(--ms-space-3) var(--ms-space-4)
+          calc(var(--ms-space-3) + env(safe-area-inset-bottom, 0px));
+      }
+    }
+    &__row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ms-space-4);
+      @include below($bp-sm) {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+
+  // corpo da confirmação (ícone + texto na descrição)
+  .ms-confirm {
+    display: flex;
+    gap: var(--ms-space-3);
+    color: var(--ms-text-dim);
+    font-size: var(--ms-text-base);
+    padding-top: var(--ms-space-2);
+
+    &__icon {
+      width: var(--ms-icon);
+      height: var(--ms-icon);
+      color: var(--ms-danger);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+
+  // ── Listagens: tabela (≥768px) e cartões (<768px) ──
+  .ms-table {
+    th,
+    td {
+      &.ms-table__cell--end {
+        text-align: right;
+      }
+      &.ms-table__cell--center {
+        text-align: center;
+      }
+    }
+    td.ms-table__cell--primary {
+      font-weight: var(--ms-fw-medium);
+      color: var(--ms-text);
+    }
+    &__actions-col {
+      width: 1%;
+    }
+    tbody tr {
+      transition: background-color var(--ms-dur-fast) var(--ms-ease);
+      @include hover {
+        background: var(--ms-surface-2);
+      }
+    }
+
+    &--cards {
+      min-width: 0; // a tabela exige 560px; os cartões cabem em qualquer largura
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-gap-list);
+    }
+    &__card {
+      @include card(var(--ms-card-pad-sm));
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-3);
+    }
+    &__card-head {
+      display: flex;
+      align-items: center;
+      gap: var(--ms-space-3);
+      min-width: 0;
+    }
+    &__card-lead {
+      flex-shrink: 0;
+    }
+    &__card-title {
+      min-width: 0;
+      font-weight: var(--ms-fw-semibold);
+      overflow-wrap: anywhere;
+    }
+    &__fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ms-space-2) var(--ms-space-4);
+      margin: 0;
+    }
+    &__field {
+      min-width: 0;
+      dt {
+        font-size: var(--ms-text-caption);
+        color: var(--ms-text-faint);
+      }
+      dd {
+        margin: 0;
+        font-size: var(--ms-text-sm);
+        overflow-wrap: anywhere;
+      }
+    }
+    &__card-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: var(--ms-space-2);
+      border-top: 1px solid var(--ms-border-subtle);
+    }
+  }
+
+  // texto longo (URL, slug) em uma linha com reticências
+  .ms-adm__truncate {
+    display: block;
+    max-width: 32ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ms-adm__muted {
+    color: var(--ms-text-dim);
+  }
+
+  // ── Barra de ferramentas das listagens (filtros, busca, contagem) ──
+  .ms-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ms-space-3);
+    margin-bottom: var(--ms-space-4);
+
+    &__end {
+      margin-left: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--ms-space-2);
+    }
+    &__count {
+      @include meta;
+      font-size: var(--ms-text-sm);
+    }
+    .ms-search {
+      flex: 1 1 240px;
+      max-width: 360px;
+    }
+    @include below($bp-sm) {
+      .ms-search {
+        max-width: none;
+      }
+    }
+  }
+
+  // campos em linha com um botão (adicionar vídeo/link): alinhados pela base
+  .ms-inline-add {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--ms-space-2);
+
+    > .ms-field,
+    > .ms-input {
+      flex: 1;
+      min-width: 0;
+    }
+    @include below($bp-sm) {
+      flex-wrap: wrap;
+      > .ms-btn {
+        width: 100%;
+      }
+    }
+  }
+
+  // grade de miniaturas do formulário (mídia do post): remover sempre visível
+  .ms-thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: var(--ms-space-3);
+    margin-top: var(--ms-space-3);
+
+    &__item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--ms-radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--ms-border);
+      background: var(--ms-surface-2);
+      display: grid;
+      place-items: center;
+      color: var(--ms-green-deep);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      > svg {
+        width: var(--ms-icon-xl);
+        height: var(--ms-icon-xl);
+      }
+      .ms-btn {
+        position: absolute;
+        top: var(--ms-space-1);
+        right: var(--ms-space-1);
+        background: var(--ms-overlay-strong);
+      }
+    }
+  }
+
+  .ms-repeater__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  // bloco de formulário com título (agrupa campos relacionados)
+  .ms-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ms-space-3);
+    padding-top: var(--ms-space-4);
+    border-top: 1px solid var(--ms-border-subtle);
+
+    &__title {
+      @include kicker($color: var(--ms-text-faint));
+    }
+  }
+}
