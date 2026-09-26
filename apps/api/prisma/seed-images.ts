@@ -1,5 +1,7 @@
 import sharp from 'sharp';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { nanoid } from 'nanoid';
 import type { MediaAsset } from '@prisma/client';
 import { prisma } from '../src/lib/prisma.js';
@@ -63,8 +65,10 @@ async function fetchRemote(picsumId: number, w: number, h: number): Promise<Buff
 }
 
 /**
- * Cria um MediaAsset de imagem para o seed. Tenta baixar de picsum (com id
- * determinístico); em falha ou modo local, gera um placeholder de marca.
+ * Cria um MediaAsset de imagem para o seed. Com `file`, usa uma foto real
+ * versionada em `prisma/assets/` (vale em qualquer SEED_IMAGE_SOURCE); senão
+ * tenta baixar de picsum (id determinístico) e, em falha ou modo local, gera um
+ * placeholder de marca.
  */
 export async function seedImage(opts: {
   label: string;
@@ -73,12 +77,16 @@ export async function seedImage(opts: {
   alt: string;
   width?: number;
   height?: number;
+  /** Foto real relativa a `prisma/` (ex.: './assets/team.jpg'). */
+  file?: string;
 }): Promise<MediaAsset> {
   const w = opts.width ?? 1200;
   const h = opts.height ?? 800;
 
   let source: Buffer | null = null;
-  if (env.SEED_IMAGE_SOURCE === 'remote') {
+  if (opts.file) {
+    source = await readFile(fileURLToPath(new URL(opts.file, import.meta.url)));
+  } else if (env.SEED_IMAGE_SOURCE === 'remote') {
     source = await fetchRemote(opts.picsumId, w, h);
   }
   source ??= await generatePlaceholder(opts.label, opts.seed, w, h);

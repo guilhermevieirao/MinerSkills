@@ -83,13 +83,15 @@ async function seedAdmin() {
 }
 
 async function seedContentBlocks() {
+  // foto real da equipe no estande (quadrada; o hero recorta pelo CSS)
   const landingHero = await seedImage({
     label: 'MinerSkills',
     seed: 1,
     picsumId: 1069,
-    alt: 'Equipe MinerSkills em competição',
-    width: 1600,
-    height: 900,
+    alt: 'Equipe MinerSkills reunida no estande, com uniformes verdes e óculos de proteção',
+    width: 1440,
+    height: 1440,
+    file: './assets/team.jpg',
   });
 
   const landing = [
