@@ -18,7 +18,7 @@ export function ConfirmDialog({
 }) {
   return (
     <Modal title={title} onClose={onCancel}>
-      <p style={{ color: 'var(--ms-text-dim)' }}>{message}</p>
+      <p className="ms-modal__text">{message}</p>
       <div className="ms-modal__actions">
         <Button variant="ghost" onClick={onCancel}>
           Cancelar

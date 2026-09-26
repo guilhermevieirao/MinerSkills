@@ -1,6 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { LayoutDashboard } from 'lucide-react';
 import { useAdminMe } from './useAdminAuth';
-import { Loader } from '../components/ui';
+import { LinkButton, Loader } from '../components/ui';
+import { ErrorState } from '../components/ui/ErrorState';
+import { StateBlock } from '../components/ui/StateBlock';
+import { ApiError } from '../lib/api';
 import { LoginPage } from './LoginPage';
 import { AdminLayout } from './AdminLayout';
 import { DashboardPage } from './sections/DashboardPage';
@@ -23,10 +27,26 @@ import { InboxSection } from './sections/InboxSection';
 import { SeasonsSection } from './sections/SeasonsSection';
 import './admin.scss';
 
-export default function AdminApp() {
-  const { data: me, isLoading, isError } = useAdminMe();
+/** URL do painel que não existe: diz isso, em vez de cair no dashboard em silêncio. */
+function AdminNotFound() {
+  return (
+    <StateBlock
+      title="Página não encontrada"
+      text="Este endereço não corresponde a nenhuma seção do painel."
+      titleAs="h1"
+      actions={
+        <LinkButton to="/admin" variant="outline">
+          <LayoutDashboard aria-hidden /> Ir para o dashboard
+        </LinkButton>
+      }
+    />
+  );
+}
 
-  if (isLoading) {
+export default function AdminApp() {
+  const me = useAdminMe();
+
+  if (me.isLoading) {
     return (
       <div className="ms-admin-loading">
         <Loader label="Verificando sessão…" />
@@ -34,12 +54,26 @@ export default function AdminApp() {
     );
   }
 
-  if (isError || !me) {
+  // 401 = sem sessão → login. Qualquer outro erro (rede, 5xx) não é "deslogado".
+  if (me.isError && !(me.error instanceof ApiError && me.error.status === 401)) {
+    return (
+      <div className="ms-admin-loading">
+        <ErrorState
+          error={me.error}
+          title="Não foi possível abrir o painel"
+          onRetry={() => void me.refetch()}
+          retrying={me.isFetching}
+        />
+      </div>
+    );
+  }
+
+  if (me.isError || !me.data) {
     return <LoginPage />;
   }
 
   return (
-    <AdminLayout admin={me}>
+    <AdminLayout admin={me.data}>
       <Routes>
         <Route index element={<DashboardPage />} />
         <Route path="dashboard" element={<Navigate to="/admin" replace />} />
@@ -62,7 +96,7 @@ export default function AdminApp() {
         <Route path="patrocinadores" element={<SponsorsSection />} />
         <Route path="mensagens" element={<InboxSection />} />
         <Route path="temporadas" element={<SeasonsSection />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<AdminNotFound />} />
       </Routes>
     </AdminLayout>
   );

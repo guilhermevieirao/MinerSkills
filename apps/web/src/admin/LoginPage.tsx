@@ -1,47 +1,66 @@
-import { useState } from 'react';
-import { LogIn, ShieldCheck } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ArrowLeft, LogIn, ShieldCheck } from 'lucide-react';
 import { loginSchema } from '@minerskills/shared';
 import { useLogin } from './useAdminAuth';
-import { Button, Input, Field } from '../components/ui';
+import { Button, Field, Input } from '../components/ui';
 import { LogoBadge } from '../components/brand/Logo';
 import { ApiError } from '../lib/api';
+import { fieldErrors, focusFirstInvalid } from '../lib/forms';
+import { useDocumentHead } from '../lib/useDocumentHead';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string>();
+  const formRef = useRef<HTMLFormElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   const login = useLogin();
+
+  useDocumentHead({ title: 'Entrar · Painel', noindex: true });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(undefined);
     const parsed = loginSchema.safeParse({ email, password });
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const issue of parsed.error.issues) errs[issue.path[0] as string] = issue.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error));
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
     setErrors({});
     try {
       await login.mutateAsync(parsed.data);
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Falha no login.');
+      setFormError(
+        err instanceof ApiError
+          ? err.message
+          : 'Não foi possível conectar ao servidor. Tente novamente.',
+      );
+      emailRef.current?.focus();
     }
   };
 
   return (
-    <div className="ms-login">
-      <form className="ms-login__card" onSubmit={submit}>
-        <LogoBadge className="ms-login__logo" />
-        <h1 className="ms-login__title">Painel MinerSkills</h1>
-        <p className="ms-login__sub">
-          <ShieldCheck /> Área administrativa restrita
-        </p>
+    <main className="ms-login">
+      <form ref={formRef} className="ms-login__card ms-form" onSubmit={submit} noValidate>
+        <div className="ms-login__head">
+          <LogoBadge decorative className="ms-login__logo" />
+          <h1 className="ms-login__title">Painel MinerSkills</h1>
+          <p className="ms-login__sub">
+            <ShieldCheck aria-hidden /> Área administrativa restrita
+          </p>
+        </div>
+
+        {formError && (
+          <p className="ms-login__error" role="alert">
+            {formError}
+          </p>
+        )}
 
         <Field label="E-mail" error={errors.email}>
           <Input
+            ref={emailRef}
             type="email"
             autoComplete="username"
             value={email}
@@ -57,12 +76,14 @@ export function LoginPage() {
           />
         </Field>
 
-        {formError && <p className="ms-login__error">{formError}</p>}
-
         <Button type="submit" block size="lg" loading={login.isPending}>
-          <LogIn /> Entrar
+          <LogIn aria-hidden /> Entrar
         </Button>
+
+        <a href="/" className="ms-login__back">
+          <ArrowLeft aria-hidden /> Voltar ao site
+        </a>
       </form>
-    </div>
+    </main>
   );
 }

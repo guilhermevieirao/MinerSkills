@@ -15,7 +15,7 @@ export interface StateBlockProps {
   compact?: boolean;
   /** Papel ARIA (`alert` para erro, nada para vazio). */
   role?: 'alert' | 'status';
-  titleAs?: 'h2' | 'h3' | 'p';
+  titleAs?: 'h1' | 'h2' | 'h3' | 'p';
   className?: string;
 }
 

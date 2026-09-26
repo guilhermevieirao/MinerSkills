@@ -101,6 +101,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin/*',
+    errorElement: <RouteErrorPage />,
     element: (
       <Suspense fallback={<Loader label="Carregando painel…" />}>
         <AdminApp />

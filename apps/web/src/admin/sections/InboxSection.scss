@@ -74,7 +74,7 @@
       white-space: nowrap;
 
       &--new {
-        background: rgba(41, 217, 140, 0.14);
+        background: var(--ms-green-soft-strong);
         color: var(--ms-green);
       }
       &--read {

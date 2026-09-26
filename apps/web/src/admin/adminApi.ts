@@ -109,7 +109,8 @@ export const adminApi = {
   contentBlocks: {
     list: (page?: string) =>
       api.get<ContentBlockDTO[]>('/admin/content-blocks', page ? { page } : undefined),
-    create: (data: ContentBlockInput) => api.post<ContentBlockDTO>('/admin/content-blocks', data),
+    create: (data: ContentBlockInput) =>
+      api.post<ContentBlockDTO>('/admin/content-blocks', data),
     update: (id: string, data: ContentBlockInput) =>
       api.put<ContentBlockDTO>(`/admin/content-blocks/${id}`, data),
     remove: (id: string) => api.del(`/admin/content-blocks/${id}`),
@@ -117,7 +118,8 @@ export const adminApi = {
 
   timeline: {
     list: () => api.get<TimelineItemDTO[]>('/admin/timeline'),
-    create: (data: TimelineItemInput) => api.post<TimelineItemDTO>('/admin/timeline', data),
+    create: (data: TimelineItemInput) =>
+      api.post<TimelineItemDTO>('/admin/timeline', data),
     update: (id: string, data: TimelineItemInput) =>
       api.put<TimelineItemDTO>(`/admin/timeline/${id}`, data),
     remove: (id: string) => api.del(`/admin/timeline/${id}`),
@@ -127,13 +129,15 @@ export const adminApi = {
     list: () => api.get<PostListItemDTO[]>('/admin/posts'),
     get: (id: string) => api.get<PostDetailDTO>(`/admin/posts/${id}`),
     create: (data: PostInput) => api.post<PostDetailDTO>('/admin/posts', data),
-    update: (id: string, data: PostInput) => api.put<PostDetailDTO>(`/admin/posts/${id}`, data),
+    update: (id: string, data: PostInput) =>
+      api.put<PostDetailDTO>(`/admin/posts/${id}`, data),
     remove: (id: string) => api.del(`/admin/posts/${id}`),
   },
 
   gallery: {
     list: () => api.get<GalleryPhotoDTO[]>('/gallery'),
-    create: (data: GalleryPhotoInput) => api.post<GalleryPhotoDTO>('/admin/gallery', data),
+    create: (data: GalleryPhotoInput) =>
+      api.post<GalleryPhotoDTO>('/admin/gallery', data),
     update: (id: string, data: GalleryPhotoInput) =>
       api.put<GalleryPhotoDTO>(`/admin/gallery/${id}`, data),
     reorder: (ids: string[]) => api.put<void>('/admin/gallery/reorder', { ids }),
@@ -142,7 +146,8 @@ export const adminApi = {
 
   quiz: {
     list: () => api.get<AdminQuizQuestion[]>('/admin/quiz/questions'),
-    create: (data: QuizQuestionInput) => api.post<AdminQuizQuestion>('/admin/quiz/questions', data),
+    create: (data: QuizQuestionInput) =>
+      api.post<AdminQuizQuestion>('/admin/quiz/questions', data),
     update: (id: string, data: QuizQuestionInput) =>
       api.put<AdminQuizQuestion>(`/admin/quiz/questions/${id}`, data),
     remove: (id: string) => api.del(`/admin/quiz/questions/${id}`),
@@ -176,7 +181,10 @@ export const adminApi = {
     removeTopic: (id: string) => api.del(`/admin/forum/topics/${id}`),
     removeReply: (id: string) => api.del(`/admin/forum/replies/${id}`),
     reports: (status: 'open' | 'resolved' | 'all' = 'open') =>
-      api.get<ForumReportDTO[]>('/admin/forum/reports', status === 'all' ? undefined : { status }),
+      api.get<ForumReportDTO[]>(
+        '/admin/forum/reports',
+        status === 'all' ? undefined : { status },
+      ),
     setReport: (id: string, data: ForumReportStatusInput) =>
       api.patch<ForumReportDTO>(`/admin/forum/reports/${id}`, data),
   },
@@ -184,7 +192,8 @@ export const adminApi = {
   awards: {
     list: () => api.get<AwardDTO[]>('/awards'),
     create: (data: AwardInput) => api.post<AwardDTO>('/admin/awards', data),
-    update: (id: string, data: AwardInput) => api.put<AwardDTO>(`/admin/awards/${id}`, data),
+    update: (id: string, data: AwardInput) =>
+      api.put<AwardDTO>(`/admin/awards/${id}`, data),
     remove: (id: string) => api.del(`/admin/awards/${id}`),
   },
 
@@ -198,7 +207,8 @@ export const adminApi = {
 
   social: {
     list: () => api.get<SocialLinkDTO[]>('/admin/social-links'),
-    create: (data: SocialLinkInput) => api.post<SocialLinkDTO>('/admin/social-links', data),
+    create: (data: SocialLinkInput) =>
+      api.post<SocialLinkDTO>('/admin/social-links', data),
     update: (id: string, data: SocialLinkInput) =>
       api.put<SocialLinkDTO>(`/admin/social-links/${id}`, data),
     remove: (id: string) => api.del(`/admin/social-links/${id}`),
@@ -218,7 +228,8 @@ export const adminApi = {
   sponsors: {
     list: () => api.get<SponsorDTO[]>('/admin/sponsors'),
     create: (data: SponsorInput) => api.post<SponsorDTO>('/admin/sponsors', data),
-    update: (id: string, data: SponsorInput) => api.put<SponsorDTO>(`/admin/sponsors/${id}`, data),
+    update: (id: string, data: SponsorInput) =>
+      api.put<SponsorDTO>(`/admin/sponsors/${id}`, data),
     reorder: (ids: string[]) => api.put<void>('/admin/sponsors/reorder', { ids }),
     remove: (id: string) => api.del(`/admin/sponsors/${id}`),
   },
@@ -234,7 +245,8 @@ export const adminApi = {
   seasons: {
     list: () => api.get<SeasonDTO[]>('/admin/seasons'),
     create: (data: SeasonInput) => api.post<SeasonDTO>('/admin/seasons', data),
-    update: (id: string, data: SeasonInput) => api.put<SeasonDTO>(`/admin/seasons/${id}`, data),
+    update: (id: string, data: SeasonInput) =>
+      api.put<SeasonDTO>(`/admin/seasons/${id}`, data),
     remove: (id: string) => api.del(`/admin/seasons/${id}`),
   },
 

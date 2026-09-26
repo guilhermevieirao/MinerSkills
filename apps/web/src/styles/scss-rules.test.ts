@@ -30,9 +30,6 @@ const stripComments = (css: string) =>
 
 /** Arquivos que ainda têm cores literais — dívida a zerar, não licença para crescer. */
 const DEBT = new Set<string>([
-  'admin/admin.scss',
-  'admin/sections/ForumSection.scss',
-  'admin/sections/InboxSection.scss',
 ]);
 
 const NO_LAYER = new Set([
