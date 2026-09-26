@@ -16,13 +16,18 @@
     transition:
       background-color var(--ms-dur) var(--ms-ease),
       border-color var(--ms-dur) var(--ms-ease),
-      backdrop-filter var(--ms-dur) var(--ms-ease);
+      backdrop-filter var(--ms-dur) var(--ms-ease),
+      transform var(--ms-dur-slow) var(--ms-ease);
 
-    // Transparente sobre o hero da Home; sólida assim que a página rola.
+    // Transparente no topo; vidro escuro (desfoque + saturação) assim que a página rola.
     &--solid {
       background: var(--ms-scrim);
-      backdrop-filter: blur(14px);
-      border-bottom-color: var(--ms-border);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-bottom-color: var(--ms-border-subtle);
+    }
+    // Rolando para baixo: sai de cena. Volta ao subir, ou quando algo nela tem foco.
+    &--tucked:not(:focus-within):not(:hover) {
+      transform: translateY(-100%);
     }
 
     &__inner {
@@ -47,6 +52,9 @@
       @include below($bp-md) {
         height: 26px;
       }
+      @include below($bp-sm) {
+        height: 22px;
+      }
     }
 
     // ── Menu completo (a partir de 1024px) ──
@@ -56,10 +64,10 @@
       @include from($bp-lg) {
         display: flex;
         align-items: center;
-        gap: var(--ms-space-1);
+        gap: var(--ms-space-2);
         flex: 1;
         min-width: 0;
-        margin-left: var(--ms-space-4);
+        margin-left: var(--ms-space-6);
       }
     }
 
@@ -92,21 +100,29 @@
 
       @include hover {
         color: var(--ms-text);
-        background: var(--ms-surface-2);
       }
       &:focus-visible,
       &[aria-expanded='true'] {
         color: var(--ms-text);
-        background: var(--ms-surface-2);
+        background: var(--ms-on-overlay-surface);
       }
     }
-    // rota atual (link) ou grupo que contém a rota atual (gatilho)
+    // rota atual (link) ou grupo que contém a rota atual (gatilho): texto claro
+    // e um ponto verde sob o rótulo
     .ms-nav__link--active,
     .ms-nav__link.ms-dropdown__trigger--active {
-      color: var(--ms-green);
-      background: var(--ms-green-soft);
-      svg {
-        color: var(--ms-green);
+      position: relative;
+      color: var(--ms-text);
+      &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 2px;
+        width: 4px;
+        height: 4px;
+        margin-left: -2px;
+        border-radius: 50%;
+        background: var(--ms-green);
       }
     }
 
@@ -128,6 +144,14 @@
       @include from($bp-lg) {
         display: none;
       }
+      // 320px: logo, chamada e menu precisam caber lado a lado
+      @include below($bp-sm) {
+        gap: var(--ms-space-1);
+        .ms-btn {
+          padding-inline: var(--ms-space-3);
+          font-size: var(--ms-text-sm);
+        }
+      }
     }
 
     &__burger {
@@ -136,9 +160,9 @@
       width: var(--ms-touch);
       height: var(--ms-touch);
       flex-shrink: 0;
-      border-radius: var(--ms-radius-md);
-      border: 1px solid var(--ms-border-control);
-      background: var(--ms-surface-2);
+      border-radius: var(--ms-radius-pill);
+      border: 1px solid var(--ms-border-subtle);
+      background: var(--ms-on-overlay-surface);
       color: var(--ms-text);
       transition:
         border-color var(--ms-dur-fast) var(--ms-ease),
@@ -150,8 +174,7 @@
       }
 
       @include hover {
-        border-color: var(--ms-green);
-        color: var(--ms-green);
+        background: var(--ms-on-overlay-surface-hover);
       }
     }
   }

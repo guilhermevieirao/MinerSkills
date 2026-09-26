@@ -10,10 +10,9 @@
       margin-bottom: var(--ms-space-5);
     }
 
-    &__kicker {
-      @include kicker;
-      display: block;
-      margin-bottom: var(--ms-space-1);
+    &__requisitos-sub {
+      color: var(--ms-text-dim);
+      margin-top: var(--ms-space-2);
     }
 
     // ── Etapas: 2 colunas → 1 ──

@@ -1,3 +1,6 @@
+import { useRef } from 'react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
+import { EASE } from '../lib/motion';
 import { History } from 'lucide-react';
 import { PageHero } from '../components/layout/PageHero';
 import { usePageBlocks, useTimeline } from '../features/content/useContent';
@@ -28,7 +31,6 @@ export function HistoriaPage() {
   return (
     <>
       <PageHero
-        kicker="Nossa trajetória"
         title={intro?.title ?? 'Nossa História'}
         subtitle={intro?.subtitle ?? undefined}
       />
@@ -52,7 +54,7 @@ export function HistoriaPage() {
           </div>
         )}
 
-        <SectionHeading kicker="Marcos" title="Linha do tempo" dense />
+        <SectionHeading title="Linha do tempo" dense />
 
         <QueryState
           query={timeline}
@@ -66,33 +68,7 @@ export function HistoriaPage() {
             />
           }
         >
-          {(items) => (
-            <Reveal>
-              <ol className="ms-timeline" role="list">
-                {items.map((item) => (
-                  <li key={item.id} className="ms-timeline__item">
-                    <div className="ms-timeline__marker" aria-hidden>
-                      <span className="ms-timeline__dot" />
-                    </div>
-                    <div className="ms-timeline__content">
-                      <span className="ms-timeline__year">{item.year}</span>
-                      <h3 className="ms-timeline__title">{item.title}</h3>
-                      <p className="ms-timeline__desc">{item.description}</p>
-                      {item.media && (
-                        <MediaImage
-                          className="ms-timeline__img"
-                          media={item.media}
-                          alt={item.media.alt ?? ''}
-                          thumb
-                          sizes="(max-width: 767px) 100vw, 640px"
-                        />
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </Reveal>
-          )}
+          {(items) => <Timeline items={items} />}
         </QueryState>
 
         {quote?.body && (
@@ -104,5 +80,83 @@ export function HistoriaPage() {
         )}
       </section>
     </>
+  );
+}
+
+type TimelineItem = NonNullable<ReturnType<typeof useTimeline>['data']>[number];
+
+/**
+ * Linha do tempo: o trilho verde se preenche conforme a lista atravessa a tela
+ * (progresso da leitura); cada marco entra deslizando e o ponto "acende".
+ */
+function Timeline({ items }: { items: TimelineItem[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 75%', 'end 60%'],
+  });
+  const fill = useTransform(scrollYProgress, (v) => `scaleY(${v})`);
+
+  return (
+    <div ref={ref} className="ms-timeline-wrap">
+      <motion.span
+        className="ms-timeline__fill"
+        aria-hidden
+        style={reduce ? { transform: 'scaleY(1)' } : { transform: fill }}
+      />
+      <ol className="ms-timeline" role="list">
+        {items.map((item) => (
+          <motion.li
+            key={item.id}
+            className="ms-timeline__item"
+            initial="hidden"
+            whileInView="shown"
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            <div className="ms-timeline__marker" aria-hidden>
+              <motion.span
+                className="ms-timeline__dot"
+                variants={{
+                  hidden: { transform: 'scale(0.4)', opacity: 0.4 },
+                  shown: {
+                    transform: 'scale(1)',
+                    opacity: 1,
+                    transition: { type: 'spring', duration: 0.5, bounce: 0.3 },
+                  },
+                }}
+              />
+            </div>
+            <motion.div
+              className="ms-timeline__content"
+              variants={{
+                hidden: reduce
+                  ? { opacity: 0 }
+                  : { opacity: 0, transform: 'translateX(-16px)', filter: 'blur(6px)' },
+                shown: {
+                  opacity: 1,
+                  transform: 'translateX(0px)',
+                  filter: 'blur(0px)',
+                  transition: { duration: 0.7, ease: EASE },
+                },
+              }}
+            >
+              <span className="ms-timeline__year">{item.year}</span>
+              <h3 className="ms-timeline__title">{item.title}</h3>
+              <p className="ms-timeline__desc">{item.description}</p>
+              {item.media && (
+                <MediaImage
+                  className="ms-timeline__img"
+                  media={item.media}
+                  alt={item.media.alt ?? ''}
+                  thumb
+                  sizes="(max-width: 767px) 100vw, 640px"
+                />
+              )}
+            </motion.div>
+          </motion.li>
+        ))}
+      </ol>
+    </div>
   );
 }

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { EASE } from '../../lib/motion';
 import './Countdown.scss';
 
 interface CountdownProps {
@@ -66,7 +68,21 @@ export function Countdown({ target }: CountdownProps) {
     >
       {units.map((u) => (
         <span key={u.plural} className="ms-countdown__unit" aria-hidden>
-          <span className="ms-countdown__value">{pad(u.value)}</span>
+          {/* cada troca rola: o número que sai sobe, o novo entra por baixo */}
+          <span className="ms-countdown__value">
+            <AnimatePresence initial={false} mode="popLayout">
+              <motion.span
+                key={u.value}
+                className="ms-countdown__digit"
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '-100%', opacity: 0 }}
+                transition={{ duration: 0.45, ease: EASE }}
+              >
+                {pad(u.value)}
+              </motion.span>
+            </AnimatePresence>
+          </span>
           <span className="ms-countdown__label">
             {u.value === 1 ? u.singular : u.plural}
           </span>

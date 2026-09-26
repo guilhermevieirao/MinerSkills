@@ -19,11 +19,21 @@ import './Navbar.scss';
  */
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  // recolhe ao rolar para baixo (o conteúdo ganha a tela) e volta ao subir
+  const [tucked, setTucked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 16);
+      if (Math.abs(y - lastY) > 6) {
+        setTucked(y > lastY && y > 480);
+        lastY = y;
+      }
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -37,7 +47,9 @@ export function Navbar() {
 
   return (
     <>
-      <header className={cx('ms-nav', scrolled && 'ms-nav--solid')}>
+      <header
+        className={cx('ms-nav', scrolled && 'ms-nav--solid', tucked && 'ms-nav--tucked')}
+      >
         <div className="ms-container ms-nav__inner">
           <Link to="/" className="ms-nav__brand" aria-label="MinerSkills — início">
             <LogoWordmark decorative className="ms-nav__logo" />

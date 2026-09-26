@@ -3,8 +3,8 @@
 @layer components {
   .ms-footer {
     margin-top: auto;
-    background: var(--ms-surface);
-    border-top: 1px solid var(--ms-border);
+    background: transparent; // a textura do fundo continua por baixo do rodapé
+    border-top: 1px solid var(--ms-border-subtle);
     padding-bottom: env(safe-area-inset-bottom, 0px);
 
     // marca + colunas de links
@@ -12,7 +12,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.6fr);
       gap: var(--ms-space-10);
-      padding-block: var(--ms-space-10);
+      padding-block: var(--ms-space-12) var(--ms-space-10);
 
       @include below($bp-lg) {
         grid-template-columns: 1fr;
@@ -41,7 +41,7 @@
       flex-shrink: 0;
     }
     &__name {
-      @include display-heading;
+      @include ui-heading;
       font-size: var(--ms-text-lg);
       color: var(--ms-text);
     }
@@ -78,7 +78,7 @@
       place-items: center;
       width: var(--ms-touch);
       height: var(--ms-touch);
-      border-radius: var(--ms-radius-md);
+      border-radius: var(--ms-radius-pill);
       border: 1px solid var(--ms-border-control);
       color: var(--ms-text-dim);
       transition:
@@ -113,8 +113,8 @@
       gap: var(--ms-space-6);
 
       @include below($bp-md) {
-        grid-template-columns: 1fr;
-        gap: var(--ms-space-5);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--ms-space-6) var(--ms-space-5);
       }
     }
     &__col {
@@ -125,7 +125,9 @@
       }
     }
     &__col-title {
-      @include kicker;
+      @include ui-heading;
+      font-size: var(--ms-text-sm);
+      color: var(--ms-text);
       margin-bottom: var(--ms-space-2);
     }
     &__link {
@@ -148,7 +150,7 @@
 
     // ── Barra inferior (borda de ponta a ponta, conteúdo no container) ──
     &__bottom {
-      border-top: 1px solid var(--ms-border);
+      border-top: 1px solid var(--ms-border-subtle);
     }
     &__bottom-inner {
       display: flex;
@@ -166,8 +168,7 @@
       }
     }
     &__mono {
-      font-family: var(--ms-font-mono);
-      letter-spacing: var(--ms-tracking-kicker);
+      letter-spacing: 0.08em;
       font-size: var(--ms-text-xs);
     }
   }

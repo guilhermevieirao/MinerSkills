@@ -43,16 +43,45 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  // A cor do fundo fica no <html> (igual ao inline de index.html); o <body> é
+  // transparente para a camada de textura (z-index -1) aparecer — com fundo
+  // próprio, o body pintaria por cima dela.
+  html {
+    background: var(--ms-bg);
+  }
+
   body {
     font-family: var(--ms-font-body);
-    background: var(--ms-bg);
+    background: transparent;
     color: var(--ms-text);
     font-size: var(--ms-text-base);
     line-height: var(--ms-lh-body);
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-feature-settings: 'ss01', 'cv11';
     overflow-x: hidden;
+  }
+
+  // Textura do fundo: luz ambiente e granulação numa camada fixa atrás de
+  // todo o conteúdo (z-index negativo no contexto raiz, acima da cor do body).
+  // Fixa = não rola junto, então não "desliza" nem pesa na rolagem.
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  body::before {
+    background: var(--ms-ambient);
+  }
+  body::after {
+    background-image: var(--ms-grain);
+    background-size: 180px 180px;
+    opacity: var(--ms-grain-opacity);
   }
 
   #root {
@@ -61,7 +90,7 @@
     flex-direction: column;
   }
 
-  // Voz da marca: só h1 e h2 (e números grandes) em Chakra Petch caixa alta.
+  // Voz da marca: h1 e h2 em Geist semibold, caixa normal, tracking negativo.
   h1,
   h2 {
     @include display-heading;
@@ -72,10 +101,10 @@
   }
   h2 {
     font-size: var(--ms-title-lg);
-    line-height: 1.15;
+    line-height: 1.08;
   }
 
-  // Títulos de interface (cards, linhas, modais): Inter, caixa normal.
+  // Títulos de interface (cards, linhas, modais): Geist, caixa normal.
   h3,
   h4,
   h5,
@@ -126,16 +155,26 @@
     color: var(--ms-on-green);
   }
 
+  html {
+    scrollbar-color: var(--ms-border-strong) var(--ms-bg);
+    caret-color: var(--ms-green);
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
   // Scrollbar tema escuro
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: var(--ms-surface);
+    background: var(--ms-bg);
   }
   ::-webkit-scrollbar-thumb {
     background: var(--ms-border-strong);
+    border: 2px solid var(--ms-bg);
     border-radius: var(--ms-radius-pill);
   }
   ::-webkit-scrollbar-thumb:hover {
@@ -149,22 +188,6 @@
   // Campo-armadilha anti-spam (fórum, contato). Nunca display:none — ver docs/features/forum.md.
   .ms-hp {
     @include honeypot;
-  }
-
-  // Texto com gradiente da marca
-  .ms-gradient-text {
-    background: var(--ms-gradient-text);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  // Alto contraste do Windows descarta o gradiente: sem isto sobrava color: transparent
-  @media (forced-colors: active) {
-    .ms-gradient-text {
-      background: none;
-      color: CanvasText;
-      -webkit-text-fill-color: CanvasText;
-    }
   }
 
   // Título em voz de marca fora de h1/h2 (usar com parcimônia)
@@ -182,6 +205,11 @@
   }
   .ms-section--sm {
     padding-block: var(--ms-section-y-sm);
+  }
+  // logo após o cabeçalho de página o conteúdo começa perto do título
+  .ms-pagehero + .ms-section,
+  .ms-pagehero + * > .ms-section:first-child {
+    padding-top: var(--ms-space-6);
   }
 
   .ms-container {

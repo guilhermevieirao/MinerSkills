@@ -1,6 +1,15 @@
 import { motion, useReducedMotion, type Variants } from 'motion/react';
 import type { ReactNode } from 'react';
-import { DUR, EASE } from '../../lib/motion';
+import { EASE } from '../../lib/motion';
+
+/** Entrada de vitrine: longa o bastante para ser lida como movimento, não como piscada. */
+const REVEAL_DUR = 0.8;
+
+/** Estado escondido: um pouco abaixo e desfocado — o conteúdo "entra em foco". */
+function hiddenState(reduce: boolean | null, y: number) {
+  return reduce ? { opacity: 0 } : { opacity: 0, y, filter: 'blur(8px)' };
+}
+const shown = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 interface RevealProps {
   children: ReactNode;
@@ -15,7 +24,7 @@ interface RevealProps {
 export function Reveal({
   children,
   delay = 0,
-  y = 24,
+  y = 28,
   className,
   as = 'div',
   once = true,
@@ -24,12 +33,8 @@ export function Reveal({
   const MotionTag = motion[as];
 
   const variants: Variants = {
-    hidden: { opacity: 0, y: reduce ? 0 : y },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: DUR.slow, ease: EASE, delay },
-    },
+    hidden: hiddenState(reduce, y),
+    visible: { ...shown, transition: { duration: REVEAL_DUR, ease: EASE, delay } },
   };
 
   return (
@@ -45,48 +50,62 @@ export function Reveal({
   );
 }
 
-/** Container que escalona a entrada dos filhos (usar com <RevealItem>). */
+/**
+ * Lista que escalona a entrada dos filhos (usar com <RevealItem>). Renderiza a
+ * própria lista (`ul` por padrão) para os itens continuarem `li` semânticos.
+ */
 export function RevealGroup({
   children,
   className,
   stagger = 0.08,
+  as = 'ul',
+  busy,
 }: {
   children: ReactNode;
   className?: string;
   stagger?: number;
+  as?: 'ul' | 'dl' | 'div';
+  /** Lista trocando de conteúdo (paginação/filtro): `aria-busy`. */
+  busy?: boolean;
 }) {
+  const MotionTag = motion[as];
   return (
-    <motion.div
+    <MotionTag
       className={className}
+      aria-busy={busy || undefined}
+      role={as === 'ul' ? 'list' : undefined}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.15 }}
       variants={{ visible: { transition: { staggerChildren: stagger } } }}
     >
       {children}
-    </motion.div>
+    </MotionTag>
   );
 }
 
 export function RevealItem({
   children,
   className,
-  y = 20,
+  y = 24,
+  as = 'li',
 }: {
   children: ReactNode;
   className?: string;
   y?: number;
+  as?: 'li' | 'div';
 }) {
   const reduce = useReducedMotion();
+  const MotionTag = motion[as];
   return (
-    <motion.div
+    <MotionTag
       className={className}
       variants={{
-        hidden: { opacity: 0, y: reduce ? 0 : y },
-        visible: { opacity: 1, y: 0, transition: { duration: DUR.slow, ease: EASE } },
+        hidden: hiddenState(reduce, y),
+        visible: { ...shown, transition: { duration: REVEAL_DUR, ease: EASE } },
       }}
     >
       {children}
-    </motion.div>
+    </MotionTag>
   );
 }

@@ -1,10 +1,11 @@
 // ────────────────────────────────────────────────────────────
-//  MinerSkills — Design Tokens (v2)
-//  Identidade: preto + verde menta. Emitidos como CSS custom properties
-//  (tematização em runtime). Regras que o teste `tokens.contrast.test.ts`
-//  garante: texto ≥ 4,5:1 e contorno de controle ≥ 3:1 sobre cada superfície
-//  em que aparecem. `--ms-space-N` é uma escala de PASSOS (a partir do 5 os
-//  valores não são múltiplos de 4px — não renomear: centenas de usos).
+//  MinerSkills — Design Tokens (v3)
+//  Identidade: escuro profundo + verde menta, linguagem premium de vitrine
+//  (blocos grandes e arredondados, títulos Geist em caixa normal, muito ar).
+//  Emitidos como CSS custom properties (tematização em runtime). Regras que o
+//  teste `tokens.contrast.test.ts` garante: texto ≥ 4,5:1 e contorno de controle
+//  ≥ 3:1 sobre cada superfície em que aparecem. `--ms-space-N` é uma escala de
+//  PASSOS (a partir do 5 os valores não são múltiplos de 4px — não renomear).
 // ────────────────────────────────────────────────────────────
 @use 'mixins' as *;
 
@@ -15,25 +16,30 @@
     accent-color: #29d98c;
 
     // ── Superfícies (rampa perceptível; campo sempre um degrau abaixo do card) ──
-    --ms-black: #0a0a0a;
-    --ms-bg: #0a0a0a;
-    --ms-surface: #151a18;
-    --ms-surface-2: #1c2320;
-    --ms-surface-3: #262e2a;
+    --ms-black: #080b0a;
+    --ms-bg: #080b0a;
+    --ms-surface: #0f1412;
+    --ms-surface-2: #161d1a;
+    --ms-surface-3: #212a26;
     --ms-surface-1: var(--ms-surface);
-    --ms-field-bg: #0f1311;
+    --ms-field-bg: #0a0e0c;
     --ms-surface-disabled: #12161400;
 
     // ── Bordas ──
-    --ms-border-subtle: rgba(255, 255, 255, 0.06); // divisórias internas
-    --ms-border: #303934; // contorno de card (decorativo)
-    --ms-border-strong: #3f4a44; // separadores em destaque
+    --ms-border-subtle: rgba(
+      255,
+      255,
+      255,
+      0.07
+    ); // divisórias internas, contorno de bloco
+    --ms-border: #232c28; // contorno de card (decorativo)
+    --ms-border-strong: #34403a; // separadores em destaque
     --ms-border-control: #667470; // input, select, chip, botão outline: ≥ 3:1
-    --ms-border-disabled: #2a322d;
+    --ms-border-disabled: #262e2a;
 
     // ── Verde da marca (do selo #10019) e derivados ──
     --ms-green: #29d98c;
-    --ms-green-hover: #24c47e; // mesma matiz, um pouco mais escuro
+    --ms-green-hover: #3ee39b; // no escuro o hover clareia
     --ms-green-strong: #2ecc71;
     --ms-green-deep: #3b9c7a; // acento sobre fundo escuro (ícones, bordas)
     --ms-green-glow: rgba(41, 217, 140, 0.35);
@@ -42,21 +48,16 @@
     --ms-green-line: rgba(41, 217, 140, 0.35);
 
     // ── Texto ──
-    --ms-text: #e8edea;
-    --ms-text-dim: #9ba8a1;
-    --ms-text-faint: #8f9993; // ≥ 5,3:1 em todas as superfícies (legendas de 12–13px)
+    --ms-text: #f2f5f3;
+    --ms-text-dim: #a3afa9;
+    --ms-text-faint: #8f9993; // ≥ 4,5:1 em todas as superfícies (legendas de 12–13px)
     --ms-text-primary: var(--ms-text);
     --ms-text-secondary: var(--ms-text-dim);
     --ms-text-tertiary: var(--ms-text-faint);
     --ms-text-disabled: #6b756f;
-    --ms-on-green: #06231a; // texto sobre verde
+    --ms-on-green: #04201a; // texto sobre verde
     --ms-on-green-soft: #15382d; // texto secundário sobre verde (≥ 5:1 no gradiente)
-    --ms-on-green-surface: rgba(
-      6,
-      35,
-      26,
-      0.14
-    ); // superfícies (pills, divisórias) sobre verde
+    --ms-on-green-surface: rgba(4, 32, 26, 0.14); // pills e divisórias sobre verde
     --ms-on-overlay: #ffffff; // texto sobre scrim/foto
 
     // ── Estados semânticos: cor · fundo suave · linha ──
@@ -81,45 +82,83 @@
 
     // ── Overlays e scrims ──
     --ms-overlay: rgba(0, 0, 0, 0.6); // atrás de drawers e modais
-    --ms-overlay-strong: rgba(6, 8, 7, 0.92); // lightbox
-    --ms-scrim: rgba(10, 10, 10, 0.82); // navbar sólida
-    --ms-scrim-image: linear-gradient(180deg, transparent 40%, rgba(6, 8, 7, 0.85) 100%);
-    --ms-on-overlay-surface: rgba(255, 255, 255, 0.08); // botões sobre foto/scrim
+    --ms-overlay-strong: rgba(3, 5, 4, 0.92); // lightbox
+    --ms-scrim: rgba(5, 7, 6, 0.72); // navbar translúcida (com backdrop-filter)
+    --ms-scrim-image: linear-gradient(180deg, transparent 35%, rgba(3, 5, 4, 0.88) 100%);
+    --ms-scrim-hero: linear-gradient(
+      180deg,
+      rgba(5, 7, 6, 0) 30%,
+      rgba(5, 7, 6, 0.55) 62%,
+      rgba(5, 7, 6, 0.94) 100%
+    );
+    // bloco com número sobre foto: escurece desde o meio, onde o número fica
+    --ms-scrim-tile: linear-gradient(
+      180deg,
+      rgba(5, 7, 6, 0.2) 0%,
+      rgba(5, 7, 6, 0.7) 45%,
+      rgba(5, 7, 6, 0.94) 100%
+    );
+    --ms-on-overlay-surface: rgba(255, 255, 255, 0.1); // botões sobre foto/scrim
+    --ms-on-overlay-surface-hover: rgba(255, 255, 255, 0.18);
 
     // ── Foco (anel único; sobre verde, troca a cor via --ms-focus-color) ──
     --ms-focus-color: var(--ms-green);
 
-    // ── Gradientes ──
+    // ── Gradientes e luz ──
     // ponta escura #22b877: --ms-on-green e --ms-on-green-soft ficam ≥ 5:1 em toda a faixa
     --ms-gradient: linear-gradient(135deg, #29d98c 0%, #22b877 100%);
-    --ms-gradient-dark: linear-gradient(160deg, #131917 0%, #0a0a0a 100%);
-    --ms-gradient-text: linear-gradient(120deg, #2ecc71 0%, #29d98c 55%, #7af5c4 100%);
+    --ms-gradient-dark: linear-gradient(180deg, #0f1412 0%, #080b0a 100%);
+    // luz verde ambiente atrás de blocos de destaque (hero, chamada final)
+    --ms-glow: radial-gradient(
+      60% 55% at 50% 0%,
+      rgba(41, 217, 140, 0.16) 0%,
+      transparent 70%
+    );
+    --ms-glow-bottom: radial-gradient(
+      70% 60% at 50% 100%,
+      rgba(41, 217, 140, 0.22) 0%,
+      transparent 72%
+    );
+    // Textura do fundo da página (camada fixa em _base.scss): luz ambiente
+    // verde vinda do alto, um brilho frio na lateral e granulação fina. Tira o
+    // fundo do "preto absoluto" sem virar desenho.
+    --ms-ambient:
+      radial-gradient(90% 55% at 50% -8%, rgba(41, 217, 140, 0.09) 0%, transparent 62%),
+      radial-gradient(55% 60% at 100% 45%, rgba(110, 175, 150, 0.06) 0%, transparent 70%),
+      radial-gradient(55% 60% at 0% 95%, rgba(41, 217, 140, 0.05) 0%, transparent 70%);
+    --ms-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --ms-grain-opacity: 0.075;
+
+    // bloco "vidro escuro" sobre foto (só onde há imagem por trás)
+    --ms-surface-glass: rgba(15, 20, 18, 0.62);
 
     // ── Tipografia ──
-    --ms-font-display: 'Chakra Petch', system-ui, sans-serif;
-    --ms-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
-    --ms-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --ms-font-display: 'Geist Variable', 'Geist', system-ui, sans-serif;
+    --ms-font-body: 'Geist Variable', 'Geist', system-ui, sans-serif;
+    --ms-font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
 
     --ms-fw-regular: 400;
     --ms-fw-medium: 500;
     --ms-fw-semibold: 600;
     --ms-fw-bold: 700;
 
-    --ms-lh-tight: 1.05; // display
+    --ms-lh-tight: 1.04; // display
     --ms-lh-snug: 1.3; // títulos de card, labels
     --ms-lh-body: 1.6;
 
-    --ms-tracking-display: 0.02em;
-    --ms-tracking-kicker: 0.14em;
-    --ms-tracking-caption: 0.04em;
+    --ms-tracking-display: -0.035em; // títulos grandes: mais justos
+    --ms-tracking-title: -0.02em; // títulos de card e seções pequenas
+    --ms-tracking-kicker: 0.01em;
+    --ms-tracking-caption: 0.01em;
 
     // Papéis (fluidos): display para a marca, title para h2/h3, num para números grandes
-    --ms-display-xl: clamp(2.5rem, 7vw, 5.5rem);
-    --ms-display-lg: clamp(2rem, 4.5vw, 3.5rem);
-    --ms-display-num: clamp(2rem, 4vw, 3rem);
-    --ms-title-lg: clamp(1.625rem, 3vw, 2.25rem);
-    --ms-title: 1.25rem;
-    --ms-title-sm: 1.0625rem;
+    --ms-display-xl: clamp(3rem, 8.4vw, 6rem);
+    --ms-display-lg: clamp(2.5rem, 6vw, 4.5rem);
+    --ms-display-num: clamp(2.75rem, 5.2vw, 4.25rem);
+    --ms-title-lg: clamp(2rem, 4.4vw, 3.5rem);
+    --ms-title: 1.375rem;
+    --ms-title-sm: 1.125rem;
+    --ms-lead: clamp(1.125rem, 1.5vw, 1.3125rem); // parágrafo de abertura
 
     // Escala legada (mantida): degraus de título ficaram fluidos, com o mesmo teto
     --ms-text-xs: 0.75rem;
@@ -149,26 +188,26 @@
     --ms-space-16: 8rem;
 
     // ── Ritmo e densidade ──
-    --ms-section-y: clamp(3.5rem, 7vw, 6rem);
-    --ms-section-y-sm: clamp(2.5rem, 5vw, 4rem);
-    --ms-section-x: clamp(1rem, 4vw, 3rem);
+    --ms-section-y: clamp(3rem, 5.5vw, 4.75rem);
+    --ms-section-y-sm: clamp(3rem, 6vw, 5rem);
+    --ms-section-x: clamp(1.25rem, 4vw, 3.5rem);
     --ms-gap-list: var(--ms-space-3);
-    --ms-gap-grid: var(--ms-space-5);
-    --ms-card-pad: var(--ms-space-5);
-    --ms-card-pad-sm: var(--ms-space-4);
+    --ms-gap-grid: 1.25rem;
+    --ms-card-pad: clamp(1.5rem, 2.6vw, 2.25rem);
+    --ms-card-pad-sm: var(--ms-space-5);
 
     // ── Raios ──
-    --ms-radius-sm: 6px; // chips, tags, controles inline
-    --ms-radius-md: 10px; // inputs, botões compactos
-    --ms-radius: 12px; // cards
-    --ms-radius-lg: 18px;
-    --ms-radius-xl: 28px; // blocos de destaque
+    --ms-radius-sm: 8px; // chips, tags, controles inline
+    --ms-radius-md: 12px; // inputs, botões compactos
+    --ms-radius: 20px; // cards
+    --ms-radius-lg: 28px; // blocos de vitrine
+    --ms-radius-xl: 36px; // blocos de destaque (hero, chamada final)
     --ms-radius-pill: 999px; // botões
 
     // ── Sombras / elevação ──
     --ms-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
-    --ms-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    --ms-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+    --ms-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    --ms-shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.6);
     --ms-shadow-glow:
       0 0 0 1px rgba(41, 217, 140, 0.25), 0 12px 40px rgba(41, 217, 140, 0.18);
     --ms-elev-1: var(--ms-shadow-sm);
@@ -178,18 +217,18 @@
 
     // ── Layout ──
     --ms-container: 1200px; // shell e conteúdo, sempre a mesma coluna
-    --ms-container-wide: 1440px; // só grades de imagem
+    --ms-container-wide: 1440px; // blocos de vitrine e grades de imagem
     --ms-container-narrow: 760px; // formulários, leitura
     --ms-measure: 68ch; // largura máxima de prosa
-    --ms-navbar-h: 64px;
+    --ms-navbar-h: 60px;
     --ms-header-h: calc(var(--ms-navbar-h) + env(safe-area-inset-top, 0px));
     --ms-admin-sidebar-w: 256px;
     --ms-admin-topbar-h: 56px;
 
     // ── Controles ──
     --ms-control-sm: 36px;
-    --ms-control: 40px;
-    --ms-control-lg: 48px;
+    --ms-control: 42px;
+    --ms-control-lg: 52px;
     --ms-touch: 44px; // alvo mínimo em telas de toque
     --ms-icon-xs: 14px;
     --ms-icon-sm: 16px;

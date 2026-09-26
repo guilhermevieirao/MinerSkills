@@ -1,0 +1,80 @@
+@use '../../styles/mixins' as *;
+
+@layer components {
+  .ms-carousel {
+    // recuo que alinha o primeiro card com a coluna do conteúdo (e mantém o
+    // último longe da borda); o trilho em si ocupa a largura toda da tela
+    --ms-carousel-gutter: max(
+      var(--ms-space-5),
+      calc((100% - var(--ms-container)) / 2 + var(--ms-space-5))
+    );
+    --ms-carousel-item: min(380px, 82vw);
+
+    @include below($bp-md) {
+      --ms-carousel-gutter: var(--ms-space-4);
+    }
+
+    &__track {
+      display: flex;
+      gap: var(--ms-gap-grid);
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--ms-carousel-gutter);
+      padding-inline: var(--ms-carousel-gutter);
+      padding-block: var(--ms-space-2) var(--ms-space-4); // não cortar sombra e foco
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    &__item {
+      flex: 0 0 var(--ms-carousel-item);
+      scroll-snap-align: start;
+      display: flex;
+      > * {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    &__controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--ms-space-3);
+      margin-top: var(--ms-space-3);
+    }
+
+    &__arrow {
+      display: inline-grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 0;
+      background: var(--ms-surface-3);
+      color: var(--ms-text);
+      transition:
+        background-color var(--ms-dur-fast) var(--ms-ease),
+        opacity var(--ms-dur-fast) var(--ms-ease),
+        transform var(--ms-dur-fast) var(--ms-ease);
+      @include touch-target;
+
+      svg {
+        width: var(--ms-icon);
+        height: var(--ms-icon);
+      }
+      @include hover {
+        background: var(--ms-border-strong);
+      }
+      &:active:not(:disabled) {
+        transform: scale(0.94);
+      }
+      &:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+    }
+  }
+}

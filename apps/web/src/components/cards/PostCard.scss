@@ -6,24 +6,24 @@
     @include card-grid(280px);
   }
 
+  // bloco de vitrine: capa grande no topo, sem contorno; no hover a foto
+  // aproxima devagar e o bloco clareia um degrau
   .ms-postcard {
     @include card-surface;
+    border-radius: var(--ms-radius-lg);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
     color: inherit;
     transition:
-      transform var(--ms-dur) var(--ms-ease),
-      border-color var(--ms-dur) var(--ms-ease),
-      box-shadow var(--ms-dur) var(--ms-ease);
+      background-color var(--ms-dur) var(--ms-ease),
+      border-color var(--ms-dur) var(--ms-ease);
 
     @include hover {
-      transform: translateY(var(--ms-lift));
-      border-color: var(--ms-green-deep);
-      box-shadow: var(--ms-elev-1);
+      background: var(--ms-surface-2);
       .ms-postcard__cover img {
-        transform: scale(1.04);
+        transform: scale(1.05);
       }
       .ms-postcard__more svg {
         transform: translateX(4px);
@@ -34,16 +34,15 @@
     }
 
     &__cover {
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 4 / 3;
       overflow: hidden;
       background: var(--ms-surface-2);
-      border-bottom: 1px solid var(--ms-border-subtle);
 
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform var(--ms-dur-slow) var(--ms-ease);
+        transition: transform 900ms var(--ms-ease);
       }
     }
     &__fallback {
@@ -62,18 +61,19 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-2);
-      padding: var(--ms-card-pad);
+      gap: var(--ms-space-3);
+      padding: var(--ms-space-5) var(--ms-space-5) var(--ms-space-6);
     }
     &__title {
       font-size: var(--ms-title);
+      line-height: 1.25;
       @include line-clamp(2);
     }
     &__excerpt {
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
       flex: 1;
-      @include line-clamp(3);
+      @include line-clamp(2);
     }
     &__more {
       display: inline-flex;

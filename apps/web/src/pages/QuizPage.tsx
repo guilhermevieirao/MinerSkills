@@ -109,7 +109,7 @@ export function QuizPage() {
 
   return (
     <>
-      <PageHero kicker="Jogo" title="Quiz MinerSkills" subtitle={DESCRIPTION} size="sm" />
+      <PageHero title="Quiz MinerSkills" subtitle={DESCRIPTION} size="sm" />
 
       <section className="ms-section ms-container ms-quiz">
         <div className="ms-quiz__main">
@@ -230,7 +230,6 @@ export function QuizPage() {
             as="h2"
             size="sm"
             id="ms-quiz-lb"
-            kicker="Ranking"
             title="Melhores pontuações"
             dense
           />

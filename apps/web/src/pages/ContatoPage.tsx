@@ -22,12 +22,7 @@ export function ContatoPage() {
 
   return (
     <>
-      <PageHero
-        kicker="Fale com a gente"
-        title="Contato"
-        subtitle={DESCRIPTION}
-        size="sm"
-      />
+      <PageHero title="Contato" subtitle={DESCRIPTION} size="sm" />
 
       <section className="ms-section ms-container ms-contact-page">
         <div className="ms-contact-page__grid">

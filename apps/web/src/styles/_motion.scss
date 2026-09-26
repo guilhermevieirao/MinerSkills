@@ -39,6 +39,38 @@
     }
   }
 
+  // entrada de vitrine: sobe um pouco e sai do desfoque
+  @keyframes ms-rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+
+  // Parallax: moldura que corta; a imagem por dentro ocupa tudo
+  .ms-parallax {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .ms-parallax__inner {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
   @keyframes ms-spin {
     to {
       transform: rotate(360deg);

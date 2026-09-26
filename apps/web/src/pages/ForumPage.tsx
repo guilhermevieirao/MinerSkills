@@ -45,7 +45,6 @@ export function ForumPage() {
   return (
     <>
       <PageHero
-        kicker="Comunidade"
         title="Fórum"
         subtitle={FORUM_DESCRIPTION}
         actions={

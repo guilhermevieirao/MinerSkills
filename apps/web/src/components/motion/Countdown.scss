@@ -1,31 +1,49 @@
 @use '../../styles/mixins' as *;
 
 @layer components {
+  // Placar: dígitos grandes em mono tabular separados por filetes, sem caixas
   .ms-countdown {
     display: inline-flex;
-    flex-wrap: wrap;
-    gap: var(--ms-space-3);
-    font-variant-numeric: tabular-nums;
+    align-items: stretch;
 
     &__unit {
-      @include card-surface;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      min-width: 72px;
-      padding: var(--ms-space-3) var(--ms-space-2);
-      background: var(--ms-surface-2);
+      align-items: flex-start;
+      gap: var(--ms-space-2);
+      padding-inline: clamp(0.875rem, 2.2vw, 1.75rem);
+      border-left: 1px solid var(--ms-border-strong);
+
+      &:first-child {
+        padding-left: 0;
+        border-left: 0;
+      }
     }
+    // o valor corta o dígito que sai (rola para cima) e o que entra
     &__value {
-      @include display-heading(1);
-      font-size: var(--ms-display-num);
+      @include numeral;
+      position: relative;
+      display: block;
+      overflow: hidden;
+      font-size: clamp(2.5rem, 5.5vw, 4.5rem);
       color: var(--ms-text);
+    }
+    &__digit {
+      display: block;
     }
     &__label {
       @include meta;
-      text-transform: uppercase;
-      letter-spacing: var(--ms-tracking-kicker);
-      margin-top: var(--ms-space-2);
+      color: var(--ms-text-faint);
+    }
+
+    // telas estreitas: os quatro grupos cabem numa linha de 288px
+    @include below($bp-sm) {
+      &__unit {
+        padding-inline: 0.625rem;
+      }
+      &__value {
+        font-size: 1.875rem;
+      }
     }
 
     // Data já alcançada: substitui os blocos por uma frase em destaque
@@ -33,17 +51,6 @@
       @include display-heading;
       font-size: var(--ms-text-2xl);
       color: var(--ms-green);
-    }
-
-    @include below($bp-sm) {
-      gap: var(--ms-space-2);
-      &__unit {
-        min-width: 60px;
-        padding: var(--ms-space-2);
-      }
-      &__value {
-        font-size: var(--ms-text-2xl);
-      }
     }
   }
 }

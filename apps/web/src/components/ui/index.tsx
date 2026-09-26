@@ -17,10 +17,12 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, ChevronDown, Inbox, Search } from 'lucide-react';
 import { cx } from '../../lib/format';
 import { StateBlock } from './StateBlock';
+import { TextReveal } from '../motion/TextReveal';
 import './ui.scss';
 
 // ── Button ──
-type Variant = 'primary' | 'outline' | 'ghost' | 'danger' | 'danger-solid';
+/** `link`: texto verde com seta que avança no hover ("Saiba mais ›") — ação secundária de vitrine. */
+type Variant = 'primary' | 'outline' | 'ghost' | 'link' | 'danger' | 'danger-solid';
 type Size = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -156,7 +158,6 @@ export function LinkButton({
 
 // ── SectionHeading ──
 export function SectionHeading({
-  kicker,
   title,
   subtitle,
   center,
@@ -168,7 +169,6 @@ export function SectionHeading({
   tone,
   id,
 }: {
-  kicker?: string;
   title: ReactNode;
   subtitle?: ReactNode;
   center?: boolean;
@@ -197,9 +197,9 @@ export function SectionHeading({
       )}
     >
       <div className="ms-heading__text">
-        {kicker && <span className="ms-heading__kicker">{kicker}</span>}
         <Tag className="ms-heading__title" id={id}>
-          {title}
+          {/* texto simples entra palavra a palavra ao aparecer na tela */}
+          {typeof title === 'string' ? <TextReveal text={title} /> : title}
         </Tag>
         {subtitle && <p className="ms-heading__subtitle">{subtitle}</p>}
       </div>

@@ -7,7 +7,7 @@ import { QueryState } from '../components/ui/QueryState';
 import { Pagination } from '../components/ui/Pagination';
 import { CardGridSkeleton } from '../components/ui/skeletons';
 import { PostCard } from '../components/cards/PostCard';
-import { Reveal } from '../components/motion/Reveal';
+import { RevealGroup, RevealItem } from '../components/motion/Reveal';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import './BlogPage.scss';
 
@@ -36,7 +36,6 @@ export function BlogPage() {
   return (
     <>
       <PageHero
-        kicker="Notícias & novidades"
         title="Blog da Mina"
         subtitle={DESCRIPTION}
         toolbar={
@@ -75,19 +74,13 @@ export function BlogPage() {
           }
         >
           {(data) => (
-            <Reveal>
-              <ul
-                className="ms-postgrid"
-                role="list"
-                aria-busy={posts.isFetching || undefined}
-              >
-                {data.items.map((post, i) => (
-                  <li key={post.id}>
-                    <PostCard post={post} priority={i < 3} />
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
+            <RevealGroup className="ms-postgrid" busy={posts.isFetching}>
+              {data.items.map((post, i) => (
+                <RevealItem key={post.id}>
+                  <PostCard post={post} priority={i < 3} />
+                </RevealItem>
+              ))}
+            </RevealGroup>
           )}
         </QueryState>
 

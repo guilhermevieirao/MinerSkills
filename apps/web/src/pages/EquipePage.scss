@@ -2,41 +2,61 @@
 
 @layer pages {
   .ms-enc {
-    // ── Filtros no cabeçalho: chips à esquerda, geração à direita ──
-    &__filters {
-      flex: 1 1 320px;
-      min-width: 0;
-    }
-    &__generation {
-      flex: 0 0 auto;
-      width: 220px;
-      @include below($bp-sm) {
-        width: 100%;
-      }
+    // título na mesma coluna larga dos dois painéis
+    &__hero .ms-container {
+      max-width: var(--ms-container-wide);
     }
 
-    // ── Layout: grade + ficha lateral (400px) a partir de 1024px ──
+    // ── Layout: dois painéis de mesma largura a partir de 1024px ──
     &__layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 400px;
-      gap: var(--ms-space-6);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--ms-gap-grid);
       align-items: start;
 
       @include below($bp-lg) {
         grid-template-columns: 1fr;
       }
     }
+
+    // painel da esquerda: filtros, grade e contagem num só bloco
     &__main {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-4);
+      gap: var(--ms-space-5);
       min-width: 0;
+      padding: clamp(1rem, 2.2vw, 1.75rem);
+      border-radius: var(--ms-radius-xl);
+      border: 1px solid var(--ms-border-subtle);
+      background: var(--ms-surface);
+
+      @include below($bp-md) {
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+    }
+
+    // funções numa fileira, gerações logo abaixo (roláveis no celular)
+    &__toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ms-space-2);
+
+      @include below($bp-md) {
+        .ms-chiprow {
+          @include scroll-row;
+          flex-wrap: nowrap;
+        }
+      }
     }
 
     &__count {
       display: inline-flex;
       align-items: center;
       gap: var(--ms-space-2);
+      padding-top: var(--ms-space-4);
+      border-top: 1px solid var(--ms-border-subtle);
       color: var(--ms-text-dim);
       font-size: var(--ms-text-sm);
       svg {
@@ -48,13 +68,15 @@
 
     &__grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: var(--ms-gap-grid);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--ms-space-3);
       transition: opacity var(--ms-dur) var(--ms-ease);
 
-      @include below($bp-md) {
+      @include below($bp-xl) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      @include below($bp-lg) {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: var(--ms-space-3);
       }
       // filtro trocando: a grade atual esmaece até a nova chegar
       &[aria-busy='true'] {
@@ -64,8 +86,10 @@
 
     // ── Ficha lateral (desktop) ──
     &__detail {
-      @include card-surface;
       @include sticky-panel;
+      border-radius: var(--ms-radius-xl);
+      border: 1px solid var(--ms-border-subtle);
+      background: var(--ms-surface);
 
       @include below($bp-lg) {
         display: none; // abaixo de 1024px a ficha é o diálogo de tela cheia
@@ -104,8 +128,8 @@
       min-height: var(--ms-navbar-h);
       padding: env(safe-area-inset-top, 0px) var(--ms-space-3) 0 var(--ms-space-4);
       background: var(--ms-scrim);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--ms-border);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--ms-border-subtle);
     }
     &__mobile-name {
       font-weight: var(--ms-fw-semibold);
@@ -117,9 +141,9 @@
       width: var(--ms-touch);
       height: var(--ms-touch);
       flex-shrink: 0;
-      border: 1px solid var(--ms-border-control);
-      border-radius: var(--ms-radius-md);
-      background: var(--ms-surface-2);
+      border: 1px solid var(--ms-border-subtle);
+      border-radius: var(--ms-radius-pill);
+      background: var(--ms-on-overlay-surface);
       color: var(--ms-text);
       svg {
         width: var(--ms-icon-lg);
@@ -133,30 +157,64 @@
 
   // ── Card (link) ──
   .ms-enc-card {
-    @include card-surface;
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    border-radius: var(--ms-radius);
+    border: 1px solid var(--ms-border-subtle);
+    background: var(--ms-surface-2);
     color: inherit;
     transition:
-      transform var(--ms-dur) var(--ms-ease),
-      border-color var(--ms-dur) var(--ms-ease),
-      box-shadow var(--ms-dur) var(--ms-ease);
+      background-color var(--ms-dur) var(--ms-ease),
+      border-color var(--ms-dur) var(--ms-ease);
 
     @include hover {
-      transform: translateY(var(--ms-lift));
-      border-color: var(--ms-green-deep);
+      border-color: var(--ms-border-strong);
       .ms-enc-card__photo img {
-        transform: scale(1.04);
+        transform: scale(1.06);
+      }
+      .ms-enc-card__role-icon {
+        color: var(--ms-green);
       }
     }
     &:focus-visible {
       border-color: var(--ms-green);
     }
-    &--active {
-      border-color: var(--ms-green);
+
+    // anel de seleção compartilhado (layoutId): desliza entre os cards
+    &__ring {
+      position: absolute;
+      inset: -1px;
+      z-index: 2;
+      border-radius: inherit;
+      border: 1px solid var(--ms-green);
       box-shadow: var(--ms-shadow-glow);
+      pointer-events: none;
+
+      // cantos em L nos vértices opostos, a assinatura da seleção
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--ms-green);
+      }
+      &::before {
+        top: -1px;
+        left: -1px;
+        border-right: 0;
+        border-bottom: 0;
+        border-top-left-radius: var(--ms-radius);
+      }
+      &::after {
+        right: -1px;
+        bottom: -1px;
+        border-left: 0;
+        border-top: 0;
+        border-bottom-right-radius: var(--ms-radius);
+      }
     }
 
     &__photo {
@@ -164,66 +222,145 @@
       display: grid;
       place-items: center;
       overflow: hidden;
-      background: var(--ms-surface-2);
+      border-radius: calc(var(--ms-radius) - 1px) calc(var(--ms-radius) - 1px) 0 0;
+      background: var(--ms-surface-3);
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform var(--ms-dur-slow) var(--ms-ease);
+        transition: transform 700ms var(--ms-ease);
       }
     }
 
     &__info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: var(--ms-space-1);
       padding: var(--ms-space-3);
     }
     &__name {
       font-weight: var(--ms-fw-semibold);
       font-size: var(--ms-text-sm);
+      letter-spacing: -0.01em;
       color: var(--ms-text);
-      @include line-clamp(2);
+      @include line-clamp(1);
     }
+    &__row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ms-space-2);
+      min-width: 0;
+    }
+    // função com o ponto verde da marca à frente
     &__role {
       display: flex;
       align-items: center;
-      gap: var(--ms-space-1);
-      color: var(--ms-text-dim);
-      font-size: var(--ms-text-caption);
+      gap: var(--ms-space-2);
       min-width: 0;
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-xs);
       white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+
+      &::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--ms-green);
+        flex-shrink: 0;
+      }
     }
     &__role-icon {
-      width: var(--ms-icon-xs);
-      height: var(--ms-icon-xs);
-      color: var(--ms-green-deep);
+      width: var(--ms-icon-sm);
+      height: var(--ms-icon-sm);
+      color: var(--ms-text-faint);
       flex-shrink: 0;
+      transition: color var(--ms-dur) var(--ms-ease);
     }
   }
 
   // ── Ficha ──
   .ms-enc-detail {
+    display: flex;
+    flex-direction: column;
+
+    // moldura da foto: fundo quadriculado discreto e cantos em L
+    &__frame {
+      position: relative;
+      margin: clamp(0.75rem, 1.6vw, 1.25rem);
+      margin-bottom: 0;
+    }
     &__photo {
-      aspect-ratio: 4 / 3;
-      background: var(--ms-surface-2);
+      position: relative;
+      aspect-ratio: 16 / 10;
       overflow: hidden;
+      border-radius: var(--ms-radius-lg);
+      background:
+        linear-gradient(var(--ms-border-subtle) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, var(--ms-border-subtle) 1px, transparent 1px) 0 0 / 32px
+          32px,
+        var(--ms-surface-2);
+    }
+    &__img {
+      position: absolute;
+      inset: 0;
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: 50% 25%;
       }
     }
     &__photo-fallback {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      inset: 0;
       display: grid;
       place-items: center;
       color: var(--ms-green-deep);
       svg {
-        width: 72px;
-        height: 72px;
+        width: 96px;
+        height: 96px;
+        stroke-width: 1.2;
+      }
+    }
+
+    &__corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--ms-green);
+      pointer-events: none;
+
+      &--tl {
+        top: -6px;
+        left: -6px;
+        border-right: 0;
+        border-bottom: 0;
+        border-top-left-radius: 14px;
+      }
+      &--tr {
+        top: -6px;
+        right: -6px;
+        border-left: 0;
+        border-bottom: 0;
+        border-top-right-radius: 14px;
+      }
+      &--bl {
+        bottom: -6px;
+        left: -6px;
+        border-right: 0;
+        border-top: 0;
+        border-bottom-left-radius: 14px;
+      }
+      &--br {
+        bottom: -6px;
+        right: -6px;
+        border-left: 0;
+        border-top: 0;
+        border-bottom-right-radius: 14px;
       }
     }
 
@@ -233,44 +370,74 @@
       gap: var(--ms-space-4);
       padding: var(--ms-card-pad);
     }
-    // nome de pessoa: Inter, caixa normal (a voz de marca fica nos títulos de página)
+    // nome de pessoa: caixa normal, na voz de título
     &__name {
-      @include ui-heading;
-      font-size: var(--ms-title-lg);
+      @include display-heading(1.05);
+      font-size: clamp(2rem, 3.4vw, 3rem);
     }
     &__meta {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: var(--ms-space-2) var(--ms-space-3);
-      margin-top: calc(-1 * var(--ms-space-2));
       .ms-meta {
         display: inline-flex;
         align-items: center;
-        gap: var(--ms-space-1);
+        gap: var(--ms-space-2);
         font-size: var(--ms-text-sm);
+        color: var(--ms-text);
       }
       svg {
-        width: var(--ms-icon-xs);
-        height: var(--ms-icon-xs);
-        color: var(--ms-green-deep);
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-green);
       }
     }
     &__tags {
       display: flex;
       flex-wrap: wrap;
       gap: var(--ms-space-2);
-      padding-bottom: var(--ms-space-4);
+      padding-bottom: var(--ms-space-5);
       border-bottom: 1px solid var(--ms-border-subtle);
     }
-    &__section {
-      .ms-heading {
-        margin-bottom: var(--ms-space-2);
+    &__label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ms-space-2);
+      margin-bottom: var(--ms-space-3);
+      font-size: var(--ms-text-base);
+      letter-spacing: var(--ms-tracking-title);
+      svg {
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-green);
       }
     }
     &__about {
       color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
+      font-size: var(--ms-text-base);
+    }
+
+    // frase do membro: faixa no rodapé da ficha
+    &__quote {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: var(--ms-space-3);
+      margin: 0;
+      padding: var(--ms-space-5) var(--ms-card-pad);
+      border-top: 1px solid var(--ms-border-subtle);
+      background: var(--ms-surface-2);
+      color: var(--ms-text-dim);
+      font-style: italic;
+      text-align: center;
+      svg {
+        width: var(--ms-icon-sm);
+        height: var(--ms-icon-sm);
+        color: var(--ms-green);
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
     }
   }
 }

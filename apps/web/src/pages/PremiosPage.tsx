@@ -5,7 +5,7 @@ import { EmptyState, SectionHeading, Tag } from '../components/ui';
 import { Medallion } from '../components/ui/tiles';
 import { QueryState } from '../components/ui/QueryState';
 import { CardGridSkeleton } from '../components/ui/skeletons';
-import { Reveal } from '../components/motion/Reveal';
+import { Reveal, RevealGroup, RevealItem } from '../components/motion/Reveal';
 import { useDocumentHead } from '../lib/useDocumentHead';
 import './PremiosPage.scss';
 
@@ -23,11 +23,7 @@ export function PremiosPage() {
 
   return (
     <>
-      <PageHero
-        kicker="Reconhecimento"
-        title="Prêmios & Conquistas"
-        subtitle={DESCRIPTION}
-      />
+      <PageHero title="Prêmios & Conquistas" subtitle={DESCRIPTION} />
 
       <section className="ms-section ms-container ms-awards">
         <QueryState
@@ -63,9 +59,9 @@ export function PremiosPage() {
                               />
                               <div className="ms-award-hero__content">
                                 <div className="ms-award-hero__tags">
-                                  <Tag tone="on-green">{a.year}</Tag>
+                                  <Tag tone="brand">{a.year}</Tag>
                                   {a.seasonRef && (
-                                    <Tag tone="on-green">{a.seasonRef.name}</Tag>
+                                    <Tag tone="neutral">{a.seasonRef.name}</Tag>
                                   )}
                                 </div>
                                 <h3 className="ms-award-hero__title">{a.title}</h3>
@@ -88,26 +84,22 @@ export function PremiosPage() {
                       title={highlights.length > 0 ? 'Todas as conquistas' : 'Conquistas'}
                       dense
                     />
-                    <Reveal>
-                      <ul className="ms-awards__grid" role="list">
-                        {rest.map((a) => (
-                          <li key={a.id} className="ms-award-card">
-                            <Medallion media={a.media} icon={AwardIcon} />
-                            <div className="ms-award-card__tags">
-                              <span className="ms-meta">{a.year}</span>
-                              {a.seasonRef && (
-                                <Tag tone="neutral">{a.seasonRef.name}</Tag>
-                              )}
-                            </div>
-                            <h3 className="ms-award-card__title">{a.title}</h3>
-                            <p className="ms-award-card__event">{a.event}</p>
-                            {a.description && (
-                              <p className="ms-award-card__desc">{a.description}</p>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </Reveal>
+                    <RevealGroup className="ms-awards__grid">
+                      {rest.map((a) => (
+                        <RevealItem key={a.id} className="ms-award-card">
+                          <Medallion media={a.media} icon={AwardIcon} />
+                          <div className="ms-award-card__tags">
+                            <span className="ms-meta">{a.year}</span>
+                            {a.seasonRef && <Tag tone="neutral">{a.seasonRef.name}</Tag>}
+                          </div>
+                          <h3 className="ms-award-card__title">{a.title}</h3>
+                          <p className="ms-award-card__event">{a.event}</p>
+                          {a.description && (
+                            <p className="ms-award-card__desc">{a.description}</p>
+                          )}
+                        </RevealItem>
+                      ))}
+                    </RevealGroup>
                   </div>
                 )}
               </>

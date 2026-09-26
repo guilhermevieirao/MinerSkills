@@ -12,8 +12,9 @@
     min-height: var(--ms-control);
     padding: 0 var(--ms-space-5);
     font-family: var(--ms-font-body);
-    font-weight: var(--ms-fw-semibold);
-    font-size: var(--ms-text-sm);
+    font-weight: var(--ms-fw-medium);
+    font-size: 0.9375rem;
+    letter-spacing: -0.005em;
     line-height: 1;
     color: var(--ms-btn-fg);
     border-radius: var(--ms-radius-pill);
@@ -36,7 +37,7 @@
     }
 
     &:active:not(:disabled) {
-      transform: translateY(1px);
+      transform: scale(0.97);
     }
     &:disabled {
       cursor: not-allowed;
@@ -47,7 +48,6 @@
       background: var(--ms-green);
       @include hover {
         background: var(--ms-green-hover);
-        box-shadow: var(--ms-shadow-glow);
       }
       &:disabled {
         background: var(--ms-surface-3);
@@ -59,9 +59,8 @@
       background: transparent;
       border-color: var(--ms-border-control);
       @include hover {
-        border-color: var(--ms-green);
-        --ms-btn-fg: var(--ms-green);
-        background: var(--ms-green-soft);
+        border-color: var(--ms-text);
+        background: var(--ms-on-overlay-surface);
       }
       &:disabled {
         --ms-btn-fg: var(--ms-text-disabled);
@@ -79,6 +78,27 @@
       &:disabled {
         --ms-btn-fg: var(--ms-text-disabled);
         background: transparent;
+      }
+    }
+    // ação secundária de vitrine: texto verde, seta avança no hover
+    &--link {
+      --ms-btn-fg: var(--ms-green);
+      background: transparent;
+      padding-inline: 0;
+      gap: var(--ms-space-1);
+      svg {
+        transition: transform var(--ms-dur) var(--ms-ease);
+      }
+      @include hover {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-thickness: 1px;
+        svg {
+          transform: translateX(3px);
+        }
+      }
+      &:active:not(:disabled) {
+        transform: none;
       }
     }
     &--danger {
@@ -115,7 +135,7 @@
     &--lg {
       min-height: var(--ms-control-lg);
       padding: 0 var(--ms-space-6);
-      font-size: var(--ms-text-base);
+      font-size: 1.0625rem;
       svg {
         width: var(--ms-icon);
         height: var(--ms-icon);
@@ -123,6 +143,11 @@
     }
     &--block {
       width: 100%;
+    }
+    // o link de vitrine não ganha o padding de pílula em nenhum tamanho
+    &--link.ms-btn--sm,
+    &--link.ms-btn--lg {
+      padding-inline: 0;
     }
     // só ícone: quadrado, com o raio dos controles (não pill)
     &--icon {
@@ -174,16 +199,21 @@
   }
 
   // ── SectionHeading ──
+  // Título grande à esquerda; ação (link "Ver todas ›") alinhada à base, à direita.
   .ms-heading {
     display: flex;
     flex-direction: column;
-    gap: var(--ms-space-3);
+    gap: var(--ms-space-4);
     margin-bottom: var(--ms-space-8);
+
+    @include below($bp-md) {
+      margin-bottom: var(--ms-space-6);
+    }
 
     &__text {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-3);
+      gap: var(--ms-space-4);
       min-width: 0;
     }
     &--center {
@@ -194,7 +224,7 @@
       }
     }
     &--dense {
-      margin-bottom: var(--ms-space-4);
+      margin-bottom: var(--ms-space-5);
     }
     // texto à esquerda, ações à direita
     &--row {
@@ -202,39 +232,38 @@
       align-items: flex-end;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: var(--ms-space-4);
+      gap: var(--ms-space-4) var(--ms-space-6);
     }
 
-    &__kicker {
-      @include kicker;
-      @include kicker-bar;
-    }
     &__title {
       font-size: var(--ms-title-lg);
-      line-height: 1.15;
+      line-height: 1.06;
+      max-width: 20ch;
+    }
+    &--center .ms-heading__title {
+      max-width: 24ch;
     }
     &--sm .ms-heading__title {
-      font-size: var(--ms-title);
+      font-size: var(--ms-text-3xl);
     }
     &--lg .ms-heading__title {
       font-size: var(--ms-display-lg);
     }
     &__subtitle {
       color: var(--ms-text-dim);
-      max-width: var(--ms-measure);
-      font-size: var(--ms-text-lg);
+      max-width: 56ch;
+      font-size: var(--ms-lead);
+      line-height: 1.5;
     }
     &__actions {
       display: flex;
       flex-wrap: wrap;
       gap: var(--ms-space-2);
+      padding-bottom: var(--ms-space-1);
     }
 
     // sobre o gradiente verde (CTA)
     &--on-green {
-      .ms-heading__kicker {
-        color: var(--ms-on-green-soft);
-      }
       .ms-heading__title {
         color: var(--ms-on-green);
       }
@@ -248,7 +277,7 @@
   .ms-card {
     @include card;
     transition:
-      transform var(--ms-dur) var(--ms-ease),
+      background-color var(--ms-dur) var(--ms-ease),
       border-color var(--ms-dur) var(--ms-ease),
       box-shadow var(--ms-dur) var(--ms-ease);
 
@@ -259,13 +288,18 @@
       padding: 0;
       overflow: hidden;
     }
-    // só para cards que navegam
+    // só para cards que navegam: a imagem aproxima, o card clareia
     &--interactive {
       cursor: pointer;
+      .ms-card__media img {
+        transition: transform var(--ms-dur-slow) var(--ms-ease);
+      }
       @include hover {
-        transform: translateY(var(--ms-lift));
-        border-color: var(--ms-green-deep);
+        background: var(--ms-surface-2);
         box-shadow: var(--ms-elev-2);
+        .ms-card__media img {
+          transform: scale(1.04);
+        }
       }
     }
     &--selected {
@@ -297,7 +331,7 @@
     padding: 0 var(--ms-space-4);
     border-radius: var(--ms-radius-pill);
     border: 1px solid var(--ms-border-control);
-    background: var(--ms-surface);
+    background: transparent;
     color: var(--ms-text-dim);
     font-size: var(--ms-text-sm);
     font-weight: var(--ms-fw-medium);
@@ -315,13 +349,13 @@
       height: var(--ms-icon-sm);
     }
     @include hover {
-      border-color: var(--ms-green);
+      border-color: var(--ms-text-dim);
       color: var(--ms-text);
     }
     &--active {
-      background: var(--ms-green);
-      border-color: var(--ms-green);
-      color: var(--ms-on-green);
+      background: var(--ms-text);
+      border-color: var(--ms-text);
+      color: var(--ms-bg);
       font-weight: var(--ms-fw-semibold);
     }
     &:disabled {
@@ -572,11 +606,9 @@
       padding-top: var(--ms-space-4);
       border-top: 1px solid var(--ms-border-subtle);
       &-title {
-        font-size: var(--ms-text-xs);
+        font-size: var(--ms-text-sm);
         font-weight: var(--ms-fw-semibold);
-        color: var(--ms-text-faint);
-        text-transform: uppercase;
-        letter-spacing: var(--ms-tracking-kicker);
+        color: var(--ms-text-dim);
       }
     }
     &__actions {
@@ -1087,7 +1119,6 @@
     padding: var(--ms-space-4);
     background: var(--ms-surface-2);
     border-radius: var(--ms-radius);
-    border-left: 3px solid var(--ms-green);
 
     > svg {
       width: var(--ms-icon);

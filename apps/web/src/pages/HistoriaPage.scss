@@ -21,6 +21,11 @@
   }
 
   // ── Linha do tempo: coluna de leitura, marcador à esquerda ──
+  .ms-timeline-wrap {
+    position: relative;
+    max-width: 760px;
+  }
+
   .ms-timeline {
     position: relative;
     max-width: 760px;
@@ -34,12 +39,20 @@
       top: 8px;
       bottom: 8px;
       width: 2px;
-      background: linear-gradient(
-        180deg,
-        var(--ms-green),
-        var(--ms-green-deep),
-        transparent
-      );
+      background: var(--ms-border-strong);
+    }
+
+    // preenchimento verde do trilho, ligado à rolagem (Timeline)
+    &__fill {
+      position: absolute;
+      left: calc(var(--ms-space-2) + 7px);
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--ms-green);
+      transform-origin: 50% 0%;
+      transform: scaleY(0);
+      z-index: 1;
     }
 
     &__item {
@@ -60,6 +73,8 @@
     }
 
     &__marker {
+      position: relative;
+      z-index: 2;
       display: flex;
       justify-content: center;
       padding-top: 6px;

@@ -68,12 +68,7 @@ export function AgendaPage() {
 
   return (
     <>
-      <PageHero
-        kicker="Programação"
-        title="Agenda"
-        subtitle={DESCRIPTION}
-        actions={subscribe}
-      />
+      <PageHero title="Agenda" subtitle={DESCRIPTION} actions={subscribe} />
 
       <section className="ms-section ms-container">
         <QueryState

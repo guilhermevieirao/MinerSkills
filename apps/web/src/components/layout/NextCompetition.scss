@@ -2,18 +2,20 @@
 
 @layer components {
   .ms-next {
-    background: var(--ms-surface);
-    border-bottom: 1px solid var(--ms-border);
-
-    &__inner {
+    // bloco único: evento à esquerda, contagem grande à direita
+    &__tile {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: var(--ms-space-8);
       align-items: center;
+      padding: clamp(1.75rem, 4vw, 3.5rem);
+      border-radius: var(--ms-radius-xl);
+      border: 1px solid var(--ms-border-subtle);
+      background: var(--ms-surface);
 
       @include below($bp-lg) {
-        grid-template-columns: 1fr;
-        gap: var(--ms-space-6);
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--ms-space-7);
       }
     }
 
@@ -23,10 +25,11 @@
       align-items: flex-start;
       gap: var(--ms-space-4);
       min-width: 0;
+    }
 
-      .ms-heading {
-        margin-bottom: 0;
-      }
+    &__event {
+      @include display-heading(1.1);
+      font-size: var(--ms-text-3xl);
     }
 
     &__meta {
@@ -34,7 +37,7 @@
       flex-wrap: wrap;
       gap: var(--ms-space-2) var(--ms-space-5);
       color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
+      font-size: var(--ms-text-base);
 
       span {
         display: inline-flex;
@@ -44,7 +47,7 @@
       svg {
         width: var(--ms-icon-sm);
         height: var(--ms-icon-sm);
-        color: var(--ms-green-deep);
+        color: var(--ms-green);
         flex-shrink: 0;
       }
     }
@@ -58,9 +61,14 @@
       }
     }
 
-    // esqueleto com a mesma altura da faixa real
-    &--loading .ms-next__info {
-      width: 100%;
+    // esqueleto com a mesma altura do bloco real
+    &--loading {
+      .ms-next__tile {
+        margin-top: var(--ms-space-8);
+      }
+      .ms-next__info {
+        width: 100%;
+      }
     }
   }
 }

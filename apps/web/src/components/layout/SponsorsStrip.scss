@@ -27,8 +27,6 @@
     // nível (principal / apoio / parceiro): legenda, não título
     &__tier {
       @include meta;
-      text-transform: uppercase;
-      letter-spacing: var(--ms-tracking-kicker);
       color: var(--ms-text-faint);
     }
 
@@ -48,14 +46,14 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 160px;
-      min-height: 88px;
-      padding: var(--ms-space-4) var(--ms-space-6);
+      min-width: 200px;
+      min-height: 112px;
+      padding: var(--ms-space-5) var(--ms-space-7);
+      border-radius: var(--ms-radius-lg);
       color: var(--ms-text);
       transition:
-        transform var(--ms-dur) var(--ms-ease),
-        border-color var(--ms-dur) var(--ms-ease),
-        box-shadow var(--ms-dur) var(--ms-ease);
+        background-color var(--ms-dur) var(--ms-ease),
+        border-color var(--ms-dur) var(--ms-ease);
 
       @include below($bp-sm) {
         min-width: 132px;
@@ -66,10 +64,15 @@
     // só o cartão que navega levanta
     a.ms-sponsors__card {
       @include hover {
-        transform: translateY(var(--ms-lift));
-        border-color: var(--ms-green-deep);
-        box-shadow: var(--ms-elev-1);
+        background: var(--ms-surface-2);
+        border-color: var(--ms-border-strong);
       }
+    }
+
+    &__cta {
+      display: flex;
+      justify-content: center;
+      margin-top: var(--ms-space-8);
     }
 
     &__logo {
@@ -90,7 +93,7 @@
     &__name {
       font-size: var(--ms-title);
       font-weight: var(--ms-fw-semibold);
-      letter-spacing: 0.02em;
+      letter-spacing: var(--ms-tracking-title);
       text-align: center;
       text-wrap: balance;
     }
@@ -98,9 +101,8 @@
     // Patrocínio principal: cartões maiores
     &__group--principal {
       .ms-sponsors__card {
-        min-width: 240px;
-        min-height: 120px;
-        border-color: var(--ms-border-strong);
+        min-width: 320px;
+        min-height: 150px;
 
         @include below($bp-sm) {
           min-width: 180px;

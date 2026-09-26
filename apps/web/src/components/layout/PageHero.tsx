@@ -3,10 +3,10 @@ import type { MediaAssetDTO } from '@minerskills/shared';
 import { cx } from '../../lib/format';
 import { HexPattern } from '../motion/HexPattern';
 import { MediaImage } from '../ui/MediaImage';
+import { TextReveal } from '../motion/TextReveal';
 import './PageHero.scss';
 
 export interface PageHeroProps {
-  kicker?: string;
   title: ReactNode;
   subtitle?: ReactNode;
   /** Trilha "Fórum › Tópico" acima do título (`<Breadcrumb>`). */
@@ -27,13 +27,12 @@ export interface PageHeroProps {
 }
 
 /**
- * Cabeçalho de página compacto: kicker, h1 e subtítulo numa coluna de leitura,
+ * Cabeçalho de página: h1 grande e subtítulo numa coluna de leitura,
  * com slots para trilha, ações e barra de ferramentas. Mesmo container do
- * conteúdo — o título alinha com o que vem abaixo. Sem animação de entrada
- * (o `<main>` já compensa a navbar fixa; a página não "pula").
+ * conteúdo — o título alinha com o que vem abaixo. Entrada curta (sobe e
+ * desfoca → nítido) só em transform/opacity/filter: a página não "pula".
  */
 export function PageHero({
-  kicker,
   title,
   subtitle,
   breadcrumb,
@@ -65,8 +64,13 @@ export function PageHero({
         {breadcrumb && <div className="ms-pagehero__crumb">{breadcrumb}</div>}
         <div className="ms-pagehero__row">
           <div className="ms-pagehero__text">
-            {kicker && <p className="ms-pagehero__kicker">{kicker}</p>}
-            <h1 className="ms-pagehero__title">{title}</h1>
+            <h1 className="ms-pagehero__title">
+              {typeof title === 'string' ? (
+                <TextReveal text={title} trigger="mount" />
+              ) : (
+                title
+              )}
+            </h1>
             {subtitle && <p className="ms-pagehero__subtitle">{subtitle}</p>}
           </div>
           {actions && <div className="ms-pagehero__actions">{actions}</div>}

@@ -1,5 +1,7 @@
+import { ArrowRight } from 'lucide-react';
 import type { SponsorDTO } from '@minerskills/shared';
-import { SectionHeading, Skeleton } from '../ui';
+import { LinkButton, SectionHeading, Skeleton } from '../ui';
+import { RevealGroup, RevealItem } from '../motion/Reveal';
 import { MediaImage } from '../ui/MediaImage';
 import { useSponsors, groupSponsorsByTier } from '../../features/sponsors/useSponsors';
 import { isWebUrl } from '../../lib/format';
@@ -50,8 +52,8 @@ export function SponsorsStrip() {
         <SectionHeading
           id="ms-sponsors-title"
           center
-          kicker="Apoio"
           title="Patrocinadores e parceiros"
+          subtitle="Quem torna possível cada robô, viagem e temporada."
         />
         {groups.map((group) => (
           <div
@@ -59,9 +61,9 @@ export function SponsorsStrip() {
             className={`ms-sponsors__group ms-sponsors__group--${group.tier}`}
           >
             <h3 className="ms-sponsors__tier">{group.label}</h3>
-            <ul className="ms-sponsors__list" role="list">
+            <RevealGroup className="ms-sponsors__list">
               {group.items.map((s) => (
-                <li key={s.id} className="ms-sponsors__item">
+                <RevealItem key={s.id} className="ms-sponsors__item">
                   {isWebUrl(s.url) ? (
                     <a
                       href={s.url}
@@ -77,11 +79,16 @@ export function SponsorsStrip() {
                       <SponsorContent sponsor={s} />
                     </span>
                   )}
-                </li>
+                </RevealItem>
               ))}
-            </ul>
+            </RevealGroup>
           </div>
         ))}
+        <div className="ms-sponsors__cta">
+          <LinkButton to="/contato" variant="link">
+            Quero apoiar a equipe <ArrowRight aria-hidden />
+          </LinkButton>
+        </div>
       </div>
     </section>
   );

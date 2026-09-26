@@ -197,7 +197,6 @@ function PostArticle({ post }: { post: PostDetailDTO }) {
         >
           <SectionHeading
             id="ms-post-related"
-            kicker="Blog"
             title="Leia também"
             actions={
               <LinkButton to="/blog" variant="outline" size="sm">

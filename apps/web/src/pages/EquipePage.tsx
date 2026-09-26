@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CalendarDays, Users, X } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { CalendarDays, Quote as QuoteIcon, ScrollText, Users, X } from 'lucide-react';
 import {
   GENERATIONS,
   GENERATION_LABELS,
@@ -14,19 +15,11 @@ import {
 } from '../features/encyclopedia/useEncyclopedia';
 import { useMemberTagMap, useMemberTags } from '../features/encyclopedia/useMemberTags';
 import { EntryIcon } from '../features/encyclopedia/roleIcons';
-import {
-  Button,
-  ChipRow,
-  EmptyState,
-  Field,
-  FilterChip,
-  SectionHeading,
-  Select,
-  Tag,
-} from '../components/ui';
+import { Button, ChipRow, EmptyState, FilterChip, Tag } from '../components/ui';
 import { Avatar } from '../components/ui/Avatar';
-import { Quote } from '../components/ui/Quote';
 import { QueryState } from '../components/ui/QueryState';
+import { TextReveal } from '../components/motion/TextReveal';
+import { EASE } from '../lib/motion';
 import { CardGridSkeleton } from '../components/ui/skeletons';
 import { MediaImage } from '../components/ui/MediaImage';
 import { mq } from '../lib/breakpoints';
@@ -85,10 +78,13 @@ function primaryTag(
 }
 
 /**
- * Equipe: filtros por função (chips) e geração (select) no cabeçalho, grade de
- * cards-link e ficha do registro selecionado — painel lateral fixo no desktop,
- * tela cheia (diálogo) abaixo de 1024px. A rota '/equipe/:slug?' não remonta ao
- * trocar o slug, então filtros e rolagem sobrevivem aos cliques nos cards.
+ * Equipe (enciclopédia): dois painéis lado a lado a partir de 1024px — à
+ * esquerda os filtros (função e geração, tudo em chips) e a grade de cards; à
+ * direita a ficha do registro selecionado, fixa durante a rolagem. Abaixo de
+ * 1024px a ficha vira um diálogo de tela cheia. A grade reorganiza os cards com
+ * animação ao filtrar e o anel de seleção desliza de um card para o outro.
+ * A rota '/equipe/:slug?' não remonta ao trocar o slug, então filtros e
+ * rolagem sobrevivem aos cliques nos cards.
  */
 export function EquipePage() {
   const { slug } = useParams();
@@ -153,48 +149,41 @@ export function EquipePage() {
 
   return (
     <>
-      <PageHero
-        kicker="Equipe MinerSkills"
-        title="Membros & Robôs"
-        subtitle={DESCRIPTION}
-        toolbar={
-          <>
-            {/* group (não tablist): as chips são botões com aria-pressed, não abas */}
-            <ChipRow
-              label="Filtrar a equipe por função"
-              scroll
-              className="ms-enc__filters"
-            >
-              {chips.map((c) => (
-                <FilterChip
-                  key={c.id}
-                  active={active === c.id}
-                  onClick={() => setChosenFilter(c.id)}
-                >
-                  {c.label}
-                </FilterChip>
-              ))}
-            </ChipRow>
-            <Field label="Geração" visuallyHiddenLabel className="ms-enc__generation">
-              <Select value={generation} onChange={(e) => setGeneration(e.target.value)}>
-                <option value={GEN_ALL}>Todas as gerações</option>
-                {GENERATIONS.map((g) => (
-                  <option key={g} value={g}>
-                    {GENERATION_LABELS[g]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </>
-        }
-      />
+      <PageHero title="Membros & Robôs" subtitle={DESCRIPTION} className="ms-enc__hero" />
 
-      <section className="ms-section ms-container">
+      <section className="ms-section ms-container ms-container--wide">
         <div className="ms-enc__layout">
           <div className="ms-enc__main">
+            <div className="ms-enc__toolbar">
+              {/* group (não tablist): as chips são botões com aria-pressed, não abas */}
+              <ChipRow label="Filtrar a equipe por função" className="ms-enc__filters">
+                {chips.map((c) => (
+                  <FilterChip
+                    key={c.id}
+                    active={active === c.id}
+                    onClick={() => setChosenFilter(c.id)}
+                  >
+                    {c.label}
+                  </FilterChip>
+                ))}
+              </ChipRow>
+              <ChipRow label="Filtrar a equipe por geração" className="ms-enc__gens">
+                {GENERATIONS.map((g) => (
+                  <FilterChip
+                    key={g}
+                    active={generation === g}
+                    // clicar de novo na geração ativa volta para todas
+                    onClick={() => setGeneration(generation === g ? GEN_ALL : g)}
+                  >
+                    {GENERATION_LABELS[g]}
+                  </FilterChip>
+                ))}
+              </ChipRow>
+            </div>
+
             <QueryState
               query={query}
-              skeleton={<CardGridSkeleton count={9} aspect="4 / 5" min={200} />}
+              skeleton={<CardGridSkeleton count={8} aspect="4 / 5" min={140} />}
               isEmpty={(list) => list.length === 0}
               empty={
                 <EmptyState
@@ -211,25 +200,42 @@ export function EquipePage() {
             >
               {(list) => (
                 <>
-                  <p className="ms-enc__count" aria-live="polite">
-                    <Users aria-hidden /> {list.length}{' '}
-                    {list.length === 1 ? 'registro encontrado' : 'registros encontrados'}
-                  </p>
                   <ul
                     className="ms-enc__grid"
                     role="list"
                     aria-busy={query.isFetching || undefined}
                   >
-                    {list.map((e) => (
-                      <li key={e.id}>
-                        <EntryCard
-                          entry={e}
-                          tagMap={tagMap}
-                          active={selected?.id === e.id}
-                        />
-                      </li>
-                    ))}
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {list.map((e, i) => (
+                        <motion.li
+                          key={e.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.94 }}
+                          animate={{
+                            opacity: 1,
+                            scale: 1,
+                            transition: { duration: 0.35, ease: EASE, delay: i * 0.02 },
+                          }}
+                          exit={{
+                            opacity: 0,
+                            scale: 0.94,
+                            transition: { duration: 0.2 },
+                          }}
+                          transition={{ layout: { duration: 0.4, ease: EASE } }}
+                        >
+                          <EntryCard
+                            entry={e}
+                            tagMap={tagMap}
+                            active={selected?.id === e.id}
+                          />
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
                   </ul>
+                  <p className="ms-enc__count" aria-live="polite">
+                    <Users aria-hidden /> {list.length}{' '}
+                    {list.length === 1 ? 'registro encontrado' : 'registros encontrados'}
+                  </p>
                 </>
               )}
             </QueryState>
@@ -282,7 +288,12 @@ export function EquipePage() {
   );
 }
 
-/** Card da grade: o link inteiro navega para a ficha; foto 4/5 ou avatar de iniciais. */
+/**
+ * Card da grade: o link inteiro navega para a ficha. Foto 4/5 (ou iniciais),
+ * nome, função com o ponto verde e o ícone da função à direita. O card ativo
+ * carrega o anel de seleção (`layoutId`): ao escolher outro card, o anel
+ * desliza até ele em vez de piscar.
+ */
 function EntryCard({
   entry,
   tagMap,
@@ -301,13 +312,21 @@ function EntryCard({
       className={cx('ms-enc-card', active && 'ms-enc-card--active')}
       aria-current={active ? 'true' : undefined}
     >
+      {active && (
+        <motion.span
+          layoutId="ms-enc-active"
+          className="ms-enc-card__ring"
+          aria-hidden
+          transition={{ type: 'spring', duration: 0.45, bounce: 0.15 }}
+        />
+      )}
       <div className="ms-enc-card__photo">
         {entry.photo ? (
           <MediaImage
             media={entry.photo}
             alt=""
             thumb
-            sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 20vw"
+            sizes="(max-width: 767px) 50vw, (max-width: 1279px) 25vw, 12vw"
           />
         ) : (
           <Avatar name={entry.name} size="xl" tone="brand" />
@@ -315,19 +334,24 @@ function EntryCard({
       </div>
       <div className="ms-enc-card__info">
         <span className="ms-enc-card__name">{entry.name}</span>
-        <span className="ms-enc-card__role">
+        <span className="ms-enc-card__row">
+          <span className="ms-enc-card__role">{role}</span>
           <EntryIcon
             kind={entry.kind}
             icon={primary?.icon}
             className="ms-enc-card__role-icon"
           />
-          {role}
         </span>
       </div>
     </Link>
   );
 }
 
+/**
+ * Ficha do registro: foto grande numa moldura de cantos, nome, idade, funções,
+ * "Sobre" e a frase do membro numa faixa no rodapé. Remonta a cada troca
+ * (`key`), então a foto abre por uma máscara e o texto entra em sequência.
+ */
 function DetailPanel({
   entry,
   tagMap,
@@ -338,32 +362,72 @@ function DetailPanel({
   /** Id do título — rótulo (`aria-labelledby`) do diálogo mobile. */
   titleId?: string;
 }) {
+  const reduce = useReducedMotion();
   const primary = primaryTag(entry, tagMap);
   const generation = entry.generation
     ? GENERATION_LABELS[entry.generation as (typeof GENERATIONS)[number]]
     : undefined;
+
+  // blocos de texto entram em sequência depois da foto
+  const rise = (order: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, transform: 'translateY(12px)' },
+          animate: {
+            opacity: 1,
+            transform: 'translateY(0px)',
+            transition: { duration: 0.5, ease: EASE, delay: 0.25 + order * 0.07 },
+          },
+        };
+
   return (
     <div className="ms-enc-detail">
-      <div className="ms-enc-detail__photo">
-        {entry.photo ? (
-          <MediaImage
-            media={entry.photo}
-            alt={entry.name}
-            sizes="(max-width: 1023px) 100vw, 400px"
+      <div className="ms-enc-detail__frame">
+        <motion.div
+          className="ms-enc-detail__photo"
+          initial={reduce ? false : { clipPath: 'inset(0% 0% 100% 0%)' }}
+          animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
+          transition={{ duration: 0.7, ease: EASE }}
+        >
+          {entry.photo ? (
+            <motion.div
+              className="ms-enc-detail__img"
+              initial={reduce ? false : { transform: 'scale(1.08)' }}
+              animate={{ transform: 'scale(1)' }}
+              transition={{ duration: 1.1, ease: EASE }}
+            >
+              <MediaImage
+                media={entry.photo}
+                alt={entry.name}
+                sizes="(max-width: 1023px) 100vw, 50vw"
+              />
+            </motion.div>
+          ) : (
+            <div className="ms-enc-detail__photo-fallback">
+              <EntryIcon kind={entry.kind} icon={primary?.icon} />
+            </div>
+          )}
+        </motion.div>
+        {/* cantos da moldura: fecham sobre a foto depois que ela abre */}
+        {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
+          <motion.span
+            key={c}
+            className={`ms-enc-detail__corner ms-enc-detail__corner--${c}`}
+            aria-hidden
+            initial={reduce ? false : { opacity: 0, scale: 1.25 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: EASE, delay: 0.35 }}
           />
-        ) : (
-          <div className="ms-enc-detail__photo-fallback">
-            <EntryIcon kind={entry.kind} icon={primary?.icon} />
-          </div>
-        )}
+        ))}
       </div>
 
       <div className="ms-enc-detail__body">
         <h2 className="ms-enc-detail__name" id={titleId}>
-          {entry.name}
+          <TextReveal text={entry.name} trigger="mount" delay={0.15} />
         </h2>
 
-        <div className="ms-enc-detail__meta">
+        <motion.div className="ms-enc-detail__meta" {...rise(0)}>
           {entry.age != null && (
             <span className="ms-meta">
               <CalendarDays aria-hidden /> {entry.age} anos
@@ -372,29 +436,37 @@ function DetailPanel({
           {entry.season && <span className="ms-meta">{entry.season}</span>}
           {entry.seasonRef && <Tag tone="neutral">{entry.seasonRef.name}</Tag>}
           {generation && <Tag tone="neutral">{generation}</Tag>}
-        </div>
+        </motion.div>
 
         {(entry.tags.length > 0 || entry.role) && (
-          <div className="ms-enc-detail__tags">
+          <motion.div className="ms-enc-detail__tags" {...rise(1)}>
             {entry.kind === 'robot' && entry.role ? (
               <Tag>{entry.role}</Tag>
             ) : (
               entry.tags.map((t) => <Tag key={t}>{tagMap.get(t)?.label ?? t}</Tag>)
             )}
-          </div>
+          </motion.div>
         )}
 
-        <div className="ms-enc-detail__section">
-          <SectionHeading as="h3" size="sm" title="Sobre" dense />
+        <motion.div className="ms-enc-detail__section" {...rise(2)}>
+          <h3 className="ms-enc-detail__label">
+            <ScrollText aria-hidden />
+            Sobre
+          </h3>
           <div className="ms-prose ms-enc-detail__about">
             {entry.about.split('\n\n').map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
-        </div>
-
-        {entry.quote && <Quote>{entry.quote}</Quote>}
+        </motion.div>
       </div>
+
+      {entry.quote && (
+        <motion.blockquote className="ms-enc-detail__quote" {...rise(3)}>
+          <QuoteIcon aria-hidden />
+          <p>{entry.quote}</p>
+        </motion.blockquote>
+      )}
     </div>
   );
 }

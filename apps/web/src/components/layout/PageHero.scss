@@ -1,25 +1,20 @@
 @use '../../styles/mixins' as *;
 
 @layer components {
+  // Cabeçalho de página: sem faixa própria — o título grande sobre o fundo da
+  // página, com uma luz verde ambiente discreta vinda de cima.
   .ms-pagehero {
     position: relative;
     overflow: hidden;
-    padding-block: var(--ms-space-8) var(--ms-space-6);
-    background: var(--ms-surface);
-    border-bottom: 1px solid var(--ms-border);
-
-    @include below($bp-md) {
-      padding-block: var(--ms-space-6) var(--ms-space-5);
-    }
+    isolation: isolate;
+    padding-block: clamp(3.5rem, 8vw, 6.5rem) clamp(2rem, 4vw, 3rem);
+    background: var(--ms-glow);
 
     &--sm {
-      padding-block: var(--ms-space-6) var(--ms-space-5);
+      padding-block: clamp(2.5rem, 6vw, 4.5rem) var(--ms-space-6);
     }
     &--lg {
-      padding-block: var(--ms-space-10) var(--ms-space-8);
-      @include below($bp-md) {
-        padding-block: var(--ms-space-8) var(--ms-space-6);
-      }
+      padding-block: clamp(4.5rem, 10vw, 8rem) clamp(2.5rem, 5vw, 4rem);
     }
 
     &__inner {
@@ -27,12 +22,12 @@
       z-index: 1;
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-5);
-      animation: ms-fade-in var(--ms-dur-fast) var(--ms-ease) both;
+      gap: var(--ms-space-6);
     }
 
     &__crumb {
       font-size: var(--ms-text-sm);
+      animation: ms-fade-in var(--ms-dur-slow) var(--ms-ease) both;
     }
 
     // título à esquerda, ações à direita (empilham quando falta espaço)
@@ -41,20 +36,15 @@
       flex-wrap: wrap;
       align-items: flex-end;
       justify-content: space-between;
-      gap: var(--ms-space-4) var(--ms-space-6);
+      gap: var(--ms-space-5) var(--ms-space-8);
     }
 
     &__text {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-3);
-      max-width: var(--ms-measure);
+      gap: var(--ms-space-4);
+      max-width: 52rem;
       min-width: 0;
-    }
-
-    &__kicker {
-      @include kicker;
-      @include kicker-bar;
     }
 
     &__title {
@@ -70,13 +60,16 @@
 
     &__subtitle {
       color: var(--ms-text-dim);
-      font-size: var(--ms-text-lg);
-      max-width: 60ch;
+      font-size: var(--ms-lead);
+      line-height: 1.5;
+      max-width: 56ch;
+      animation: ms-rise 700ms var(--ms-ease) 80ms both;
     }
 
     &__actions {
       @include cluster(var(--ms-space-2));
       flex-shrink: 0;
+      animation: ms-rise 700ms var(--ms-ease) 140ms both;
     }
 
     &__toolbar {
@@ -84,6 +77,8 @@
       flex-wrap: wrap;
       align-items: center;
       gap: var(--ms-space-3);
+      padding-top: var(--ms-space-2);
+      animation: ms-fade-in var(--ms-dur-slow) var(--ms-ease) 200ms both;
     }
 
     // ── Com imagem de fundo (capa do post) ──
@@ -96,25 +91,18 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        animation: ms-fade-in 900ms var(--ms-ease) both;
       }
-      // scrim: a foto escurece de cima para baixo até a superfície do cabeçalho
+      // scrim: a foto escurece até o fundo da página
       &::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(
-          180deg,
-          var(--ms-overlay) 0%,
-          var(--ms-scrim) 70%,
-          var(--ms-surface) 100%
-        );
+        background: var(--ms-scrim-hero);
       }
     }
     &--media {
-      padding-block: var(--ms-space-12) var(--ms-space-6);
-      @include below($bp-md) {
-        padding-block: var(--ms-space-10) var(--ms-space-5);
-      }
+      padding-block: clamp(8rem, 18vw, 14rem) var(--ms-space-8);
       .ms-pagehero__subtitle {
         color: var(--ms-text);
       }

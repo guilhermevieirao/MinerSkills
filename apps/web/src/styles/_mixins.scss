@@ -57,7 +57,7 @@ $bp-xl: 1280px;
 
 @mixin card-surface {
   background: var(--ms-surface);
-  border: 1px solid var(--ms-border);
+  border: 1px solid var(--ms-border-subtle);
   border-radius: var(--ms-radius);
 }
 
@@ -87,57 +87,54 @@ $bp-xl: 1280px;
   gap: $gap;
 }
 
-/// Rótulo de seção (eyebrow): mono, caixa alta, verde por padrão.
-@mixin kicker($tracking: var(--ms-tracking-kicker), $color: var(--ms-green)) {
-  font-family: var(--ms-font-mono);
+/// Rótulo pequeno (grupos de navegação, colunas do rodapé, legendas de dado).
+/// Nunca acima de um título de seção: o título fala por si.
+@mixin kicker($tracking: var(--ms-tracking-kicker), $color: var(--ms-text-dim)) {
+  font-family: var(--ms-font-body);
   font-weight: var(--ms-fw-medium);
-  font-size: var(--ms-text-xs);
+  font-size: var(--ms-text-caption);
   letter-spacing: $tracking;
-  text-transform: uppercase;
+  text-transform: none;
   color: $color;
 }
 
-/// Traço curto antes do kicker (24px), o mesmo em todo lugar.
-@mixin kicker-bar($width: 24px) {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ms-space-2);
-  &::before {
-    content: '';
-    width: $width;
-    height: 2px;
-    background: currentColor;
-    flex-shrink: 0;
-  }
-}
-
-/// Metadado (data, contador, autoria): discreto, sem caixa alta — não é kicker.
+/// Metadado (data, contador, autoria): discreto, algarismos tabulares.
 @mixin meta {
-  font-family: var(--ms-font-mono);
+  font-family: var(--ms-font-body);
   font-weight: var(--ms-fw-medium);
-  font-size: var(--ms-text-xs);
+  font-size: var(--ms-text-caption);
   letter-spacing: var(--ms-tracking-caption);
   color: var(--ms-text-dim);
   font-variant-numeric: tabular-nums;
 }
 
-/// Título de marca (h1/h2, números grandes): Chakra Petch em caixa alta.
+/// Título de marca (h1/h2): Geist semibold, caixa normal, bem justo.
 /// O leading aperta só nos tamanhos de display.
 @mixin display-heading($lh: var(--ms-lh-tight)) {
   font-family: var(--ms-font-display);
-  font-weight: var(--ms-fw-bold);
-  text-transform: uppercase;
+  font-weight: var(--ms-fw-semibold);
+  text-transform: none;
   letter-spacing: var(--ms-tracking-display);
   line-height: $lh;
+  text-wrap: balance;
 }
 
-/// Título de interface (h3+, cards, linhas, modais): Inter, caixa normal.
+/// Título de interface (h3+, cards, linhas, modais): mesma família, mais solto.
 @mixin ui-heading {
   font-family: var(--ms-font-body);
   font-weight: var(--ms-fw-semibold);
   text-transform: none;
-  letter-spacing: normal;
+  letter-spacing: var(--ms-tracking-title);
   line-height: var(--ms-lh-snug);
+}
+
+/// Número de destaque (estatística, contagem): mono tabular, sem pular largura.
+@mixin numeral {
+  font-family: var(--ms-font-mono);
+  font-weight: var(--ms-fw-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 /// Coluna de leitura para texto longo.
@@ -178,10 +175,11 @@ $bp-xl: 1280px;
     text-underline-offset: 3px;
   }
   blockquote {
-    border-left: 3px solid var(--ms-green);
-    padding-left: var(--ms-space-4);
-    color: var(--ms-text-dim);
-    font-style: italic;
+    border-left: 1px solid var(--ms-border-strong);
+    padding-left: var(--ms-space-5);
+    color: var(--ms-text);
+    font-size: var(--ms-text-lg);
+    line-height: 1.55;
   }
   img,
   iframe {

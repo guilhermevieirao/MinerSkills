@@ -4,6 +4,7 @@ import { useAgenda } from '../../features/agenda/useAgenda';
 import { LinkButton, SectionHeading, Skeleton } from '../ui';
 import { DateText } from '../ui/DateText';
 import { Countdown } from '../motion/Countdown';
+import { Reveal } from '../motion/Reveal';
 import './NextCompetition.scss';
 
 /**
@@ -28,13 +29,15 @@ export function NextCompetition() {
     if (agenda.isError || agenda.fetchStatus === 'paused') return null;
     return (
       <section className="ms-section ms-next ms-next--loading" aria-hidden>
-        <div className="ms-container ms-next__inner">
-          <div className="ms-next__info">
-            <Skeleton height={12} width={180} />
-            <Skeleton height={36} width="70%" />
-            <Skeleton height={16} width="45%" />
+        <div className="ms-container">
+          <Skeleton height={44} width={320} />
+          <div className="ms-next__tile">
+            <div className="ms-next__info">
+              <Skeleton height={36} width="70%" />
+              <Skeleton height={16} width="45%" />
+            </div>
+            <Skeleton height={110} width={360} />
           </div>
-          <Skeleton height={92} width={320} />
         </div>
       </section>
     );
@@ -44,33 +47,31 @@ export function NextCompetition() {
 
   return (
     <section className="ms-section ms-next" aria-labelledby="ms-next-title">
-      <div className="ms-container ms-next__inner">
-        <div className="ms-next__info">
-          <SectionHeading
-            id="ms-next-title"
-            kicker="Próxima competição"
-            title={next.title}
-            dense
-          />
-          <div className="ms-next__meta">
-            <span>
-              <CalendarClock aria-hidden />
-              <DateText iso={next.startsAt} format="datetime" meta={false} />
-            </span>
-            {next.location && (
+      <div className="ms-container">
+        <SectionHeading id="ms-next-title" title="Próxima competição" />
+        <Reveal className="ms-next__tile">
+          <div className="ms-next__info">
+            <h3 className="ms-next__event">{next.title}</h3>
+            <div className="ms-next__meta">
               <span>
-                <MapPin aria-hidden />
-                {next.location}
+                <CalendarClock aria-hidden />
+                <DateText iso={next.startsAt} format="datetime" meta={false} />
               </span>
-            )}
+              {next.location && (
+                <span>
+                  <MapPin aria-hidden />
+                  {next.location}
+                </span>
+              )}
+            </div>
+            <LinkButton to="/agenda" variant="link">
+              Ver agenda <ArrowRight aria-hidden />
+            </LinkButton>
           </div>
-          <LinkButton to="/agenda" variant="outline" size="sm">
-            Ver agenda <ArrowRight aria-hidden />
-          </LinkButton>
-        </div>
-        <div className="ms-next__timer">
-          <Countdown target={next.startsAt} />
-        </div>
+          <div className="ms-next__timer">
+            <Countdown target={next.startsAt} />
+          </div>
+        </Reveal>
       </div>
     </section>
   );

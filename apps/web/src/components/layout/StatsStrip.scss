@@ -2,60 +2,178 @@
 
 @layer components {
   .ms-stats {
-    background: var(--ms-bg);
-    border-block: 1px solid var(--ms-border);
-
     &__grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-auto-rows: minmax(190px, auto);
+      gap: var(--ms-gap-grid);
 
-      @include below($bp-md) {
+      @include below($bp-lg) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      @include below($bp-sm) {
-        grid-template-columns: 1fr;
+        grid-auto-rows: minmax(180px, auto);
       }
     }
 
-    // valor acima da legenda (o <dt> vem antes no DOM; a coluna invertida cuida da ordem visual)
+    // bloco: número no alto, legenda embaixo (o <dt> vem antes no DOM; a ordem
+    // visual é do grid-template-areas)
     &__item {
-      display: flex;
-      flex-direction: column-reverse;
-      gap: var(--ms-space-1);
-      padding: var(--ms-space-6) var(--ms-space-5);
-      border-left: 1px solid var(--ms-border);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-areas:
+        'value'
+        'label'
+        'link';
+      grid-template-rows: 1fr auto auto;
+      align-content: end;
+      gap: var(--ms-space-2);
+      padding: var(--ms-card-pad);
+      border-radius: var(--ms-radius-lg);
+      background: var(--ms-surface);
+      border: 1px solid var(--ms-border-subtle);
       min-width: 0;
 
+      // o primeiro número é o bloco grande
       &:first-child {
-        border-left: 0;
-      }
-      @include below($bp-md) {
-        padding: var(--ms-space-5) var(--ms-space-4);
-        &:nth-child(odd) {
-          border-left: 0;
-        }
-        &:nth-child(n + 3) {
-          border-top: 1px solid var(--ms-border);
+        grid-column: span 2;
+        grid-row: span 2;
+
+        .ms-stats__value {
+          font-size: clamp(4.5rem, 12vw, 10rem);
+          color: var(--ms-green);
         }
       }
+
+      // com foto: o número é escrito sobre a imagem, com escurecimento na base
+      &--photo {
+        min-height: 420px;
+        border-color: transparent;
+
+        .ms-stats__value,
+        .ms-stats__label,
+        .ms-stats__link {
+          position: relative;
+          z-index: 1;
+        }
+        .ms-stats__label {
+          color: var(--ms-on-overlay);
+        }
+      }
+      // blocos largos: texto à esquerda, conteúdo próprio (rostos, troféu) à direita
+      &--wide {
+        grid-column: span 2;
+        grid-template-areas:
+          'extra extra'
+          'value value'
+          'label label'
+          'link link';
+        grid-template-rows: 1fr auto auto auto;
+
+        @include from($bp-md) {
+          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-areas:
+            'value extra'
+            'label extra'
+            'link extra';
+          grid-template-rows: 1fr auto auto;
+        }
+      }
+
+      @include below($bp-lg) {
+        &:first-child {
+          grid-row: span 1;
+          min-height: 280px;
+        }
+      }
+      // celular: um bloco por linha, palavras inteiras
       @include below($bp-sm) {
-        border-left: 0;
-        &:nth-child(n + 2) {
-          border-top: 1px solid var(--ms-border);
+        &:nth-child(n) {
+          grid-column: span 2;
         }
       }
     }
 
     &__value {
-      @include display-heading(1);
-      font-size: var(--ms-display-num);
+      grid-area: value;
+      align-self: end;
+      @include numeral;
+      font-size: clamp(2.25rem, 3.4vw, 3rem);
       color: var(--ms-text);
-      font-variant-numeric: tabular-nums;
-      overflow-wrap: anywhere;
+      overflow-wrap: break-word;
     }
+    &__photo {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--ms-scrim-tile);
+      }
+    }
+
+    &__extra {
+      grid-area: extra;
+      align-self: center;
+      margin: 0;
+    }
+
+    // rostos de quem está na equipe, sobrepostos
+    &__faces {
+      display: flex;
+      padding-left: var(--ms-space-3);
+
+      .ms-avatar {
+        margin-left: calc(-1 * var(--ms-space-3));
+        border: 3px solid var(--ms-surface);
+        transition: margin var(--ms-dur-slow) var(--ms-ease);
+      }
+    }
+    // no hover os rostos se afastam um pouco, como um leque abrindo
+    &__item {
+      @include hover {
+        .ms-stats__faces .ms-avatar {
+          margin-left: calc(-1 * var(--ms-space-1));
+        }
+      }
+    }
+
+    // troféu em anel verde suave
+    &__trophy {
+      display: grid;
+      place-items: center;
+      width: clamp(72px, 8vw, 104px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--ms-green-soft);
+      border: 1px solid var(--ms-green-line);
+      color: var(--ms-green);
+
+      svg {
+        width: 46%;
+        height: 46%;
+        stroke-width: 1.5;
+      }
+    }
+
+    // valor que é palavra ("Rising"): voz de título, não mono
+    &__value--word {
+      font-family: var(--ms-font-display);
+      font-weight: var(--ms-fw-semibold);
+      letter-spacing: var(--ms-tracking-display);
+    }
+
     &__label {
+      grid-area: label;
       color: var(--ms-text-dim);
-      font-size: var(--ms-text-sm);
+      font-size: var(--ms-text-base);
+      max-width: 28ch;
+    }
+    &__link {
+      grid-area: link;
+      margin-top: var(--ms-space-1);
     }
   }
 }

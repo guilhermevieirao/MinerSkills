@@ -10,13 +10,16 @@
 
   .ms-season {
     @include card-surface;
+    border-radius: var(--ms-radius-lg);
     overflow: hidden;
     transition:
       border-color var(--ms-dur) var(--ms-ease),
       box-shadow var(--ms-dur) var(--ms-ease);
 
+    // temporada atual: luz verde por baixo e contorno um degrau mais forte
     &--current {
-      border-left: 3px solid var(--ms-green);
+      background: var(--ms-glow-bottom), var(--ms-surface);
+      border-color: var(--ms-green-line);
     }
     &--open {
       border-color: var(--ms-green-deep);

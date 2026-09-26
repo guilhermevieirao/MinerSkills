@@ -23,17 +23,16 @@
     }
   }
 
-  // ── Destaque: a única superfície verde da página ──
+  // ── Destaque: superfície escura com a luz verde da marca por baixo ──
   .ms-award-hero {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--ms-space-6);
+    gap: var(--ms-space-7);
     align-items: center;
-    padding: var(--ms-space-6);
-    border-radius: var(--ms-radius-lg);
-    background: var(--ms-gradient);
-    color: var(--ms-on-green);
-    --ms-focus-color: var(--ms-on-green);
+    padding: clamp(1.75rem, 4vw, 3rem);
+    border-radius: var(--ms-radius-xl);
+    border: 1px solid var(--ms-green-line);
+    background: var(--ms-glow-bottom), var(--ms-surface);
 
     @include below($bp-sm) {
       grid-template-columns: 1fr;
@@ -42,17 +41,10 @@
       padding: var(--ms-space-5);
     }
 
-    // medalhão invertido sobre o verde
-    &__badge.ms-medallion {
-      background: var(--ms-on-green-surface);
-      border-color: var(--ms-on-green-soft);
-      color: var(--ms-on-green);
-    }
-
     &__content {
       display: flex;
       flex-direction: column;
-      gap: var(--ms-space-2);
+      gap: var(--ms-space-3);
       min-width: 0;
     }
     &__tags {
@@ -64,17 +56,16 @@
       }
     }
     &__title {
-      color: var(--ms-on-green);
       font-size: var(--ms-title-lg);
-      line-height: var(--ms-lh-snug);
+      line-height: 1.05;
     }
     &__event {
-      color: var(--ms-on-green-soft);
-      font-weight: var(--ms-fw-semibold);
-      font-size: var(--ms-text-sm);
+      color: var(--ms-text);
+      font-weight: var(--ms-fw-medium);
+      font-size: var(--ms-text-base);
     }
     &__desc {
-      color: var(--ms-on-green-soft);
+      color: var(--ms-text-dim);
       max-width: var(--ms-measure);
     }
   }

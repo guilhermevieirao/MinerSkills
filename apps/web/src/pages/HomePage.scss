@@ -2,118 +2,227 @@
 
 @layer pages {
   // ── HERO ──
-  // O <main> compensa a navbar fixa; o hero volta ao topo (margem negativa) para
-  // ficar sob a navbar transparente e repõe a altura dela no padding.
+  // Título gigante à esquerda; texto e ações à direita, alinhados à base.
+  // Abaixo, o bloco de imagem (escala e raio ligados à rolagem em HomeHero).
   .ms-hero {
     position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    margin-top: calc(-1 * var(--ms-header-h));
-    min-height: min(88dvh, 820px);
-    padding-block: calc(var(--ms-header-h) + var(--ms-space-10)) var(--ms-space-10);
-    background: var(--ms-gradient-dark);
-    --ms-hex-opacity: 0.1;
+    padding-top: clamp(2.5rem, 7vw, 6rem);
+    background: var(--ms-glow);
 
-    @include below($bp-md) {
-      padding-block: calc(var(--ms-header-h) + var(--ms-space-8)) var(--ms-space-8);
-      min-height: min(80dvh, 640px);
+    // título numa linha só, de ponta a ponta; abaixo, texto à esquerda e
+    // ações à direita (empilham no celular)
+    &__head {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1.5rem, 3vw, 2.5rem);
+      container-type: inline-size;
     }
 
-    // com foto do CMS: a textura recua e a foto ganha um scrim
-    &--photo {
-      --ms-hex-opacity: 0.06;
+    // o nome ocupa a coluna de ponta a ponta: o tamanho sai da largura do container.
+    // ponytail: razão calibrada para "MINERSKILLS" (11 letras); um título mais
+    // longo no CMS quebra linha em vez de encolher — trocar por fit-text se precisar.
+    &__title {
+      font-size: 15.9cqi; // letras em spans perdem o kerning: um pouco menor que o encaixe exato
+      line-height: 0.88;
+      letter-spacing: -0.05em;
+      overflow-wrap: break-word;
     }
-    &__bg {
+
+    &__side {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--ms-space-5) var(--ms-space-8);
+    }
+
+    &__lead {
+      font-size: var(--ms-lead);
+      line-height: 1.5;
+      color: var(--ms-text-dim);
+      max-width: 38ch;
+      animation: ms-rise 900ms var(--ms-ease) 380ms both;
+    }
+
+    &__actions {
+      @include cluster(var(--ms-space-3) var(--ms-space-5));
+      animation: ms-rise 900ms var(--ms-ease) 480ms both;
+    }
+
+    // palco do bloco de imagem: largura de vitrine (mais larga que o texto)
+    &__stage {
+      width: 100%;
+      max-width: var(--ms-container-wide);
+      margin: clamp(2.5rem, 6vw, 4.5rem) auto 0;
+      padding-inline: var(--ms-space-5);
+
+      @include below($bp-md) {
+        padding-inline: var(--ms-space-4);
+      }
+    }
+
+    &__media {
+      position: relative;
+      overflow: hidden;
+      margin: 0;
+      aspect-ratio: 16 / 8;
+      border-radius: var(--ms-radius-lg);
+      background: var(--ms-surface);
+      transform-origin: 50% 0%;
+      animation: ms-fade-in 1.2s var(--ms-ease) 300ms both;
+      // garante o recorte do raio animado no Safari
+      isolation: isolate;
+
+      @include below($bp-md) {
+        aspect-ratio: 4 / 5;
+      }
+      // sem foto no CMS: faixa baixa com o selo, não uma tela vazia
+      &:has(.ms-hero__placeholder) {
+        aspect-ratio: 16 / 5;
+        @include below($bp-md) {
+          aspect-ratio: 4 / 3;
+        }
+      }
+
+      // leve escurecimento na base para a legenda
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--ms-scrim-image);
+        pointer-events: none;
+      }
+    }
+
+    // a foto é maior que o bloco para o paralaxe não mostrar borda
+    &__photo {
       position: absolute;
-      inset: 0;
-      z-index: 0;
+      inset: -12% 0;
 
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
-      &::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, var(--ms-overlay) 0%, var(--ms-scrim) 100%);
-      }
     }
-    .ms-hex {
+
+    &__placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: var(--ms-glow-bottom), var(--ms-surface);
+    }
+    &__badge {
+      width: min(40%, 280px);
+      height: auto;
+      color: var(--ms-green);
+    }
+
+    &__caption {
+      position: absolute;
+      left: clamp(1rem, 3vw, 2rem);
+      bottom: clamp(1rem, 3vw, 2rem);
       z-index: 1;
-    }
-
-    &__inner {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--ms-space-5);
-      animation: ms-fade-up var(--ms-dur-slow) var(--ms-ease) both;
-    }
-
-    &__kicker {
-      @include kicker;
-      @include kicker-bar;
+      padding: var(--ms-space-2) var(--ms-space-4);
+      border-radius: var(--ms-radius-pill);
+      background: var(--ms-surface-glass);
+      backdrop-filter: blur(16px) saturate(160%);
+      color: var(--ms-on-overlay);
       font-size: var(--ms-text-sm);
-    }
-
-    &__title {
-      font-size: var(--ms-display-xl);
-      line-height: 0.95;
-      letter-spacing: 0.01em;
-      overflow-wrap: anywhere;
-    }
-
-    &__lead {
-      font-size: var(--ms-text-xl);
-      color: var(--ms-text-dim);
-      max-width: var(--ms-measure);
-
-      @include below($bp-md) {
-        font-size: var(--ms-text-lg);
-      }
-    }
-
-    &__actions {
-      @include cluster(var(--ms-space-3));
-      margin-top: var(--ms-space-2);
+      font-weight: var(--ms-fw-medium);
     }
   }
 
-  // ── QUEM SOMOS ──
-  .ms-about {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    gap: var(--ms-space-10);
-    align-items: start;
+  // ── ATALHOS (faixa de ícones, rola no celular) ──
+  .ms-shortcuts {
+    padding-top: clamp(3rem, 6vw, 5rem);
 
-    @include below($bp-lg) {
-      grid-template-columns: 1fr;
-      gap: var(--ms-space-8);
-    }
-
-    &__text {
+    &__list {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--ms-space-5);
+      justify-content: center;
+      gap: var(--ms-space-2);
 
-      .ms-heading {
-        margin-bottom: 0;
+      @include below($bp-xl) {
+        justify-content: flex-start;
+        @include scroll-row;
+        gap: var(--ms-space-2);
       }
     }
 
-    &__media {
-      @include card-surface;
-      overflow: hidden;
-      aspect-ratio: 4 / 3;
+    &__link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--ms-space-3);
+      width: 112px;
+
+      @include below($bp-md) {
+        width: 88px;
+        font-size: var(--ms-text-caption);
+      }
+      padding: var(--ms-space-3) var(--ms-space-2);
+      border-radius: var(--ms-radius);
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-sm);
+      font-weight: var(--ms-fw-medium);
+      text-align: center;
+      line-height: 1.3;
+      transition: color var(--ms-dur-fast) var(--ms-ease);
+
+      @include hover {
+        color: var(--ms-text);
+        .ms-shortcuts__icon {
+          background: var(--ms-surface-3);
+          transform: translateY(-3px);
+          svg {
+            color: var(--ms-green);
+          }
+        }
+      }
+    }
+
+    &__icon {
       display: grid;
       place-items: center;
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
       background: var(--ms-surface-2);
+      border: 1px solid var(--ms-border-subtle);
+      transition:
+        background-color var(--ms-dur) var(--ms-ease),
+        transform var(--ms-dur) var(--ms-ease);
+
+      svg {
+        width: 26px;
+        height: 26px;
+        color: var(--ms-text);
+        stroke-width: 1.6;
+        transition: color var(--ms-dur) var(--ms-ease);
+      }
+    }
+  }
+
+  // ── QUEM SOMOS (imagem grande + texto) ──
+  .ms-about {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+
+    @include below($bp-lg) {
+      grid-template-columns: 1fr;
+    }
+
+    &__media {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 4 / 5;
+      border-radius: var(--ms-radius-lg);
+      display: grid;
+      place-items: center;
+      background: var(--ms-glow-bottom), var(--ms-surface);
 
       img {
         width: 100%;
@@ -122,7 +231,7 @@
       }
 
       @include below($bp-lg) {
-        max-width: 560px;
+        aspect-ratio: 4 / 3;
       }
     }
     &__badge {
@@ -130,79 +239,134 @@
       height: auto;
       color: var(--ms-green);
     }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ms-space-5);
+    }
+
+    // sem foto: título à esquerda, texto e link à direita
+    &--text {
+      grid-template-columns: 1fr;
+
+      .ms-about__text {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: start;
+        gap: var(--ms-space-5) clamp(2rem, 6vw, 6rem);
+
+        > .ms-heading {
+          grid-row: span 2;
+          margin-bottom: 0;
+        }
+        > :not(.ms-heading) {
+          grid-column: 2;
+          justify-self: start;
+        }
+
+        @include below($bp-lg) {
+          grid-template-columns: 1fr;
+          > .ms-heading {
+            grid-row: auto;
+          }
+          > :not(.ms-heading) {
+            grid-column: 1;
+          }
+        }
+      }
+    }
+    &__body {
+      color: var(--ms-text-dim);
+      font-size: var(--ms-text-lg);
+      line-height: 1.65;
+      max-width: 56ch;
+    }
   }
 
-  // ── PILARES ──
-  .ms-pillars-wrap {
-    background: var(--ms-surface);
-    border-block: 1px solid var(--ms-border);
-  }
-
-  .ms-pillars {
+  // ── PILARES (uma só composição: três colunas separadas por filetes) ──
+  .ms-pillars__row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--ms-gap-grid);
+    border-radius: var(--ms-radius-xl);
+    border: 1px solid var(--ms-border-subtle);
+    background: var(--ms-surface);
+    overflow: hidden;
 
     @include below($bp-lg) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    @include below($bp-md) {
       grid-template-columns: 1fr;
     }
   }
 
-  // informativo, não navega: sem hover
   .ms-pillar {
-    @include card;
-    background: var(--ms-surface-2);
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: var(--ms-space-3);
+    padding: clamp(1.75rem, 3.4vw, 3rem);
+    border-left: 1px solid var(--ms-border-subtle);
 
+    &:first-child {
+      border-left: 0;
+    }
+    @include below($bp-lg) {
+      border-left: 0;
+      & + & {
+        border-top: 1px solid var(--ms-border-subtle);
+      }
+    }
+
+    // a sigla inteira, grande, como abertura da coluna
+    &__word {
+      display: block;
+      margin-bottom: var(--ms-space-5);
+      font-size: clamp(3.5rem, 6.4vw, 5.5rem);
+      font-weight: var(--ms-fw-semibold);
+      letter-spacing: -0.055em;
+      line-height: 0.9;
+      color: var(--ms-text);
+    }
     &__title {
       font-size: var(--ms-title);
-      margin-top: var(--ms-space-1);
+      line-height: 1.2;
     }
     &__sub {
       @include meta;
-      margin-top: calc(-1 * var(--ms-space-2));
+      color: var(--ms-text-faint);
     }
     &__body {
       color: var(--ms-text-dim);
+      max-width: 44ch;
     }
   }
 
-  // ── CHAMADA FINAL (única superfície em gradiente) ──
+  // ── CHAMADA FINAL ──
   .ms-cta {
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ms-space-7);
+    padding: clamp(3.5rem, 9vw, 7rem) var(--ms-section-x);
     border-radius: var(--ms-radius-xl);
-    padding: var(--ms-section-y-sm) var(--ms-section-x);
-    background: var(--ms-gradient);
-    color: var(--ms-on-green);
+    border: 1px solid var(--ms-border-subtle);
+    background: var(--ms-surface);
     text-align: center;
-    // anel de foco invertido: verde sobre verde sumiria
-    --ms-focus-color: var(--ms-on-green);
+    isolation: isolate;
 
-    .ms-hex {
-      color: var(--ms-black);
-      --ms-hex-opacity: 0.1;
+    // luz ligada à rolagem (CtaGlow): cresce a partir da base
+    &__glow {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: var(--ms-glow-bottom);
+      transform-origin: 50% 100%;
+      pointer-events: none;
     }
 
-    &__content {
-      position: relative;
-      z-index: 1;
-      max-width: 640px;
-      margin-inline: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--ms-space-6);
-
-      .ms-heading {
-        margin-bottom: 0;
-      }
+    .ms-heading {
+      margin-bottom: 0;
     }
 
     &__actions {
@@ -210,24 +374,6 @@
       flex-direction: column;
       align-items: center;
       gap: var(--ms-space-4);
-    }
-    // botão invertido sobre o verde
-    &__btn.ms-btn--primary {
-      --ms-btn-fg: var(--ms-green);
-      background: var(--ms-black);
-      @include hover {
-        background: var(--ms-black);
-        box-shadow: var(--ms-elev-2);
-      }
-    }
-    &__link {
-      color: var(--ms-on-green);
-      font-weight: var(--ms-fw-semibold);
-      font-size: var(--ms-text-sm);
-      text-decoration: underline;
-      text-underline-offset: 4px;
-      padding: var(--ms-space-1) var(--ms-space-2);
-      border-radius: var(--ms-radius-sm);
     }
   }
 

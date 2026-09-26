@@ -1,0 +1,15 @@
+@layer components {
+  // a máscara corta o texto que sobe; o respiro embaixo não corta descendentes (g, p, ç)
+  .ms-reveal-text__word {
+    display: inline-block;
+    white-space: nowrap; // letras separadas nunca quebram no meio da palavra
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+  }
+  .ms-reveal-text__part {
+    display: inline-block;
+    will-change: transform;
+  }
+}

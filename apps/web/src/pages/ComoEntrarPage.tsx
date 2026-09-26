@@ -44,7 +44,6 @@ export function ComoEntrarPage() {
   return (
     <>
       <PageHero
-        kicker={hero?.subtitle ?? 'Processo seletivo'}
         title={hero?.title ?? 'Como Entrar na MinerSkills'}
         subtitle={hero?.body ?? undefined}
         actions={
@@ -60,7 +59,7 @@ export function ComoEntrarPage() {
       <section className="ms-section ms-container ms-join">
         {/* ─── Etapas ─── */}
         <div className="ms-join__block">
-          <SectionHeading kicker="Etapas" title="Como funciona" dense />
+          <SectionHeading title="Como funciona" dense />
           <QueryState query={blocks} skeleton={<ListSkeleton rows={4} lead={56} />}>
             {(data) => {
               const steps = data
@@ -114,10 +113,10 @@ export function ComoEntrarPage() {
               <div className="ms-join__requisitos-head">
                 <IconTile icon={CheckCircle2} />
                 <div>
-                  {requisitos.subtitle && (
-                    <span className="ms-join__kicker">{requisitos.subtitle}</span>
-                  )}
                   <h2 className="ms-join__requisitos-title">{requisitos.title}</h2>
+                  {requisitos.subtitle && (
+                    <p className="ms-join__requisitos-sub">{requisitos.subtitle}</p>
+                  )}
                 </div>
               </div>
               {requisitos.body && (

@@ -53,8 +53,8 @@ export default defineConfig(({ mode }) => {
           description:
             'Equipe de robótica MinerSkills #10019 — FIRST Robotics Competition',
           lang: 'pt-BR',
-          theme_color: '#0A0A0A',
-          background_color: '#0A0A0A',
+          theme_color: '#080b0a',
+          background_color: '#080b0a',
           display: 'standalone',
           orientation: 'any',
           start_url: '/',

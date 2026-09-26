@@ -45,11 +45,7 @@ export function TemporadasPage() {
 
   return (
     <>
-      <PageHero
-        kicker="Linha do tempo competitiva"
-        title="Temporadas"
-        subtitle={DESCRIPTION}
-      />
+      <PageHero title="Temporadas" subtitle={DESCRIPTION} />
 
       <section className="ms-section ms-container">
         <QueryState
