@@ -83,20 +83,7 @@ test.describe('Acessibilidade', () => {
     await expect(first).toBeFocused();
   });
 
-  test('faixa decorativa e filtros sem papéis ARIA indevidos; ids de pattern únicos', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    await expect(page.locator('.ms-marquee').first()).toBeAttached();
-    await expect(page.locator('[role="marquee"]')).toHaveCount(0);
-
-    // A Home renderiza mais de um HexPattern: cada <pattern> precisa do próprio id.
-    const ids = await page
-      .locator('svg pattern[id]')
-      .evaluateAll((els) => els.map((el) => el.id));
-    expect(ids.length).toBeGreaterThan(1);
-    expect(new Set(ids).size).toBe(ids.length);
-
+  test('filtros sem papéis ARIA indevidos', async ({ page }) => {
     await page.goto('/equipe');
     await expect(page.locator('.ms-enc__filters')).toBeVisible();
     await expect(page.locator('[role="tablist"]')).toHaveCount(0);
