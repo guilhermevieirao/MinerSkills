@@ -44,3 +44,10 @@ desktop.ini
 
 # Capturas locais (apps/web: npm run screenshots)
 /apps/web/screenshots/
+
+# Impeccable (ferramenta de design): artefatos de trabalho locais — capturas de
+# revisão, referências externas, páginas de decisão e cache do hook. Fica
+# versionado só o sidecar do design system (.impeccable/design.json).
+.impeccable/*
+!.impeccable/design.json
+**/.impeccable/hook.cache.json

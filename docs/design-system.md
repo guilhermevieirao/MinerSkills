@@ -1,3 +1,9 @@
+> **Atualizado em 2026-09:** o site público ganhou o design system **v3** (escuro profundo +
+> verde, Geist em caixa normal, blocos de vitrine e movimento ligado à rolagem). A fonte de
+> verdade agora é o [`DESIGN.md`](../DESIGN.md) na raiz (com o sidecar `.impeccable/design.json`).
+> O conteúdo abaixo descreve a **v2** e fica como histórico — valores de cor, fonte, raio e
+> ritmo mudaram; consulte sempre `apps/web/src/styles/_tokens.scss`.
+
 # Design System (v2)
 
 Identidade **preta + verde menta**, voz de marca técnica (Chakra Petch em caixa alta)
